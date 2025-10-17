@@ -1,0 +1,4 @@
+name: homerun
+version: '1.0-SNAPSHOT'
+main: net.chlod.minecraft.homerun.Homerun
+api-version: '1.21'
