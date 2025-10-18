@@ -60,6 +60,9 @@ class ChunkCopyUtil(private val plugin: JavaPlugin) {
         // Copy heightmaps
         copyHeightmaps(sourceLevelChunk, targetLevelChunk)
 
+        // Reset lighting data
+        resetLighting(targetLevel, targetX, targetZ)
+
         // Copy persistent data container
         targetLevelChunk.persistentDataContainer.putAll(
             sourceLevelChunk.persistentDataContainer.toTagCompound()
@@ -90,6 +93,8 @@ class ChunkCopyUtil(private val plugin: JavaPlugin) {
     ) {
         val sourceSections = source.sections
         val targetSections = target.sections
+
+        source.blendingData
 
         for (i in sourceSections.indices) {
             val sourceSection = sourceSections[i]
@@ -213,6 +218,20 @@ class ChunkCopyUtil(private val plugin: JavaPlugin) {
         }
     }
 
+    private fun resetLighting(level: ServerLevel, chunkX: Int, chunkZ: Int) {
+        val chunkPos = ChunkPos(chunkX, chunkZ)
+        val lightEngine = level.lightEngine
+
+        // Disable light updates for this chunk
+        lightEngine.retainData(chunkPos, false)
+
+        // Clear existing light data
+        lightEngine.setLightEnabled(chunkPos, false)
+
+        // Schedule lighting recalculation on next tick
+        level.chunkSource.lightEngine.tryScheduleUpdate()
+    }
+
     /**
      * Recalculates lighting for the target chunk
      */
@@ -254,7 +273,7 @@ class ChunkCopyUtil(private val plugin: JavaPlugin) {
 
         for ((chunkX, chunkZ) in chunks) {
             // Load source chunk
-            val sourceChunk = sourceWorld.getChunkAt(chunkX, chunkZ)
+            val sourceChunk = sourceWorld.getChunkAt(chunkX, chunkZ, true)
 
             // Copy to target with offset
             copyChunk(

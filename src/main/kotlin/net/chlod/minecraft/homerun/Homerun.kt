@@ -2,6 +2,7 @@ package net.chlod.minecraft.homerun
 
 import io.papermc.paper.command.brigadier.BasicCommand
 import io.papermc.paper.command.brigadier.CommandSourceStack
+import net.chlod.minecraft.homerun.logic.ChunkBlendingUtil
 import net.chlod.minecraft.homerun.logic.ChunkCopyUtil
 import org.bukkit.Bukkit
 import org.bukkit.WorldCreator
@@ -22,16 +23,15 @@ class Homerun : JavaPlugin() {
 
     override fun onEnable() {
         var breakpoint = object : BasicCommand {
+            val worldName = "world_${System.currentTimeMillis()}"
+
             override fun execute(commandSourceStack: CommandSourceStack, args: Array<String>) {
                 object : BukkitRunnable() {
                     override fun run() {
                         if (Bukkit.isTickingWorlds()) {
-                            return;
+                            return
                         }
 
-                        cancel()
-
-                        val worldName = "world_${System.currentTimeMillis()}"
                         componentLogger.info("Generating new world...")
                         val currentWorld = commandSourceStack.location.world
                         val newWorld = server.createWorld(WorldCreator(worldName))
@@ -42,6 +42,11 @@ class Homerun : JavaPlugin() {
                             return
                         }
 
+                        componentLogger.info("World loaded at ${newWorld.name}")
+
+                        cancel()
+
+                        componentLogger.info("Transplanting spawn chunks from ${currentWorld.name} to ${newWorld.name}...")
                         val spawnChunk = currentWorld.spawnLocation.chunk
                         val minX = floor(spawnChunk.x - (range / 2.0)).toInt()
                         val maxX = ceil(spawnChunk.x + (range / 2.0)).toInt() - 1
@@ -56,11 +61,40 @@ class Homerun : JavaPlugin() {
                             maxX,
                             maxZ
                         )
+                        ChunkBlendingUtil(this@Homerun).setBlendingDataForRegion(
+                            newWorld,
+                            minX,
+                            minZ,
+                            maxX,
+                            maxZ
+                        )
+
+                        componentLogger.info("Setting spawn location...")
                         newWorld.setSpawnLocation(
                             currentWorld.spawnLocation.x.toInt(),
                             currentWorld.spawnLocation.y.toInt(),
                             currentWorld.spawnLocation.z.toInt()
                         )
+
+                        componentLogger.info("Marking deletion for border chunks...");
+                        // Delete all chunks at least 16 chunks away from the copied area, if they exist
+                        val border = 16
+                        for (x in (minX - border)..(maxX + border)) {
+                            for (z in (minZ - border)..(maxZ + border)) {
+                                if (
+                                    (x !in minX..maxX || z !in minZ..maxZ)
+                                    && (newWorld.isChunkLoaded(x, z) || (newWorld.isChunkGenerated(x, z)))
+                                ) {
+                                    val chunk = newWorld.getChunkAt(x, z)
+                                    chunk.entities.forEach { entity -> entity.remove() }
+                                    if (newWorld.regenerateChunk(x, z)) {
+                                        componentLogger.info("Regenerated chunk at ($x, $z)")
+                                    } else {
+                                        componentLogger.warn("Failed to regenerate chunk at ($x, $z)")
+                                    }
+                                }
+                            }
+                        }
 
                         componentLogger.info("World generation complete: $worldName")
                         commandSourceStack.sender.sendMessage("World generation complete: $worldName")
@@ -76,10 +110,10 @@ class Homerun : JavaPlugin() {
         registerCommand("breakpoint", breakpoint)
 
         // Plugin startup logic
-        var world = server.worlds.firstOrNull();
+        var world = server.worlds.firstOrNull()
         if (world != null) {
             componentLogger.info("World found: ${world.name}")
-            componentLogger.info("keys:");
+            componentLogger.info("keys:")
             for (key in world.persistentDataContainer.keys) {
                 componentLogger.info(" - ${key.asString()}")
             }
