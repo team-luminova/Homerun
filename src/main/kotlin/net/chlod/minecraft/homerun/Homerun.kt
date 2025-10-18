@@ -1,125 +1,34 @@
 package net.chlod.minecraft.homerun
 
-import io.papermc.paper.command.brigadier.BasicCommand
-import io.papermc.paper.command.brigadier.CommandSourceStack
-import net.chlod.minecraft.homerun.logic.ChunkBlendingUtil
-import net.chlod.minecraft.homerun.logic.ChunkCopyUtil
-import org.bukkit.Bukkit
-import org.bukkit.WorldCreator
-import org.bukkit.entity.Player
+import net.chlod.minecraft.homerun.command.ResetCommand
+import net.chlod.minecraft.homerun.data.ResetData
+import net.chlod.minecraft.homerun.listeners.PlayerJoinListener
+import net.chlod.minecraft.homerun.offline.ChunkTransferUtil
 import org.bukkit.plugin.java.JavaPlugin
-import org.bukkit.scheduler.BukkitRunnable
-import kotlin.math.ceil
-import kotlin.math.floor
 
 class Homerun : JavaPlugin() {
 
-    // range is in diameter
-    var range = 256 / 16
+    var lockedDown = false
 
     override fun onLoad() {
         // Load logic
+        val resetData = ResetData.find(this)
+        if (resetData != null) {
+            componentLogger.info("Found existing reset data for world ${resetData.sourceWorld} to ${resetData.targetWorld}")
+            componentLogger.info("Running chunk transplant...")
+            ChunkTransferUtil(resetData).transferChunks()
+            componentLogger.info("Finished chunk transplant")
+            resetData.delete()
+        } else {
+            componentLogger.info("No existing reset data found")
+        }
     }
 
     override fun onEnable() {
-        var breakpoint = object : BasicCommand {
-            val worldName = "world_${System.currentTimeMillis()}"
+        saveDefaultConfig()
 
-            override fun execute(commandSourceStack: CommandSourceStack, args: Array<String>) {
-                object : BukkitRunnable() {
-                    override fun run() {
-                        if (Bukkit.isTickingWorlds()) {
-                            return
-                        }
-
-                        componentLogger.info("Generating new world...")
-                        val currentWorld = commandSourceStack.location.world
-                        val newWorld = server.createWorld(WorldCreator(worldName))
-
-                        if (newWorld == null) {
-                            componentLogger.error("Failed to create new world!")
-                            commandSourceStack.sender.sendMessage("Failed to create new world!")
-                            return
-                        }
-
-                        componentLogger.info("World loaded at ${newWorld.name}")
-
-                        cancel()
-
-                        componentLogger.info("Transplanting spawn chunks from ${currentWorld.name} to ${newWorld.name}...")
-                        val spawnChunk = currentWorld.spawnLocation.chunk
-                        val minX = floor(spawnChunk.x - (range / 2.0)).toInt()
-                        val maxX = ceil(spawnChunk.x + (range / 2.0)).toInt() - 1
-                        val minZ = floor(spawnChunk.z - (range / 2.0)).toInt()
-                        val maxZ = ceil(spawnChunk.z + (range / 2.0)).toInt() - 1
-
-                        ChunkCopyUtil(this@Homerun).copyRegion(
-                            currentWorld,
-                            newWorld,
-                            minX,
-                            minZ,
-                            maxX,
-                            maxZ
-                        )
-                        ChunkBlendingUtil(this@Homerun).setBlendingDataForRegion(
-                            newWorld,
-                            minX,
-                            minZ,
-                            maxX,
-                            maxZ
-                        )
-
-                        componentLogger.info("Setting spawn location...")
-                        newWorld.setSpawnLocation(
-                            currentWorld.spawnLocation.x.toInt(),
-                            currentWorld.spawnLocation.y.toInt(),
-                            currentWorld.spawnLocation.z.toInt()
-                        )
-
-                        componentLogger.info("Marking deletion for border chunks...");
-                        // Delete all chunks at least 16 chunks away from the copied area, if they exist
-                        val border = 16
-                        for (x in (minX - border)..(maxX + border)) {
-                            for (z in (minZ - border)..(maxZ + border)) {
-                                if (
-                                    (x !in minX..maxX || z !in minZ..maxZ)
-                                    && (newWorld.isChunkLoaded(x, z) || (newWorld.isChunkGenerated(x, z)))
-                                ) {
-                                    val chunk = newWorld.getChunkAt(x, z)
-                                    chunk.entities.forEach { entity -> entity.remove() }
-                                    if (newWorld.regenerateChunk(x, z)) {
-                                        componentLogger.info("Regenerated chunk at ($x, $z)")
-                                    } else {
-                                        componentLogger.warn("Failed to regenerate chunk at ($x, $z)")
-                                    }
-                                }
-                            }
-                        }
-
-                        componentLogger.info("World generation complete: $worldName")
-                        commandSourceStack.sender.sendMessage("World generation complete: $worldName")
-                        commandSourceStack.sender.sendMessage("Teleporting...")
-                        if (commandSourceStack.sender is Player) {
-                            (commandSourceStack.sender as Player).teleport(newWorld.spawnLocation)
-                        }
-                    }
-                }.runTaskTimer(this@Homerun, 0L, 20L)
-            }
-        }
-
-        registerCommand("breakpoint", breakpoint)
-
-        // Plugin startup logic
-        var world = server.worlds.firstOrNull()
-        if (world != null) {
-            componentLogger.info("World found: ${world.name}")
-            componentLogger.info("keys:")
-            for (key in world.persistentDataContainer.keys) {
-                componentLogger.info(" - ${key.asString()}")
-            }
-        } else {
-            componentLogger.info("No world found!")
-        }
+        registerCommand("reset", ResetCommand(this))
+        server.pluginManager.registerEvents(PlayerJoinListener(this), this)
     }
 
     override fun onDisable() {

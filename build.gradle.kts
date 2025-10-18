@@ -13,12 +13,17 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/") {
         name = "papermc-repo"
     }
+    maven("https://jitpack.io") {
+        name = "jitpack-repo"
+    }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    implementation("com.github.Querz:mcaselector:2.5.3")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    // Other Dependencies
+
+    // NMS
     paperweight.paperDevBundle("1.21.4-R0.1-SNAPSHOT")
 }
 
