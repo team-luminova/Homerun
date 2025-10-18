@@ -4,17 +4,22 @@ import net.chlod.minecraft.homerun.data.ResetData
 import net.querz.mcaselector.changer.fields.ForceBlendField
 import net.querz.mcaselector.config.ConfigProvider
 import net.querz.mcaselector.config.WorldConfig
+import net.querz.mcaselector.io.JobHandler
 import net.querz.mcaselector.io.RegionDirectories
 import net.querz.mcaselector.io.WorldDirectories
+import net.querz.mcaselector.io.job.ChunkFilterDeleter
 import net.querz.mcaselector.io.job.ChunkImporter
 import net.querz.mcaselector.io.job.FieldChanger
+import net.querz.mcaselector.io.job.SelectionDeleter
 import net.querz.mcaselector.selection.Selection
 import net.querz.mcaselector.util.point.Point2i
 import net.querz.mcaselector.util.point.Point3i
 import net.querz.mcaselector.util.progress.Progress
 import net.querz.mcaselector.util.property.DataProperty
 import net.querz.mcaselector.util.range.Range
+import org.apache.commons.io.FileUtils
 import java.io.File
+import java.io.FileFilter
 
 class ChunkTransferUtil {
 
@@ -64,87 +69,76 @@ class ChunkTransferUtil {
         ConfigProvider.WORLD = WorldConfig()
         ConfigProvider.WORLD.setWorldDirs(targetWorld)
         val source: WorldDirectories = sourceWorld
-        val offset = Point3i(0, 0, 0)
-        val overwrite = true
         val selection = Selection()
-        val sections: List<Range> = listOf(Range(Integer.MIN_VALUE, Integer.MAX_VALUE))
 
         for (chunk in resetData.chunks) {
             selection.addChunk(Point2i(chunk.first, chunk.second))
         }
 
-        val progress = object : Progress {
-            private var max: Int = 1
-            private var msg: String? = null
-            private var progress: Int = 0
-
-            private fun printProgress() {
-                val percent = (progress.toDouble() / max.toDouble()) * 100.0
-                resetData.plugin.componentLogger.info("Progress: %.2f%% - %s".format(percent, msg ?: ""))
-            }
-
-            override fun setMax(max: Int) {
-                this.max = max
-            }
-
-            override fun updateProgress(msg: String?, progress: Int) {
-                this.progress = progress
-                this.msg = msg
-                printProgress()
-            }
-
-            override fun done(msg: String?) {
-                resetData.plugin.componentLogger.info("Done: %s".format(msg ?: ""))
-            }
-
-            override fun taskCancelled(): Boolean {
-                return false
-            }
-
-            override fun cancelTask() {
-                // No-op
-            }
-
-            override fun incrementProgress(msg: String?) {
-                progress++
-                this.msg = msg
-                printProgress()
-            }
-
-            override fun incrementProgress(msg: String?, progress: Int) {
-                this.progress += progress
-                this.msg = msg
-                printProgress()
-            }
-
-            override fun setMessage(msg: String?) {
-                this.msg = msg
-                printProgress()
-            }
+        importChunks(source, selection)
+        while (JobHandler.getActiveJobs() > 0) {
+            Thread.onSpinWait()
         }
+//        File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + "_1").mkdirs()
+//        FileUtils.copyDirectory(
+//            targetWorld.region.parentFile,
+//            File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + "_1")
+//        ) { pathname -> !pathname.name.endsWith("session.lock") }
+//        forceDeleteOldChunks()
+//        while (JobHandler.getActiveJobs() > 0) {
+//            Thread.onSpinWait()
+//        }
+//        File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + "_2").mkdirs()
+//        FileUtils.copyDirectory(
+//            targetWorld.region.parentFile,
+//            File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + "_2")
+//        ) { pathname -> !pathname.name.endsWith("session.lock") }
+        Thread.sleep(1000)
 
+        forceBlendNewChunks(selection)
+        while (JobHandler.getActiveJobs() > 0) {
+            Thread.onSpinWait()
+        }
+//        File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + "_3").mkdirs()
+//        FileUtils.copyDirectory(
+//            targetWorld.region.parentFile,
+//            File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + "_3")
+//        ) { pathname -> !pathname.name.endsWith("session.lock") }
+
+        resetData.plugin.componentLogger.info("Waiting for verification...")
+        Thread.sleep(60000)
+    }
+
+    fun forceDeleteOldChunks() {
+        val progress = PluginProgress(resetData, "deleting old chunks")
+        val selection = Selection()
+
+        for (chunk in resetData.chunks) {
+            selection.addChunk(Point2i(chunk.first, chunk.second))
+        }
+        selection.isInverted = true
+
+        SelectionDeleter.deleteSelection(
+            selection,
+            progress
+        )
+    }
+
+    fun importChunks(source: WorldDirectories, selection: Selection) {
+        val progress = PluginProgress(resetData, "importing chunks")
+        val sections: List<Range> = listOf(Range(Integer.MIN_VALUE, Integer.MAX_VALUE))
         val tempFiles = DataProperty<MutableMap<Point2i?, RegionDirectories>?>()
         ChunkImporter.importChunks(
             source,
             progress,
             true,
-            overwrite,
+            true,
             selection,
             selection,
             sections,
-            offset,
+            Point3i(0, 0, 0),
             tempFiles
         )
-        val forceBlendField = ForceBlendField()
-        forceBlendField.newValue = true
-        FieldChanger.changeNBTFields(
-            listOf(forceBlendField),
-            true,
-            selection,
-            progress,
-            true
-        )
-
         if (tempFiles.get() != null) {
             for (tempFile in tempFiles.get()!!.values) {
                 if (!tempFile.region.delete()) {
@@ -158,9 +152,75 @@ class ChunkTransferUtil {
                 }
             }
         }
+    }
 
-        resetData.plugin.componentLogger.info("Waiting for verification...")
-        Thread.sleep(60000)
+    fun forceBlendNewChunks(selection: Selection) {
+        val progress = PluginProgress(resetData, "forcing blending on all chunks")
+        val forceBlendField = ForceBlendField()
+        forceBlendField.newValue = true
+        FieldChanger.changeNBTFields(
+            listOf(forceBlendField),
+            true,
+            selection,
+            progress,
+            true
+        )
+    }
+
+    class PluginProgress(val resetData: ResetData, val prefix: String) : Progress {
+        private var max: Int = 1
+        private var msg: String? = null
+        private var progress: Int = 0
+
+        private fun printProgress() {
+            val percent = (progress.toDouble() / max.toDouble()) * 100.0
+            resetData.plugin.componentLogger.info("Progress (%s): %.2f%% (%d/%d) - %s".format(
+                prefix,
+                percent,
+                progress,
+                max,
+                msg ?: ""
+            ))
+        }
+
+        override fun setMax(max: Int) {
+            this.max = max
+        }
+
+        override fun updateProgress(msg: String?, progress: Int) {
+            this.progress = progress
+            this.msg = msg
+            printProgress()
+        }
+
+        override fun done(msg: String?) {
+            resetData.plugin.componentLogger.info("Done: %s".format(msg ?: ""))
+        }
+
+        override fun taskCancelled(): Boolean {
+            return false
+        }
+
+        override fun cancelTask() {
+            // No-op
+        }
+
+        override fun incrementProgress(msg: String?) {
+            progress++
+            this.msg = msg
+            printProgress()
+        }
+
+        override fun incrementProgress(msg: String?, progress: Int) {
+            this.progress += progress
+            this.msg = msg
+            printProgress()
+        }
+
+        override fun setMessage(msg: String?) {
+            this.msg = msg
+            printProgress()
+        }
     }
 
 }

@@ -10,7 +10,7 @@ class ResetData(
     val sourceWorld: String,
     val targetWorld: String,
     val chunks: List<Pair<Int, Int>>,
-    val spawnLocation: Pair<Double, Double>
+    val spawnLocation: Triple<Double, Double, Double>
 ) {
 
     companion object {
@@ -33,8 +33,9 @@ class ResetData(
                         val pair = it as List<*>
                         Pair((pair[0] as Int), (pair[1] as Int))
                     },
-                    Pair(
+                    Triple(
                         config.getDouble("spawn.x"),
+                        config.getDouble("spawn.y"),
                         config.getDouble("spawn.z")
                     )
                 )
@@ -48,7 +49,7 @@ class ResetData(
             sourceWorld: String,
             targetWorld: String,
             chunks: List<Pair<Int, Int>>,
-            spawnLocation: Pair<Double, Double>,
+            spawnLocation: Triple<Double, Double, Double>,
         ): ResetData {
             val time = System.currentTimeMillis()
             return ResetData(plugin, time, sourceWorld, targetWorld, chunks, spawnLocation)

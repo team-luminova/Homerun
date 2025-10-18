@@ -51,8 +51,9 @@ class WorldPrepareTask(val plugin: Plugin, val commandSourceStack: CommandSource
                 chunkPairs.add(Pair(x, z))
             }
         }
-        val spawnLocation = Pair(
+        val spawnLocation = Triple(
             newWorld.spawnLocation.x,
+            newWorld.spawnLocation.y,
             newWorld.spawnLocation.z
         )
         val resetData = ResetData.create(
