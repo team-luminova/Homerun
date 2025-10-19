@@ -7,19 +7,18 @@ import net.querz.mcaselector.config.WorldConfig
 import net.querz.mcaselector.io.JobHandler
 import net.querz.mcaselector.io.RegionDirectories
 import net.querz.mcaselector.io.WorldDirectories
-import net.querz.mcaselector.io.job.ChunkFilterDeleter
 import net.querz.mcaselector.io.job.ChunkImporter
 import net.querz.mcaselector.io.job.FieldChanger
 import net.querz.mcaselector.io.job.SelectionDeleter
+import net.querz.mcaselector.logging.Logging
 import net.querz.mcaselector.selection.Selection
 import net.querz.mcaselector.util.point.Point2i
 import net.querz.mcaselector.util.point.Point3i
 import net.querz.mcaselector.util.progress.Progress
 import net.querz.mcaselector.util.property.DataProperty
 import net.querz.mcaselector.util.range.Range
-import org.apache.commons.io.FileUtils
 import java.io.File
-import java.io.FileFilter
+import kotlin.math.log
 
 class ChunkTransferUtil {
 
@@ -65,7 +64,15 @@ class ChunkTransferUtil {
     }
 
     fun transferChunks() {
+        // Instantiate a very bare-bones MCASelector environment
         MCASelectorVersionImplLoader.init()
+
+        val logFolder = File(resetData.plugin.dataFolder, "logs")
+        logFolder.mkdirs()
+
+        ConfigProvider.GLOBAL.debug = true
+        JobHandler.setTrimSaveData(false)
+
         ConfigProvider.WORLD = WorldConfig()
         ConfigProvider.WORLD.setWorldDirs(targetWorld)
         val source: WorldDirectories = sourceWorld
@@ -79,32 +86,14 @@ class ChunkTransferUtil {
         while (JobHandler.getActiveJobs() > 0) {
             Thread.onSpinWait()
         }
-//        File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + "_1").mkdirs()
-//        FileUtils.copyDirectory(
-//            targetWorld.region.parentFile,
-//            File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + "_1")
-//        ) { pathname -> !pathname.name.endsWith("session.lock") }
-//        forceDeleteOldChunks()
-//        while (JobHandler.getActiveJobs() > 0) {
-//            Thread.onSpinWait()
-//        }
-//        File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + "_2").mkdirs()
-//        FileUtils.copyDirectory(
-//            targetWorld.region.parentFile,
-//            File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + "_2")
-//        ) { pathname -> !pathname.name.endsWith("session.lock") }
-        Thread.sleep(1000)
-
+        forceDeleteOldChunks()
+        while (JobHandler.getActiveJobs() > 0) {
+            Thread.onSpinWait()
+        }
         forceBlendNewChunks(selection)
         while (JobHandler.getActiveJobs() > 0) {
             Thread.onSpinWait()
         }
-//        File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + "_3").mkdirs()
-//        FileUtils.copyDirectory(
-//            targetWorld.region.parentFile,
-//            File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + "_3")
-//        ) { pathname -> !pathname.name.endsWith("session.lock") }
-
         resetData.plugin.componentLogger.info("Waiting for verification...")
         Thread.sleep(60000)
     }
@@ -126,16 +115,15 @@ class ChunkTransferUtil {
 
     fun importChunks(source: WorldDirectories, selection: Selection) {
         val progress = PluginProgress(resetData, "importing chunks")
-        val sections: List<Range> = listOf(Range(Integer.MIN_VALUE, Integer.MAX_VALUE))
         val tempFiles = DataProperty<MutableMap<Point2i?, RegionDirectories>?>()
         ChunkImporter.importChunks(
             source,
             progress,
             true,
             true,
+            null,
             selection,
-            selection,
-            sections,
+            null,
             Point3i(0, 0, 0),
             tempFiles
         )

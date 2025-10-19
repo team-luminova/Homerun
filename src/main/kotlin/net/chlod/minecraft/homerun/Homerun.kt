@@ -6,6 +6,7 @@ import net.chlod.minecraft.homerun.command.ResetCommand
 import net.chlod.minecraft.homerun.data.ResetData
 import net.chlod.minecraft.homerun.listeners.PlayerJoinListener
 import net.chlod.minecraft.homerun.offline.ChunkTransferUtil
+import org.bukkit.Location
 import org.bukkit.WorldCreator
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
@@ -40,8 +41,15 @@ class Homerun : JavaPlugin() {
                 args: Array<out String>
             ) {
                 val world = server.createWorld(WorldCreator(args[0]))
-                if (world != null) {
-                    (commandSourceStack.sender as Player).teleport(world.spawnLocation)
+                if (world != null && commandSourceStack.sender is Player) {
+                    val player = commandSourceStack.sender as Player
+                    player.teleport(
+                        Location(
+                            world,
+                            player.location.x, player.location.y, player.location.z,
+                            player.location.yaw, player.location.pitch
+                        )
+                    )
                     commandSourceStack.sender.sendMessage("Teleported to world ${world.name}")
                 } else {
                     commandSourceStack.sender.sendMessage("World ${args[0]} not found")
