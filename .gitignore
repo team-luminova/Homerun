@@ -36,7 +36,7 @@ target/
 hs_err_pid*
 
 # Server data
-run/
+run*/
 
 # Gradle
 .gradle/
