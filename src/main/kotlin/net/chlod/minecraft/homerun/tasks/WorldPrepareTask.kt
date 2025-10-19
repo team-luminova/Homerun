@@ -1,8 +1,8 @@
 package net.chlod.minecraft.homerun.tasks
 
-import io.papermc.paper.command.brigadier.CommandSourceStack
 import net.chlod.minecraft.homerun.data.ResetData
 import org.bukkit.Bukkit
+import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitRunnable
@@ -10,7 +10,7 @@ import java.io.File
 import kotlin.math.ceil
 import kotlin.math.floor
 
-class WorldPrepareTask(val plugin: Plugin, val commandSourceStack: CommandSourceStack): BukkitRunnable() {
+class WorldPrepareTask(val plugin: Plugin, val sourceWorld: World): BukkitRunnable() {
 
     val range = ceil(plugin.config.getInt("range") / 16.0).toInt()
     val newWorldName = "world_${System.currentTimeMillis()}"
@@ -24,12 +24,11 @@ class WorldPrepareTask(val plugin: Plugin, val commandSourceStack: CommandSource
         }
 
         componentLogger.info("Generating new world...")
-        val currentWorld = commandSourceStack.location.world
-        var newWorld = server.createWorld(WorldCreator(newWorldName))
+        val currentWorld = sourceWorld
+        val newWorld = server.createWorld(WorldCreator(newWorldName))
 
         if (newWorld == null) {
             componentLogger.error("Failed to create new world!")
-            commandSourceStack.sender.sendMessage("Failed to create new world!")
             return
         }
 
@@ -51,10 +50,12 @@ class WorldPrepareTask(val plugin: Plugin, val commandSourceStack: CommandSource
                 chunkPairs.add(Pair(x, z))
             }
         }
-        val spawnLocation = Triple(
-            newWorld.spawnLocation.x,
-            newWorld.spawnLocation.y,
-            newWorld.spawnLocation.z
+        val spawnLocation = listOf(
+            currentWorld.spawnLocation.x,
+            currentWorld.spawnLocation.y,
+            currentWorld.spawnLocation.z,
+            currentWorld.spawnLocation.yaw.toDouble(),
+            currentWorld.spawnLocation.pitch.toDouble()
         )
         val resetData = ResetData.create(
             plugin,

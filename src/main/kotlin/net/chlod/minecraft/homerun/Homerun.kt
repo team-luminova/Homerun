@@ -5,13 +5,17 @@ import io.papermc.paper.command.brigadier.CommandSourceStack
 import net.chlod.minecraft.homerun.command.ResetCommand
 import net.chlod.minecraft.homerun.data.ResetData
 import net.chlod.minecraft.homerun.listeners.PlayerJoinListener
-import net.chlod.minecraft.homerun.offline.ChunkTransferUtil
+import net.chlod.minecraft.homerun.tasks.WorldPostloadTask
+import net.chlod.minecraft.homerun.tasks.WorldPostpareTask
 import org.bukkit.Location
+import org.bukkit.NamespacedKey
 import org.bukkit.WorldCreator
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 
 class Homerun : JavaPlugin() {
+
+    val KEY_NEEDS_RESPAWN = NamespacedKey(this, "needs_respawn")
 
     var appliedResetData: ResetData? = null
     var lockedDown = false
@@ -21,9 +25,10 @@ class Homerun : JavaPlugin() {
         val resetData = ResetData.find(this)
         if (resetData != null) {
             componentLogger.info("Found existing reset data for world ${resetData.sourceWorld} to ${resetData.targetWorld}")
-            componentLogger.info("Running chunk transplant...")
-            ChunkTransferUtil(resetData).transferChunks()
-            componentLogger.info("Finished chunk transplant")
+            // Directly run the task because we want this to be a blocking operation.
+            // Otherwise, the server will load the world before we're done processing.
+            WorldPostpareTask(this, resetData)
+                .run()
             appliedResetData = resetData
             resetData.delete()
         } else {
@@ -59,12 +64,8 @@ class Homerun : JavaPlugin() {
         server.pluginManager.registerEvents(PlayerJoinListener(this), this)
 
         if (appliedResetData != null) {
-            componentLogger.info("Setting spawn point for world ${appliedResetData!!.targetWorld}")
-            val newWorld = server.getWorld(appliedResetData!!.targetWorld)
-            val spawnX = appliedResetData!!.spawnLocation.first.toInt()
-            val spawnY = appliedResetData!!.spawnLocation.second.toInt()
-            val spawnZ = appliedResetData!!.spawnLocation.second.toInt()
-            newWorld?.setSpawnLocation(spawnX, spawnY, spawnZ)
+            WorldPostloadTask(this, appliedResetData!!)
+                .run()
         }
     }
 

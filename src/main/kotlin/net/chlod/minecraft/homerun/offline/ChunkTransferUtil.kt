@@ -10,58 +10,15 @@ import net.querz.mcaselector.io.WorldDirectories
 import net.querz.mcaselector.io.job.ChunkImporter
 import net.querz.mcaselector.io.job.FieldChanger
 import net.querz.mcaselector.io.job.SelectionDeleter
-import net.querz.mcaselector.logging.Logging
 import net.querz.mcaselector.selection.Selection
 import net.querz.mcaselector.util.point.Point2i
 import net.querz.mcaselector.util.point.Point3i
 import net.querz.mcaselector.util.progress.Progress
 import net.querz.mcaselector.util.property.DataProperty
-import net.querz.mcaselector.util.range.Range
+import org.apache.commons.io.FileUtils
 import java.io.File
-import kotlin.math.log
 
-class ChunkTransferUtil {
-
-    private val resetData: ResetData
-
-    private var sourceWorld: WorldDirectories
-    private var targetWorld: WorldDirectories
-
-    constructor(resetData: ResetData) {
-        this.resetData = resetData
-        val serverDirectory = resetData.plugin.server.pluginsFolder.parent
-        val sourceWorldDirectory = File(serverDirectory, resetData.sourceWorld)
-        val targetWorldDirectory = File(serverDirectory, resetData.targetWorld)
-
-        val sourceRegion = File(sourceWorldDirectory, "region")
-        val sourcePoi = File(sourceWorldDirectory, "poi")
-        val sourceEntities = File(sourceWorldDirectory, "entities")
-
-        verifyWorldDirectories(sourceRegion, sourcePoi, sourceEntities)
-        sourceWorld = WorldDirectories(sourceRegion, sourcePoi, sourceEntities)
-
-        val targetRegion = File(targetWorldDirectory, "region")
-        val targetPoi = File(targetWorldDirectory, "poi")
-        val targetEntities = File(targetWorldDirectory, "entities")
-
-        verifyWorldDirectories(targetRegion, targetPoi, targetEntities)
-        targetWorld = WorldDirectories(targetRegion, targetPoi, targetEntities)
-    }
-
-    private fun verifyWorldDirectories(region: File, poi: File, entities: File) {
-        verifyWorldDirectory(region)
-        verifyWorldDirectory(poi)
-        verifyWorldDirectory(entities)
-    }
-
-    private fun verifyWorldDirectory(worldDirectory: File) {
-        if (worldDirectory.exists() && !worldDirectory.isDirectory) {
-            throw IllegalArgumentException("Provided world directory ${worldDirectory.path} is not a directory")
-        }
-        if (!worldDirectory.exists() && !worldDirectory.mkdirs()) {
-            throw IllegalArgumentException("Provided world directory ${worldDirectory.path} could not be created")
-        }
-    }
+class ChunkTransferUtil(resetData: ResetData) : OfflineUtil(resetData) {
 
     fun transferChunks() {
         // Instantiate a very bare-bones MCASelector environment
@@ -86,16 +43,28 @@ class ChunkTransferUtil {
         while (JobHandler.getActiveJobs() > 0) {
             Thread.onSpinWait()
         }
+        // backupWorld("_1")
         forceDeleteOldChunks()
         while (JobHandler.getActiveJobs() > 0) {
             Thread.onSpinWait()
         }
+        // backupWorld("_2")
         forceBlendNewChunks(selection)
         while (JobHandler.getActiveJobs() > 0) {
             Thread.onSpinWait()
         }
-        resetData.plugin.componentLogger.info("Waiting for verification...")
-        Thread.sleep(60000)
+        // backupWorld("_3")
+    }
+
+    /**
+     * World backup function for debugging purposes.
+     */
+    fun backupWorld(suffix: String) {
+        File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + suffix).mkdirs()
+        FileUtils.copyDirectory(
+            targetWorld.region.parentFile,
+            File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + suffix)
+        ) { pathname -> !pathname.name.endsWith("session.lock") }
     }
 
     fun forceDeleteOldChunks() {

@@ -25,7 +25,6 @@ import net.querz.mcaselector.version.java_1_9.ChunkFilter_15w32a
 import net.querz.mcaselector.version.java_null.ChunkFilter_Null
 import java.lang.reflect.Field
 import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Modifier
 import java.util.*
 
 class MCASelectorVersionImplLoader {

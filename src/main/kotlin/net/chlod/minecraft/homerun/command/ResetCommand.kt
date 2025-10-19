@@ -18,7 +18,8 @@ class ResetCommand(val plugin: Homerun): BasicCommand {
             player.kick(Component.text("Server is resetting the world. Please reconnect shortly."))
         }
 
-        WorldPrepareTask(plugin, commandSourceStack).runTaskTimer(plugin, 0L, 20L)
+        WorldPrepareTask(plugin, commandSourceStack.location.world)
+            .runTaskTimer(plugin, 0L, 20L)
     }
 
 }

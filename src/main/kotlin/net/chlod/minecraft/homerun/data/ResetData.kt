@@ -10,7 +10,7 @@ class ResetData(
     val sourceWorld: String,
     val targetWorld: String,
     val chunks: List<Pair<Int, Int>>,
-    val spawnLocation: Triple<Double, Double, Double>
+    val spawnLocation: List<Double>
 ) {
 
     companion object {
@@ -33,10 +33,12 @@ class ResetData(
                         val pair = it as List<*>
                         Pair((pair[0] as Int), (pair[1] as Int))
                     },
-                    Triple(
+                    listOf(
                         config.getDouble("spawn.x"),
                         config.getDouble("spawn.y"),
-                        config.getDouble("spawn.z")
+                        config.getDouble("spawn.z"),
+                        config.getDouble("spawn.yaw"),
+                        config.getDouble("spawn.pitch")
                     )
                 )
             } catch (_: Exception) {
@@ -49,7 +51,7 @@ class ResetData(
             sourceWorld: String,
             targetWorld: String,
             chunks: List<Pair<Int, Int>>,
-            spawnLocation: Triple<Double, Double, Double>,
+            spawnLocation: List<Double>,
         ): ResetData {
             val time = System.currentTimeMillis()
             return ResetData(plugin, time, sourceWorld, targetWorld, chunks, spawnLocation)
@@ -63,8 +65,11 @@ class ResetData(
         config.set("sourceWorld", sourceWorld)
         config.set("targetWorld", targetWorld)
         config.set("chunks", chunks.map { listOf(it.first, it.second) })
-        config.set("spawn.x", spawnLocation.first)
-        config.set("spawn.z", spawnLocation.second)
+        config.set("spawn.x", spawnLocation[0])
+        config.set("spawn.y", spawnLocation[1])
+        config.set("spawn.z", spawnLocation[2])
+        config.set("spawn.yaw", spawnLocation[3])
+        config.set("spawn.pitch", spawnLocation[4])
         config.save(resetData)
     }
 
