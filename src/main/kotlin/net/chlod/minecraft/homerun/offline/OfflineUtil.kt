@@ -4,6 +4,9 @@ import net.chlod.minecraft.homerun.data.ResetData
 import net.querz.mcaselector.io.WorldDirectories
 import java.io.File
 
+/**
+ * Utility class for offline world manipulation. World must be unloaded (not necessarily unlocked).
+ */
 abstract class OfflineUtil {
 
     protected val resetData: ResetData
