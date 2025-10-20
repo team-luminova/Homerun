@@ -1,1 +1,54 @@
-range: 256
+# ===============================================
+#      __________
+#     < homerun! >
+#      ----------
+#             \   ^__^
+#              \  (oo)\_______
+#                 \_/\        )\
+#                     ||----\ | \
+#                     ||     ||      umazing!
+#
+# ===============================================
+#
+# Homerun lets you build ephemeral Minecraft servers,
+# while retaining a specific number of chunks. It incentivizes
+# building bases close to each other, while allowing for near-
+# infinite exploration and exploitation of resources.
+#
+# This is the main configuration file. Here lies where all your
+# settings are defined.
+
+# This defines a set of reset rules. A "reset rule" is a specific
+# set of conditions that, when met, will cause chunks to be reset.
+# The conditions and the reset parameters are both configurable.
+# ALL conditions must be met for a reset to occur.
+reset_rules:
+    -   conditions:
+            # Run a reset every day at midnight UTC.
+            - cron: "0 0 * * *" # Every day at midnight
+        parameters:
+            # The name of the world to reset from. By default, this is the default world
+            # (the `level-name` value in the server.properties file). Use this if you want
+            # to reset a world back to a specific set of chunks every time, but don't need
+            # to keep changes to those chunks after resets.
+            world: world
+            # The pattern to follow for newly-created worlds. Pick a pattern which avoids
+            # collisions, otherwise worlds may overwrite each other.
+            #
+            # Some level of templating is allowed. See documentation for details.
+            target_world_pattern: world_${timestamp}
+            # Whether the default world set in server.properties should be the newly-created
+            # world after a reset.
+            modify_server_properties: true
+            # Whether to automatically restart the server after a reset. This will require a
+            # valid restart script under the server's spigot.yml configuration.
+            restart: true
+            # Behavior for players located outside of retained chunks when a reset occurs.
+            # "kill" will kill them, "spawn" will teleport them to the world spawn,
+            # "ignore" will leave them where they are, and "highest" will teleport them
+            # to the highest non-air block at their current X/Z coordinates.
+            outside_player_behavior: "spawn"
+            # The list of chunks to retain. Each entry defines a method for selecting chunks to retain.
+            retained_chunks:
+                # Retain chunks around the world spawn point
+                - from_world_spawn: 8

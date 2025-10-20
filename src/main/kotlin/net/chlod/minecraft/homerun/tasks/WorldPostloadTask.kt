@@ -65,7 +65,7 @@ class WorldPostloadTask(val plugin: Homerun, val resetData: ResetData): BukkitRu
         var bukkitValues = if (rootTag.contains("BukkitValues"))
             rootTag.getCompound("BukkitValues") else CompoundTag()
 
-        bukkitValues.putBoolean(plugin.KEY_NEEDS_RESPAWN.asString(), true)
+        bukkitValues.putBoolean(plugin.nskNeedsRespawn.asString(), true)
         rootTag.put("BukkitValues", bukkitValues)
     }
 

@@ -3,6 +3,7 @@ package net.chlod.minecraft.homerun
 import io.papermc.paper.command.brigadier.BasicCommand
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import net.chlod.minecraft.homerun.command.ResetCommand
+import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.data.ResetData
 import net.chlod.minecraft.homerun.listeners.PlayerJoinListener
 import net.chlod.minecraft.homerun.tasks.WorldPostloadTask
@@ -10,17 +11,20 @@ import net.chlod.minecraft.homerun.tasks.WorldPostpareTask
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
 import org.bukkit.WorldCreator
+import org.bukkit.configuration.serialization.ConfigurationSerialization
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 
 class Homerun : JavaPlugin() {
 
-    val KEY_NEEDS_RESPAWN = NamespacedKey(this, "needs_respawn")
+    val nskNeedsRespawn = NamespacedKey(this, "needs_respawn")
 
     var appliedResetData: ResetData? = null
     var lockedDown = false
 
     override fun onLoad() {
+        ConfigurationSerialization.registerClass(ResetRule::class.java)
+
         // Load logic
         val resetData = ResetData.find(this)
         if (resetData != null) {

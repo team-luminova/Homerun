@@ -19,9 +19,10 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
-    implementation("com.github.Querz:mcaselector:2.5.3")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("com.github.Querz:mcaselector:2.5.3")
+    implementation("com.cronutils:cron-utils:9.2.1")
+    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
 
     // NMS
     paperweight.paperDevBundle("1.21.4-R0.1-SNAPSHOT")
