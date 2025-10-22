@@ -1,10 +1,11 @@
 package net.chlod.minecraft.homerun.offline
 
-import net.chlod.minecraft.homerun.data.ResetData
+import net.chlod.minecraft.homerun.Homerun
+import net.chlod.minecraft.homerun.data.WorldResetData
 import org.apache.commons.io.FileUtils
 import java.io.File
 
-class WorldDataTransferUtil(resetData: ResetData) : OfflineUtil(resetData)  {
+class WorldDataTransferUtil(plugin: Homerun, worldResetData: WorldResetData) : OfflineUtil(plugin, worldResetData)  {
 
     val sourceWorldDirectory = sourceWorld.region.parent
     val targetWorldDirectory = targetWorld.region.parent

@@ -1,6 +1,7 @@
 package net.chlod.minecraft.homerun.offline
 
-import net.chlod.minecraft.homerun.data.ResetData
+import net.chlod.minecraft.homerun.Homerun
+import net.chlod.minecraft.homerun.data.WorldResetData
 import net.querz.mcaselector.io.WorldDirectories
 import java.io.File
 
@@ -9,16 +10,18 @@ import java.io.File
  */
 abstract class OfflineUtil {
 
-    protected val resetData: ResetData
+    protected val plugin: Homerun
+    protected val worldResetData: WorldResetData
 
     protected var sourceWorld: WorldDirectories
     protected var targetWorld: WorldDirectories
 
-    constructor(resetData: ResetData) {
-        this.resetData = resetData
-        val serverDirectory = resetData.plugin.server.pluginsFolder.parent
-        val sourceWorldDirectory = File(serverDirectory, resetData.sourceWorld)
-        val targetWorldDirectory = File(serverDirectory, resetData.targetWorld)
+    constructor(plugin: Homerun, worldResetData: WorldResetData) {
+        this.plugin = plugin
+        this.worldResetData = worldResetData
+        val serverDirectory = plugin.server.pluginsFolder.parent
+        val sourceWorldDirectory = File(serverDirectory, worldResetData.sourceWorld)
+        val targetWorldDirectory = File(serverDirectory, worldResetData.targetWorld)
 
         val sourceRegion = File(sourceWorldDirectory, "region")
         val sourcePoi = File(sourceWorldDirectory, "poi")

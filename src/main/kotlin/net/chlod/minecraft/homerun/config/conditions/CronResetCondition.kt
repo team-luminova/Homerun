@@ -8,7 +8,7 @@ import com.cronutils.model.time.ExecutionTime
 import com.cronutils.parser.CronParser
 import net.chlod.minecraft.homerun.Homerun
 import java.time.ZonedDateTime
-import java.util.Locale
+import java.util.*
 import kotlin.jvm.optionals.getOrNull
 
 class CronResetCondition : ResetCondition {

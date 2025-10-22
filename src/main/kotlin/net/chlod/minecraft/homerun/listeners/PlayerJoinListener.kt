@@ -23,7 +23,7 @@ class PlayerJoinListener(val plugin: Homerun) : Listener {
     @EventHandler(priority = EventPriority.NORMAL)
     fun onJoinLate(event: PlayerJoinEvent) {
         val needsRespawn = event.player.persistentDataContainer.get(
-            plugin.nskNeedsRespawn, PersistentDataType.BOOLEAN
+            plugin.keys.needsRespawn, PersistentDataType.BOOLEAN
         )
         if (needsRespawn != null && needsRespawn) {
             plugin.componentLogger.info("${event.player.name} was not in a retained chunk during reset. Respawning them.")
@@ -32,6 +32,11 @@ class PlayerJoinListener(val plugin: Homerun) : Listener {
             if (plugin.server is CraftServer) {
                 val playerList = (plugin.server as CraftServer).server.playerList
                 val serverPlayer = playerList.getPlayer(event.player.uniqueId)
+                if (serverPlayer == null) {
+                    // This should be impossible
+                    plugin.componentLogger.error("Could not respawn player ${event.player.name}: server player not found!")
+                    return
+                }
                 // TODO: Should be KILLED by config
                 playerList.respawn(
                     serverPlayer,
@@ -44,7 +49,7 @@ class PlayerJoinListener(val plugin: Homerun) : Listener {
                 // Just teleport them to their respawn location.
                 event.player.teleport(event.player.world.spawnLocation)
             }
-            event.player.persistentDataContainer.remove(plugin.nskNeedsRespawn)
+            event.player.persistentDataContainer.remove(plugin.keys.needsRespawn)
             event.player.sendMessage("You were in a reset chunk and have been respawned for safety.")
         }
     }

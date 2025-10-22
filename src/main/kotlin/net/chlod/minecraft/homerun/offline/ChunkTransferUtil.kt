@@ -1,6 +1,7 @@
 package net.chlod.minecraft.homerun.offline
 
-import net.chlod.minecraft.homerun.data.ResetData
+import net.chlod.minecraft.homerun.Homerun
+import net.chlod.minecraft.homerun.data.WorldResetData
 import net.querz.mcaselector.changer.fields.ForceBlendField
 import net.querz.mcaselector.config.ConfigProvider
 import net.querz.mcaselector.config.WorldConfig
@@ -16,15 +17,16 @@ import net.querz.mcaselector.util.point.Point3i
 import net.querz.mcaselector.util.progress.Progress
 import net.querz.mcaselector.util.property.DataProperty
 import org.apache.commons.io.FileUtils
+import org.bukkit.plugin.Plugin
 import java.io.File
 
-class ChunkTransferUtil(resetData: ResetData) : OfflineUtil(resetData) {
+class ChunkTransferUtil(plugin: Homerun, worldResetData: WorldResetData) : OfflineUtil(plugin, worldResetData) {
 
     fun transferChunks() {
         // Instantiate a very bare-bones MCASelector environment
         MCASelectorVersionImplLoader.init()
 
-        val logFolder = File(resetData.plugin.dataFolder, "logs")
+        val logFolder = File(plugin.dataFolder, "logs")
         logFolder.mkdirs()
 
         ConfigProvider.GLOBAL.debug = true
@@ -35,7 +37,7 @@ class ChunkTransferUtil(resetData: ResetData) : OfflineUtil(resetData) {
         val source: WorldDirectories = sourceWorld
         val selection = Selection()
 
-        for (chunk in resetData.chunks) {
+        for (chunk in worldResetData.chunks!!) {
             selection.addChunk(Point2i(chunk.first, chunk.second))
         }
 
@@ -60,18 +62,18 @@ class ChunkTransferUtil(resetData: ResetData) : OfflineUtil(resetData) {
      * World backup function for debugging purposes.
      */
     fun backupWorld(suffix: String) {
-        File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + suffix).mkdirs()
+        File(plugin.server.pluginsFolder.parentFile, worldResetData.targetWorld + suffix).mkdirs()
         FileUtils.copyDirectory(
             targetWorld.region.parentFile,
-            File(resetData.plugin.server.pluginsFolder.parentFile, resetData.targetWorld + suffix)
+            File(plugin.server.pluginsFolder.parentFile, worldResetData.targetWorld + suffix)
         ) { pathname -> !pathname.name.endsWith("session.lock") }
     }
 
     fun forceDeleteOldChunks() {
-        val progress = PluginProgress(resetData, "deleting old chunks")
+        val progress = PluginProgress(plugin, "deleting old chunks")
         val selection = Selection()
 
-        for (chunk in resetData.chunks) {
+        for (chunk in worldResetData.chunks!!) {
             selection.addChunk(Point2i(chunk.first, chunk.second))
         }
         selection.isInverted = true
@@ -83,7 +85,7 @@ class ChunkTransferUtil(resetData: ResetData) : OfflineUtil(resetData) {
     }
 
     fun importChunks(source: WorldDirectories, selection: Selection) {
-        val progress = PluginProgress(resetData, "importing chunks")
+        val progress = PluginProgress(plugin, "importing chunks")
         val tempFiles = DataProperty<MutableMap<Point2i?, RegionDirectories>?>()
         ChunkImporter.importChunks(
             source,
@@ -99,20 +101,20 @@ class ChunkTransferUtil(resetData: ResetData) : OfflineUtil(resetData) {
         if (tempFiles.get() != null) {
             for (tempFile in tempFiles.get()!!.values) {
                 if (!tempFile.region.delete()) {
-                    resetData.plugin.componentLogger.warn("failed to delete temp file {}", tempFile.region)
+                    plugin.componentLogger.warn("failed to delete temp file {}", tempFile.region)
                 }
                 if (!tempFile.poi.delete()) {
-                    resetData.plugin.componentLogger.warn("failed to delete temp file {}", tempFile.poi)
+                    plugin.componentLogger.warn("failed to delete temp file {}", tempFile.poi)
                 }
                 if (!tempFile.entities.delete()) {
-                    resetData.plugin.componentLogger.warn("failed to delete temp file {}", tempFile.entities)
+                    plugin.componentLogger.warn("failed to delete temp file {}", tempFile.entities)
                 }
             }
         }
     }
 
     fun forceBlendNewChunks(selection: Selection) {
-        val progress = PluginProgress(resetData, "forcing blending on all chunks")
+        val progress = PluginProgress(plugin, "forcing blending on all chunks")
         val forceBlendField = ForceBlendField()
         forceBlendField.newValue = true
         FieldChanger.changeNBTFields(
@@ -124,14 +126,14 @@ class ChunkTransferUtil(resetData: ResetData) : OfflineUtil(resetData) {
         )
     }
 
-    class PluginProgress(val resetData: ResetData, val prefix: String) : Progress {
+    class PluginProgress(val plugin: Plugin, val prefix: String) : Progress {
         private var max: Int = 1
         private var msg: String? = null
         private var progress: Int = 0
 
         private fun printProgress() {
             val percent = (progress.toDouble() / max.toDouble()) * 100.0
-            resetData.plugin.componentLogger.info("Progress (%s): %.2f%% (%d/%d) - %s".format(
+            plugin.componentLogger.info("Progress (%s): %.2f%% (%d/%d) - %s".format(
                 prefix,
                 percent,
                 progress,
@@ -151,7 +153,7 @@ class ChunkTransferUtil(resetData: ResetData) : OfflineUtil(resetData) {
         }
 
         override fun done(msg: String?) {
-            resetData.plugin.componentLogger.info("Done: %s".format(msg ?: ""))
+            plugin.componentLogger.info("Done: %s".format(msg ?: ""))
         }
 
         override fun taskCancelled(): Boolean {

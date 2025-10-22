@@ -4,39 +4,35 @@ import io.papermc.paper.command.brigadier.BasicCommand
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import net.chlod.minecraft.homerun.command.ResetCommand
 import net.chlod.minecraft.homerun.config.ResetRule
-import net.chlod.minecraft.homerun.data.ResetData
+import net.chlod.minecraft.homerun.data.HomerunNamespacedKeys
+import net.chlod.minecraft.homerun.data.ResetLock
 import net.chlod.minecraft.homerun.listeners.PlayerJoinListener
+import net.chlod.minecraft.homerun.tasks.ResetPreloadTask
 import net.chlod.minecraft.homerun.tasks.WorldPostloadTask
-import net.chlod.minecraft.homerun.tasks.WorldPostpareTask
 import org.bukkit.Location
-import org.bukkit.NamespacedKey
 import org.bukkit.WorldCreator
 import org.bukkit.configuration.serialization.ConfigurationSerialization
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
+import java.util.*
 
 class Homerun : JavaPlugin() {
 
-    val nskNeedsRespawn = NamespacedKey(this, "needs_respawn")
+    val keys = HomerunNamespacedKeys(this)
 
-    var appliedResetData: ResetData? = null
+    var appliedResetLocks = mutableListOf<ResetLock>()
     var lockedDown = false
 
     override fun onLoad() {
         ConfigurationSerialization.registerClass(ResetRule::class.java)
 
-        // Load logic
-        val resetData = ResetData.find(this)
-        if (resetData != null) {
-            componentLogger.info("Found existing reset data for world ${resetData.sourceWorld} to ${resetData.targetWorld}")
+        // Load in the configuration
+        ResetLock.findAll(this).forEach {
+            componentLogger.info("Found existing reset lock: ${it.id} (${Date(it.time)})")
             // Directly run the task because we want this to be a blocking operation.
             // Otherwise, the server will load the world before we're done processing.
-            WorldPostpareTask(this, resetData)
-                .run()
-            appliedResetData = resetData
-            resetData.delete()
-        } else {
-            componentLogger.info("No existing reset data found")
+            ResetPreloadTask(this, it).run()
+            it.delete()
         }
     }
 
@@ -67,9 +63,8 @@ class Homerun : JavaPlugin() {
         })
         server.pluginManager.registerEvents(PlayerJoinListener(this), this)
 
-        if (appliedResetData != null) {
-            WorldPostloadTask(this, appliedResetData!!)
-                .run()
+        for (appliedResetLock in appliedResetLocks) {
+            WorldPostloadTask(this, appliedResetLock).run()
         }
     }
 

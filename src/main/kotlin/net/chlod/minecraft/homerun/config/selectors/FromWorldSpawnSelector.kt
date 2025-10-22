@@ -8,7 +8,7 @@ import kotlin.math.floor
 /**
  * Selects chunks to retain based on their distance from the world spawn point.
  */
-class FromWorldSpawnSelector : ChunkRetentionSelector {
+class FromWorldSpawnSelector : ChunkSelectorSetting {
 
     companion object {
         @Suppress("unused")
