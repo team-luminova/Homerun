@@ -6,13 +6,18 @@ import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.config.util.TargetWorldPatternSubstitutor
 import net.chlod.minecraft.homerun.data.ResetLock
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
+import net.minecraft.server.dedicated.DedicatedServer
+import net.minecraft.server.dedicated.DedicatedServerProperties
+import net.minecraft.server.dedicated.DedicatedServerSettings
 import org.bukkit.Bukkit
 import org.bukkit.World
 import org.bukkit.World.Environment
 import org.bukkit.WorldCreator
+import org.bukkit.craftbukkit.CraftServer
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
+import java.nio.file.Path
 
 class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnable() {
 
@@ -106,28 +111,71 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         componentLogger.info("Reset instructions list saved.")
 
         if (rule.parameters.modifyServerProperties ?: true) {
-            val serverProperties = File(server.pluginsFolder.parentFile, "server.properties")
-            componentLogger.info("Modifying server.properties to set spawn world...")
-            val properties = serverProperties.readLines().toMutableList()
-            var spawnWorldSet = false
-            for (i in properties.indices) {
-                if (properties[i].startsWith("level-name=")) {
-                    properties[i] = "level-name=$targetWorldName"
-                    spawnWorldSet = true
-                    break
-                }
-            }
-            if (!spawnWorldSet) {
-                properties.add("level-name=$targetWorldName")
-            }
-            serverProperties.writeText(properties.joinToString("\n"))
-            componentLogger.info("Modified server.properties spawn world...")
+            modifyServerPropertiesViaReflection(targetWorldName)
         }
 
-        if (rule.parameters.restart ?: true) {
+        if (rule.parameters.restart ?: (rule.parameters.modifyServerProperties ?: false)) {
             componentLogger.info("Restarting server...")
             server.restart()
+        } else if (
+            rule.parameters.modifyServerProperties == true
+            && rule.parameters.restart == false
+        ) {
+            componentLogger.warn("Restart not requested, but server.properties was modified. This is dangerous!")
+            componentLogger.warn("You should remove the \"restart\" parameter for this reset rule, or set it to true.")
         }
+    }
+
+    fun modifyServerPropertiesViaReflection(targetWorldName: String) {
+        try {
+            val dedicatedServerField = CraftServer::class.java.getDeclaredField("console")
+            dedicatedServerField.isAccessible = true
+            val dedicatedServer = dedicatedServerField.get(server) as DedicatedServer
+            val dedicatedServerSettings = dedicatedServer.settings
+            val serverPropertiesPathField = DedicatedServerSettings::class.java.getDeclaredField("source")
+            serverPropertiesPathField.isAccessible = true
+
+            val serverPropertiesPath = serverPropertiesPathField.get(dedicatedServerSettings) as Path
+            componentLogger.info("Detected server.properties path: $serverPropertiesPath")
+
+            val serverPropertiesField = DedicatedServerSettings::class.java.getDeclaredField("properties")
+            serverPropertiesField.isAccessible = true
+            val serverProperties = serverPropertiesField.get(dedicatedServerSettings) as DedicatedServerProperties
+            serverProperties.properties["level-name"] = targetWorldName
+            dedicatedServerSettings.forceSave()
+
+            componentLogger.info("Modified server.properties spawn world safely: $targetWorldName")
+        } catch (e: Exception) {
+            componentLogger.error("Could not modify server.properties via reflection: ${e.message}")
+            modifyServerPropertiesDirectly(targetWorldName)
+        }
+    }
+
+    fun modifyServerPropertiesDirectly(targetWorldName: String) {
+        val serverProperties = File(server.pluginsFolder.parentFile, "server.properties")
+
+        if (!serverProperties.exists()) {
+            componentLogger.error("Could not find server.properties at expected location: ${serverProperties.path}")
+            componentLogger.error("You will need to set the spawn world manually to '$targetWorldName'")
+            componentLogger.error("Otherwise, players will not be able to join the correct world!")
+            return
+        }
+
+        componentLogger.info("Modifying server.properties directly to set spawn world...")
+        val properties = serverProperties.readLines().toMutableList()
+        var spawnWorldSet = false
+        for (i in properties.indices) {
+            if (properties[i].startsWith("level-name=")) {
+                properties[i] = "level-name=$targetWorldName"
+                spawnWorldSet = true
+                break
+            }
+        }
+        if (!spawnWorldSet) {
+            properties.add("level-name=$targetWorldName")
+        }
+        serverProperties.writeText(properties.joinToString("\n"))
+        componentLogger.info("Modified server.properties spawn world directly: $targetWorldName")
     }
 
     fun generateWorld(sourceWorld: World, targetWorldName: String): World? {

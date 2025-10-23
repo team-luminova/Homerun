@@ -20,7 +20,8 @@ import org.apache.commons.io.FileUtils
 import org.bukkit.plugin.Plugin
 import java.io.File
 
-class ChunkTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadInstruction) : OfflineUtil(plugin, resetInstructions) {
+class ChunkTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadInstruction) :
+    OfflineUtil(plugin, resetInstructions) {
 
     fun transferChunks() {
         // Instantiate a very bare-bones MCASelector environment
@@ -62,10 +63,10 @@ class ChunkTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadInstru
      * World backup function for debugging purposes.
      */
     fun backupWorld(suffix: String) {
-        File(plugin.server.pluginsFolder.parentFile, this.resetInstructions.targetWorld + suffix).mkdirs()
+        File(plugin.server.worldContainer, this.resetInstructions.targetWorld + suffix).mkdirs()
         FileUtils.copyDirectory(
             targetWorld.region.parentFile,
-            File(plugin.server.pluginsFolder.parentFile, this.resetInstructions.targetWorld + suffix)
+            File(plugin.server.worldContainer, this.resetInstructions.targetWorld + suffix)
         ) { pathname -> !pathname.name.endsWith("session.lock") }
     }
 
@@ -133,13 +134,15 @@ class ChunkTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadInstru
 
         private fun printProgress() {
             val percent = (progress.toDouble() / max.toDouble()) * 100.0
-            plugin.componentLogger.info("Progress (%s): %.2f%% (%d/%d) - %s".format(
-                prefix,
-                percent,
-                progress,
-                max,
-                msg ?: ""
-            ))
+            plugin.componentLogger.info(
+                "Progress (%s): %.2f%% (%d/%d) - %s".format(
+                    prefix,
+                    percent,
+                    progress,
+                    max,
+                    msg ?: ""
+                )
+            )
         }
 
         override fun setMax(max: Int) {

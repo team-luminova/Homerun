@@ -19,9 +19,9 @@ abstract class OfflineUtil {
     constructor(plugin: Homerun, resetInstructions: WorldResetLoadInstruction) {
         this.plugin = plugin
         this.resetInstructions = resetInstructions
-        val serverDirectory = plugin.server.pluginsFolder.parent
-        val sourceWorldDirectory = File(serverDirectory, resetInstructions.sourceWorld)
-        val targetWorldDirectory = File(serverDirectory, resetInstructions.targetWorld)
+        val worldContainer = plugin.server.worldContainer
+        val sourceWorldDirectory = File(worldContainer, resetInstructions.sourceWorld)
+        val targetWorldDirectory = File(worldContainer, resetInstructions.targetWorld)
 
         val sourceRegion = File(sourceWorldDirectory, "region")
         val sourcePoi = File(sourceWorldDirectory, "poi")
