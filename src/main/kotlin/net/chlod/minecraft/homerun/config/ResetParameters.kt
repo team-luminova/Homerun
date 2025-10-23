@@ -66,17 +66,30 @@ class ResetParameters(
             val retainedChunks: MutableList<ChunkSelectorSetting> = ArrayList()
             if (retainedChunksRaw is List<*>) {
                 for (selector in retainedChunksRaw) {
+                    var deserialized = false
                     for (selectorType in SELECTORS) {
                         try {
-                            val deserialized = selectorType.javaClass
+                            val result = selectorType.javaClass
                                 .getMethod("deserialize", Map::class.java)
                                 .invoke(selectorType, selector)
-                            retainedChunks.add(deserialized as ChunkSelectorSetting)
+                            retainedChunks.add(result as ChunkSelectorSetting)
+                            deserialized = true
+                            break
                         } catch (_: IllegalArgumentException) {
-                            // ignore
+                            // Try the next selector type
+                        } catch (e: java.lang.reflect.InvocationTargetException) {
+                            // Unwrap and check if it's an IllegalArgumentException
+                            if (e.cause is IllegalArgumentException) {
+                                // Try the next selector type
+                                continue
+                            }
+                            throw IllegalArgumentException("can't deserialize selector '$selector'", e)
                         } catch (e: Exception) {
                             throw IllegalArgumentException("can't deserialize selector '$selector'", e)
                         }
+                    }
+                    if (!deserialized) {
+                        throw IllegalArgumentException("can't deserialize selector '$selector' (no matching selector type)")
                     }
                 }
             }
@@ -130,8 +143,8 @@ class ResetParameters(
             "modify_server_properties" to modifyServerProperties,
             "restart" to restart,
             "outside_player_behavior" to outsidePlayerBehavior?.name?.lowercase(),
-            "nether_behavior" to netherBehavior,
-            "end_behavior" to endBehavior
+            "nether_behavior" to netherBehavior?.name?.lowercase(),
+            "end_behavior" to endBehavior?.name?.lowercase()
         )
     }
 

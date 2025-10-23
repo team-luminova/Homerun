@@ -30,17 +30,30 @@ class ResetRule(
             val deserializedConditions: MutableList<ResetCondition> = ArrayList()
 
             for (condition in conditions) {
+                var deserialized = false
                 for (conditionType in CONDITIONS) {
                     try {
-                        val deserialized = conditionType.javaClass
+                        val result = conditionType.javaClass
                             .getMethod("deserialize", Map::class.java)
                             .invoke(conditionType, condition)
-                        deserializedConditions.add(deserialized as ResetCondition)
-                    } catch (e: IllegalArgumentException) {
+                        deserializedConditions.add(result as ResetCondition)
+                        deserialized = true
+                        break
+                    } catch (_: IllegalArgumentException) {
+                        // Try the next condition type
+                    } catch (e: java.lang.reflect.InvocationTargetException) {
+                        // Unwrap and check if it's an IllegalArgumentException
+                        if (e.cause is IllegalArgumentException) {
+                            // Try the next condition type
+                            continue
+                        }
                         throw IllegalArgumentException("couldn't deserialize condition: $condition", e)
                     } catch (e: Exception) {
-                        throw e
+                        throw IllegalArgumentException("couldn't deserialize condition: $condition", e)
                     }
+                }
+                if (!deserialized) {
+                    throw IllegalArgumentException("couldn't deserialize condition: $condition (no matching condition type)")
                 }
             }
 
@@ -72,10 +85,10 @@ class ResetRule(
         }
 
         return HashMap<String?, Any?>().apply {
-            "conditions" to serializedConditions
-            "parameters" to parameters.serialize()
+            put("conditions", serializedConditions)
+            put("parameters", parameters.serialize())
             if (name != null) {
-                "name" to name
+                put("name", name)
             }
         }
     }
