@@ -1,8 +1,11 @@
 package net.chlod.minecraft.homerun
 
-import io.papermc.paper.command.brigadier.BasicCommand
-import io.papermc.paper.command.brigadier.CommandSourceStack
+import io.papermc.paper.command.brigadier.Commands
+import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler
+import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.chlod.minecraft.homerun.command.ResetCommand
+import net.chlod.minecraft.homerun.command.TpworldCommand
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.data.HomerunNamespacedKeys
 import net.chlod.minecraft.homerun.data.PlayerLockout
@@ -10,10 +13,7 @@ import net.chlod.minecraft.homerun.data.ResetLock
 import net.chlod.minecraft.homerun.listeners.PlayerJoinListener
 import net.chlod.minecraft.homerun.tasks.ResetLoadTask
 import net.chlod.minecraft.homerun.tasks.WorldPostloadTask
-import org.bukkit.Location
-import org.bukkit.WorldCreator
 import org.bukkit.configuration.serialization.ConfigurationSerialization
-import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.*
 
@@ -48,28 +48,20 @@ class Homerun : JavaPlugin() {
         server.pluginManager.registerEvents(PlayerJoinListener(this), this)
 
         // Registering commands
-        registerCommand("reset", ResetCommand(this))
-        registerCommand("tpworld", object : BasicCommand {
-            override fun execute(
-                commandSourceStack: CommandSourceStack,
-                args: Array<out String>
-            ) {
-                val world = server.createWorld(WorldCreator(args[0]))
-                if (world != null && commandSourceStack.sender is Player) {
-                    val player = commandSourceStack.sender as Player
-                    player.teleport(
-                        Location(
-                            world,
-                            player.location.x, player.location.y, player.location.z,
-                            player.location.yaw, player.location.pitch
-                        )
-                    )
-                    commandSourceStack.sender.sendMessage("Teleported to world ${world.name}")
-                } else {
-                    commandSourceStack.sender.sendMessage("World ${args[0]} not found")
-                }
-            }
-        })
+        @Suppress("UnstableApiUsage")
+        this.lifecycleManager.registerEventHandler(
+            LifecycleEvents.COMMANDS,
+            LifecycleEventHandler { commands: ReloadableRegistrarEvent<Commands> ->
+                commands.registrar().register(
+                    TpworldCommand.createCommand("tpworld"),
+                    "Teleports the player to a world"
+                )
+                commands.registrar().register(
+                    ResetCommand.createCommand(this, "reset"),
+                    "Forces a reset with the specified rule"
+                )
+            })
+
 
         // Process any applied reset locks
         for (appliedResetLock in appliedResetLocks) {

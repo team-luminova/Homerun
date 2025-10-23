@@ -1,34 +1,43 @@
 package net.chlod.minecraft.homerun.command
 
-import io.papermc.paper.command.brigadier.BasicCommand
+import com.mojang.brigadier.Command
+import com.mojang.brigadier.arguments.StringArgumentType
+import com.mojang.brigadier.tree.LiteralCommandNode
 import io.papermc.paper.command.brigadier.CommandSourceStack
+import io.papermc.paper.command.brigadier.Commands
 import net.chlod.minecraft.homerun.Homerun
-import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.config.ResetRule
-import net.chlod.minecraft.homerun.config.conditions.AlwaysResetCondition
-import net.chlod.minecraft.homerun.config.selectors.FromWorldSpawnSelector
-import net.chlod.minecraft.homerun.data.PlayerLockout
 import net.chlod.minecraft.homerun.tasks.ResetPrepareTask
 
-class ResetCommand(val plugin: Homerun): BasicCommand {
+class ResetCommand {
 
-    override fun execute(
-        commandSourceStack: CommandSourceStack,
-        args: Array<out String>
-    ) {
-        val world = commandSourceStack.location.world
-        // Kick all players and prevent new logins
-        PlayerLockout.of(world).lock()
-        PlayerLockout.of(world).kickAll()
+    companion object {
 
-        ResetPrepareTask(plugin, ResetRule(
-            listOf(AlwaysResetCondition()),
-            ResetParameters(
-                listOf(FromWorldSpawnSelector(256 / 8))
-            ),
-            "homerun_reset_command_${System.currentTimeMillis()}"
-        ))
-            .runTaskTimer(plugin, 0L, 20L)
+        fun createCommand(plugin: Homerun, commandName: String): LiteralCommandNode<CommandSourceStack> {
+            return Commands.literal(commandName)
+                .then(
+                    Commands.argument("rule", StringArgumentType.string())
+                        .executes { ctx ->
+                            val ruleName = ctx.getArgument("rule", String::class.java)
+
+                            val config = plugin.config.getList("reset_rules")
+                            if (config != null) {
+                                for (rule in config) {
+                                    if (rule is ResetRule && rule.name == ruleName) {
+                                        plugin.componentLogger.info("Forcing reset with rule: $ruleName")
+                                        ResetPrepareTask(plugin, rule)
+                                            .runTaskTimer(plugin, 0L, 20L)
+                                        break
+                                    }
+                                }
+                            }
+
+                            Command.SINGLE_SUCCESS
+                        }
+                )
+                .build()
+        }
+
     }
 
 }
