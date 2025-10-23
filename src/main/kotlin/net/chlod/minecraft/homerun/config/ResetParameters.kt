@@ -49,7 +49,7 @@ class ResetParameters(
      * Whether to reset the End dimension along with the Overworld.
      */
     val endBehavior: DimensionResetBehavior? = null
-): ConfigurationSerializable {
+) : ConfigurationSerializable {
 
     companion object {
 
@@ -180,12 +180,7 @@ class ResetParameters(
         /**
          * Teleport players to the closest valid space at their current X/Z coordinates.
          */
-        CLOSEST,
-
-        /**
-         * Teleport players to the closest valid space inside the retained chunks.
-         */
-        CLOSEST_RETAINED
+        CLOSEST
     }
 
     /**

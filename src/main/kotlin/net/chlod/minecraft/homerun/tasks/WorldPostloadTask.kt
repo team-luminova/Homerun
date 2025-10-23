@@ -12,7 +12,7 @@ import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
 import kotlin.io.path.Path
 
-class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock): BukkitRunnable() {
+class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitRunnable() {
 
     val componentLogger = plugin.componentLogger
 
@@ -78,18 +78,12 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock): BukkitRu
         val bukkitValues = if (rootTag.contains("BukkitValues"))
             rootTag.getCompound("BukkitValues") else CompoundTag()
 
-        val outsideKey = when (resetInstructions.outsidePlayerBehavior) {
-            null, ResetParameters.OutsidePlayerBehavior.SPAWN -> plugin.keys.needsRespawn
-            ResetParameters.OutsidePlayerBehavior.KILL -> plugin.keys.needsKill
-            ResetParameters.OutsidePlayerBehavior.WORLD_SPAWN -> plugin.keys.needsTeleportToSpawn
-            ResetParameters.OutsidePlayerBehavior.HIGHEST -> plugin.keys.needsTeleportToHighest
-            ResetParameters.OutsidePlayerBehavior.CLOSEST -> plugin.keys.needsTeleportToClosest
-            ResetParameters.OutsidePlayerBehavior.CLOSEST_RETAINED -> plugin.keys.needsTeleportToClosestRetained
-            ResetParameters.OutsidePlayerBehavior.IGNORE -> null /* do nothing */
-        }
-        if (outsideKey != null) {
-            bukkitValues.putBoolean(outsideKey.asString(), true)
-        }
+        bukkitValues.putString(
+            plugin.keys.playerResetDisposition.asString(),
+            (resetInstructions.outsidePlayerBehavior
+                ?: ResetParameters.OutsidePlayerBehavior.SPAWN).name.lowercase()
+        )
+        
         rootTag.put("BukkitValues", bukkitValues)
     }
 

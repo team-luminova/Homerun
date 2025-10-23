@@ -10,7 +10,8 @@ import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.data.HomerunNamespacedKeys
 import net.chlod.minecraft.homerun.data.PlayerLockout
 import net.chlod.minecraft.homerun.data.ResetLock
-import net.chlod.minecraft.homerun.listeners.PlayerJoinListener
+import net.chlod.minecraft.homerun.listeners.PlayerLockoutListener
+import net.chlod.minecraft.homerun.listeners.PlayerUpgradeListener
 import net.chlod.minecraft.homerun.tasks.ResetLoadTask
 import net.chlod.minecraft.homerun.tasks.WorldPostloadTask
 import org.bukkit.configuration.serialization.ConfigurationSerialization
@@ -45,7 +46,8 @@ class Homerun : JavaPlugin() {
         saveDefaultConfig()
 
         // Registering event listeners
-        server.pluginManager.registerEvents(PlayerJoinListener(this), this)
+        server.pluginManager.registerEvents(PlayerUpgradeListener(this), this)
+        server.pluginManager.registerEvents(PlayerLockoutListener(this), this)
 
         // Registering commands
         @Suppress("UnstableApiUsage")

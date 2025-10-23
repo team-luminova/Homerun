@@ -14,7 +14,7 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
 
-class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable() {
+class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnable() {
 
     val componentLogger = plugin.componentLogger
     val server = plugin.server
@@ -52,7 +52,10 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
                 null if rule.parameters.netherBehavior != DimensionResetBehavior.WIPE -> {
                     componentLogger.warn("Source world Nether dimension not found, skipping Nether generation...")
                 }
-                null -> { /* do nothing. This condition exists for smart casting. */ }
+
+                null -> { /* do nothing. This condition exists for smart casting. */
+                }
+
                 else -> {
                     val dimResetInstructions = checkGenerateDimension(
                         sourceWorldNether,
@@ -75,7 +78,10 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
                 null if rule.parameters.endBehavior != DimensionResetBehavior.WIPE -> {
                     componentLogger.warn("Source world End dimension not found, skipping End generation...")
                 }
-                null -> { /* do nothing. This condition exists for smart casting. */ }
+
+                null -> { /* do nothing. This condition exists for smart casting. */
+                }
+
                 else -> {
                     val dimResetInstructions = checkGenerateDimension(
                         sourceWorldEnd,
@@ -156,7 +162,11 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
         )
     }
 
-    fun checkGenerateDimension(sourceWorldDim: World, targetWorldName: String, behavior: DimensionResetBehavior?): Pair<World?, WorldResetLoadInstruction>? {
+    fun checkGenerateDimension(
+        sourceWorldDim: World,
+        targetWorldName: String,
+        behavior: DimensionResetBehavior?
+    ): Pair<World?, WorldResetLoadInstruction>? {
         val dimensionSuffix = sourceWorldDim.environment.name.lowercase()
         when (behavior) {
             DimensionResetBehavior.NORMAL -> {
@@ -166,6 +176,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
                     gatherWorldInformation(sourceWorldDim, "${targetWorldName}_${dimensionSuffix}")
                 )
             }
+
             DimensionResetBehavior.RENAME, DimensionResetBehavior.COPY -> {
                 return Pair(
                     null,
@@ -175,6 +186,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
                     )
                 )
             }
+
             null, DimensionResetBehavior.WIPE -> return null /* do nothing */
         }
     }
@@ -190,7 +202,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
         val retainedChunks = retainedChunkList.distinct()
 
         componentLogger.info("Getting source spawn location...")
-        val spawnLocation = sourceWorld.spawnLocation
+        val spawnLocation = sourceWorld.spawnLocation.clone()
         spawnLocation.world = null
 
         return WorldResetLoadInstruction(
