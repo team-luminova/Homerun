@@ -1,5 +1,8 @@
 package net.chlod.minecraft.homerun.data
 
+import net.chlod.minecraft.homerun.data.world.ResetLoadInstructions
+import net.chlod.minecraft.homerun.data.world.ResetLoadInstructions.ResetLoadInstructionType
+import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.Plugin
 import java.io.File
@@ -9,7 +12,7 @@ class ResetLock(
     val plugin: Plugin,
     val id: String,
     val time: Long,
-    val worldResetData: List<WorldResetData>
+    val resetInstructions: List<ResetLoadInstructions>
 ) {
 
     companion object {
@@ -28,17 +31,27 @@ class ResetLock(
 
                 val config = YamlConfiguration.loadConfiguration(file)
                 try {
-                    val worldResetDataList = config.getMapList("worlds")
+                    val id = file.name.removeSuffix(".lock")
+                    val time = config.getLong("time")
+                    val resetInstructionsList = config.getMapList("worlds")
+
                     @Suppress("UNCHECKED_CAST")
                     val resetLock = ResetLock(
                         plugin,
-                        file.name.removeSuffix(".lock"),
-                        config.getLong("time"),
-                        worldResetDataList.map {
+                        id,
+                        time,
+                        resetInstructionsList.map {
                             if (it !is Map<*, *> || it.keys.any { key -> key !is String }) {
-                                throw IllegalArgumentException("Invalid world reset data #${worldResetDataList.indexOf(it) + 1}")
+                                throw IllegalArgumentException("Invalid world reset data #${resetInstructionsList.indexOf(it) + 1}")
                             }
-                            WorldResetData.deserialize(it as Map<String, Object>)
+                            when (ResetLoadInstructionType.valueOf(it["type"] as String)) {
+                                ResetLoadInstructionType.RESET ->
+                                    WorldResetLoadInstruction.deserialize(it as Map<String, Object>)
+                                ResetLoadInstructionType.COPY ->
+                                    WorldResetLoadInstruction.deserialize(it as Map<String, Object>)
+                                ResetLoadInstructionType.RENAME ->
+                                    WorldResetLoadInstruction.deserialize(it as Map<String, Object>)
+                            }
                         }
                     )
                     locks.add(resetLock)
@@ -51,10 +64,10 @@ class ResetLock(
 
         fun create(
             plugin: Plugin,
-            worldResetData: List<WorldResetData>
+            resetInstructions: List<ResetLoadInstructions>
         ): ResetLock {
             val time = System.currentTimeMillis()
-            return ResetLock(plugin, UUID.randomUUID().toString(), time, worldResetData)
+            return ResetLock(plugin, UUID.randomUUID().toString(), time, resetInstructions)
         }
     }
 
@@ -67,7 +80,7 @@ class ResetLock(
         val resetLock = File(lockFolder, "$id.lock")
         val config = YamlConfiguration()
         config.set("time", time)
-        config.set("worldResetData", worldResetData)
+        config.set("worlds", resetInstructions)
         config.save(resetLock)
     }
 

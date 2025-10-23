@@ -5,7 +5,7 @@ import net.chlod.minecraft.homerun.config.ResetParameters.DimensionResetBehavior
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.config.util.TargetWorldPatternSubstitutor
 import net.chlod.minecraft.homerun.data.ResetLock
-import net.chlod.minecraft.homerun.data.WorldResetData
+import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import org.bukkit.Bukkit
 import org.bukkit.World
 import org.bukkit.World.Environment
@@ -41,9 +41,9 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
         cancel()
         setMetadata(sourceWorld, targetWorld)
 
-        val worldResetDataList = mutableListOf<WorldResetData>()
-        val worldResetData = gatherWorldInformation(sourceWorld, targetWorldName)
-        worldResetDataList.add(worldResetData)
+        val resetInstructionsList = mutableListOf<WorldResetLoadInstruction>()
+        val resetInstructions = gatherWorldInformation(sourceWorld, targetWorldName)
+        resetInstructionsList.add(resetInstructions)
 
         if (sourceWorld.environment != Environment.NORMAL && rule.parameters.netherBehavior != null) {
             componentLogger.warn("Tried to reset Nether for world of ${sourceWorld.environment.name} dimension. Skipping...")
@@ -54,16 +54,16 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
                 }
                 null -> { /* do nothing. This condition exists for smart casting. */ }
                 else -> {
-                    val dimResetData = checkGenerateDimension(
+                    val dimResetInstructions = checkGenerateDimension(
                         sourceWorldNether,
                         targetWorldName,
                         rule.parameters.netherBehavior
                     )
-                    if (dimResetData != null) {
-                        if (dimResetData.first != null) {
+                    if (dimResetInstructions != null) {
+                        if (dimResetInstructions.first != null) {
                             setMetadata(sourceWorld, targetWorld)
                         }
-                        worldResetDataList.add(dimResetData.second)
+                        resetInstructionsList.add(dimResetInstructions.second)
                     }
                 }
             }
@@ -77,16 +77,16 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
                 }
                 null -> { /* do nothing. This condition exists for smart casting. */ }
                 else -> {
-                    val dimResetData = checkGenerateDimension(
+                    val dimResetInstructions = checkGenerateDimension(
                         sourceWorldEnd,
                         targetWorldName,
                         rule.parameters.endBehavior
                     )
-                    if (dimResetData != null) {
-                        if (dimResetData.first != null) {
+                    if (dimResetInstructions != null) {
+                        if (dimResetInstructions.first != null) {
                             setMetadata(sourceWorld, targetWorld)
                         }
-                        worldResetDataList.add(dimResetData.second)
+                        resetInstructionsList.add(dimResetInstructions.second)
                     }
                 }
             }
@@ -94,10 +94,10 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
 
         val resetLock = ResetLock.create(
             plugin,
-            worldResetDataList
+            resetInstructionsList
         )
         resetLock.save()
-        componentLogger.info("Reset data saved.")
+        componentLogger.info("Reset instructions list saved.")
 
         if (rule.parameters.modifyServerProperties ?: true) {
             val serverProperties = File(server.pluginsFolder.parentFile, "server.properties")
@@ -156,7 +156,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
         )
     }
 
-    fun checkGenerateDimension(sourceWorldDim: World, targetWorldName: String, behavior: DimensionResetBehavior?): Pair<World?, WorldResetData>? {
+    fun checkGenerateDimension(sourceWorldDim: World, targetWorldName: String, behavior: DimensionResetBehavior?): Pair<World?, WorldResetLoadInstruction>? {
         val dimensionSuffix = sourceWorldDim.environment.name.lowercase()
         when (behavior) {
             DimensionResetBehavior.NORMAL -> {
@@ -169,10 +169,9 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
             DimensionResetBehavior.RENAME, DimensionResetBehavior.COPY -> {
                 return Pair(
                     null,
-                    WorldResetData(
+                    WorldResetLoadInstruction(
                         sourceWorldDim.name + "_nether",
-                        targetWorldName + "_nether",
-                        WorldResetData.WorldResetBehavior.valueOf(behavior.name)
+                        targetWorldName + "_nether"
                     )
                 )
             }
@@ -180,7 +179,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
         }
     }
 
-    fun gatherWorldInformation(sourceWorld: World, targetWorldName: String): WorldResetData {
+    fun gatherWorldInformation(sourceWorld: World, targetWorldName: String): WorldResetLoadInstruction {
         componentLogger.info("Getting list of retained chunks...")
 
         val retainedChunkList = mutableListOf<Pair<Int, Int>>()
@@ -194,10 +193,9 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule): BukkitRunnable
         val spawnLocation = sourceWorld.spawnLocation
         spawnLocation.world = null
 
-        return WorldResetData(
+        return WorldResetLoadInstruction(
             sourceWorld.name,
             targetWorldName,
-            WorldResetData.WorldResetBehavior.NORMAL,
             retainedChunks,
             spawnLocation,
             rule.parameters.outsidePlayerBehavior

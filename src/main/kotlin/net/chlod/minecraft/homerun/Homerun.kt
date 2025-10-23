@@ -7,7 +7,7 @@ import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.data.HomerunNamespacedKeys
 import net.chlod.minecraft.homerun.data.ResetLock
 import net.chlod.minecraft.homerun.listeners.PlayerJoinListener
-import net.chlod.minecraft.homerun.tasks.ResetPreloadTask
+import net.chlod.minecraft.homerun.tasks.ResetLoadTask
 import net.chlod.minecraft.homerun.tasks.WorldPostloadTask
 import org.bukkit.Location
 import org.bukkit.WorldCreator
@@ -31,7 +31,7 @@ class Homerun : JavaPlugin() {
             componentLogger.info("Found existing reset lock: ${it.id} (${Date(it.time)})")
             // Directly run the task because we want this to be a blocking operation.
             // Otherwise, the server will load the world before we're done processing.
-            ResetPreloadTask(this, it).run()
+            ResetLoadTask(this, it).run()
             it.delete()
         }
     }
