@@ -1,7 +1,7 @@
 package net.chlod.minecraft.homerun.listeners
 
 import net.chlod.minecraft.homerun.Homerun
-import net.kyori.adventure.text.Component
+import net.chlod.minecraft.homerun.data.PlayerLockout
 import net.minecraft.world.entity.Entity
 import org.bukkit.craftbukkit.CraftServer
 import org.bukkit.event.EventHandler
@@ -15,8 +15,9 @@ class PlayerJoinListener(val plugin: Homerun) : Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onJoinEarly(event: PlayerJoinEvent) {
-        if (plugin.lockedDown) {
-            event.player.kick(Component.text("Server is resetting the world. Please reconnect shortly."))
+        val lockout = PlayerLockout.of(event.player.world)
+        if (lockout.isLocked()) {
+            lockout.handleLockout(event.player)
         }
     }
 

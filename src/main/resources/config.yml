@@ -23,7 +23,8 @@
 # The conditions and the reset parameters are both configurable.
 # ALL conditions must be met for a reset to occur.
 reset_rules:
-    -   conditions:
+    -   enabled: false
+        conditions:
             # Run a reset every day at midnight UTC.
             - cron: "0 0 * * *" # Every day at midnight
         parameters:

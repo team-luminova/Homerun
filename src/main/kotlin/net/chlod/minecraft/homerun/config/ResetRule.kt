@@ -8,7 +8,8 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable
 class ResetRule(
     val conditions: List<ResetCondition>,
     val parameters: ResetParameters,
-    val name: String?
+    val name: String?,
+    val enabled: Boolean? = false
 ) : ConfigurationSerializable {
 
     companion object {
@@ -68,11 +69,13 @@ class ResetRule(
             val resetParameters = ResetParameters.deserialize(parameters as Map<String, Object>)
 
             val name = args["name"] as String?
+            val enabled = args["enabled"] as Boolean?
 
             return ResetRule(
                 deserializedConditions,
                 resetParameters,
-                name
+                name,
+                enabled
             )
         }
 
@@ -85,11 +88,14 @@ class ResetRule(
         }
 
         return HashMap<String?, Any?>().apply {
-            put("conditions", serializedConditions)
-            put("parameters", parameters.serialize())
             if (name != null) {
                 put("name", name)
             }
+            if (enabled != null) {
+                put("enabled", enabled)
+            }
+            put("conditions", serializedConditions)
+            put("parameters", parameters.serialize())
         }
     }
 

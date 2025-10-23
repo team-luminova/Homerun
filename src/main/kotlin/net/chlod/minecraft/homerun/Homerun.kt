@@ -5,6 +5,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack
 import net.chlod.minecraft.homerun.command.ResetCommand
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.data.HomerunNamespacedKeys
+import net.chlod.minecraft.homerun.data.PlayerLockout
 import net.chlod.minecraft.homerun.data.ResetLock
 import net.chlod.minecraft.homerun.listeners.PlayerJoinListener
 import net.chlod.minecraft.homerun.tasks.ResetLoadTask
@@ -21,7 +22,6 @@ class Homerun : JavaPlugin() {
     val keys = HomerunNamespacedKeys(this)
 
     var appliedResetLocks = mutableListOf<ResetLock>()
-    var lockedDown = false
 
     override fun onLoad() {
         ConfigurationSerialization.registerClass(ResetRule::class.java)
@@ -29,6 +29,10 @@ class Homerun : JavaPlugin() {
         // Load in the configuration
         ResetLock.findAll(this).forEach {
             componentLogger.info("Found existing reset lock: ${it.id} (${Date(it.time)})")
+
+            // Lock player joins
+            PlayerLockout.global.lock()
+
             // Directly run the task because we want this to be a blocking operation.
             // Otherwise, the server will load the world before we're done processing.
             ResetLoadTask(this, it).run()
@@ -37,8 +41,13 @@ class Homerun : JavaPlugin() {
     }
 
     override fun onEnable() {
+        // Saving default configuration
         saveDefaultConfig()
 
+        // Registering event listeners
+        server.pluginManager.registerEvents(PlayerJoinListener(this), this)
+
+        // Registering commands
         registerCommand("reset", ResetCommand(this))
         registerCommand("tpworld", object : BasicCommand {
             override fun execute(
@@ -61,11 +70,13 @@ class Homerun : JavaPlugin() {
                 }
             }
         })
-        server.pluginManager.registerEvents(PlayerJoinListener(this), this)
 
+        // Process any applied reset locks
         for (appliedResetLock in appliedResetLocks) {
             WorldPostloadTask(this, appliedResetLock).run()
         }
+        // Unlock player joins
+        PlayerLockout.global.unlock()
     }
 
     override fun onDisable() {

@@ -7,8 +7,8 @@ import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.config.conditions.AlwaysResetCondition
 import net.chlod.minecraft.homerun.config.selectors.FromWorldSpawnSelector
+import net.chlod.minecraft.homerun.data.PlayerLockout
 import net.chlod.minecraft.homerun.tasks.ResetPrepareTask
-import net.kyori.adventure.text.Component
 
 class ResetCommand(val plugin: Homerun): BasicCommand {
 
@@ -16,11 +16,10 @@ class ResetCommand(val plugin: Homerun): BasicCommand {
         commandSourceStack: CommandSourceStack,
         args: Array<out String>
     ) {
-        plugin.lockedDown = true
+        val world = commandSourceStack.location.world
         // Kick all players and prevent new logins
-        commandSourceStack.location.world.players.forEach { player ->
-            player.kick(Component.text("Server is resetting the world. Please reconnect shortly."))
-        }
+        PlayerLockout.of(world).lock()
+        PlayerLockout.of(world).kickAll()
 
         ResetPrepareTask(plugin, ResetRule(
             listOf(AlwaysResetCondition()),
