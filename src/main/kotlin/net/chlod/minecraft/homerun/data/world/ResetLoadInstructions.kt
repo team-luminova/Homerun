@@ -19,9 +19,9 @@ abstract class ResetLoadInstructions(
     }
 
     enum class ResetLoadInstructionType() {
-        RESET,
-        COPY,
-        RENAME,
+        RESET(),
+        COPY(),
+        RENAME(),
     }
 
 }

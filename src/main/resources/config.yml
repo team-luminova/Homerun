@@ -26,7 +26,7 @@ reset_rules:
     -   name: default
         enabled: false
         conditions:
-            # Run a reset every day at midnight UTC.
+            # Run a reset every day at midnight on the server's local time.
             -   cron: "0 0 * * *" # Every day at midnight
         parameters:
             # The name of the world to reset from. By default, this is the default world

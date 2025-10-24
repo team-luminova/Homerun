@@ -16,6 +16,7 @@ import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import net.chlod.minecraft.homerun.listeners.PlayerLockoutListener
 import net.chlod.minecraft.homerun.listeners.PlayerUpgradeListener
 import net.chlod.minecraft.homerun.tasks.ResetLoadTask
+import net.chlod.minecraft.homerun.tasks.ResetPrepareTask
 import net.chlod.minecraft.homerun.tasks.WorldPostloadTask
 import org.bukkit.configuration.serialization.ConfigurationSerialization
 import org.bukkit.plugin.java.JavaPlugin
@@ -33,7 +34,6 @@ class Homerun : JavaPlugin() {
         ConfigurationSerialization.registerClass(WorldResetLoadInstruction::class.java)
         ConfigurationSerialization.registerClass(WorldCopyLoadInstruction::class.java)
         ConfigurationSerialization.registerClass(WorldRenameLoadInstruction::class.java)
-
 
         loadResetRules()
 
@@ -81,6 +81,23 @@ class Homerun : JavaPlugin() {
         }
         // Unlock player joins
         PlayerLockout.global.unlock()
+
+        // Start processing new reset rules
+        server.scheduler
+            .scheduleSyncRepeatingTask(this, {
+                resetRules.forEachIndexed { index, resetRule ->
+                    for (condition in resetRule.conditions) {
+                        if (condition.isSatisfied(this)) {
+                            componentLogger.warn(
+                                "Reset condition satisfied for rule ${resetRule.name ?: index}, executing reset."
+                            )
+                            ResetPrepareTask(this, resetRule)
+                                .runTaskTimer(this, 0L, 20L)
+                            break
+                        }
+                    }
+                }
+            }, 0, 20L)
     }
 
     override fun onDisable() {
