@@ -27,7 +27,8 @@ class Homerun : JavaPlugin() {
     val keys = HomerunNamespacedKeys(this)
 
     val resetRules = mutableListOf<ResetRule>()
-    var appliedResetLocks = mutableListOf<ResetLock>()
+    private var appliedResetLocks = mutableListOf<ResetLock>()
+    private var conditionCheckTask: Int? = null
 
     override fun onLoad() {
         ConfigurationSerialization.registerClass(ResetRule::class.java)
@@ -83,7 +84,7 @@ class Homerun : JavaPlugin() {
         PlayerLockout.global.unlock()
 
         // Start processing new reset rules
-        server.scheduler
+        conditionCheckTask = server.scheduler
             .scheduleSyncRepeatingTask(this, {
                 resetRules.forEachIndexed { index, resetRule ->
                     for (condition in resetRule.conditions) {
@@ -102,6 +103,10 @@ class Homerun : JavaPlugin() {
 
     override fun onDisable() {
         // Plugin shutdown logic
+        if (conditionCheckTask == null || conditionCheckTask == -1) {
+            return
+        }
+        server.scheduler.cancelTask(conditionCheckTask!!)
     }
 
     private fun loadResetRules() {
