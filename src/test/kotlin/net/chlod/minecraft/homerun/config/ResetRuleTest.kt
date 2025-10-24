@@ -5,7 +5,10 @@ import net.chlod.minecraft.homerun.config.conditions.CronResetCondition
 import net.chlod.minecraft.homerun.config.selectors.FromWorldSpawnSelector
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ResetRuleTest {
 
@@ -157,6 +160,7 @@ class ResetRuleTest {
 
         // Serialize then deserialize
         val serialized = originalRule.serialize()
+
         @Suppress("UNCHECKED_CAST")
         val deserialized = ResetRule.deserialize(serialized as Map<String, Object>)
 
@@ -180,6 +184,7 @@ class ResetRuleTest {
 
         // Serialize then deserialize
         val serialized = originalRule.serialize()
+
         @Suppress("UNCHECKED_CAST")
         val deserialized = ResetRule.deserialize(serialized as Map<String, Object>)
 
@@ -270,7 +275,7 @@ class ResetRuleTest {
 
         assertNull(serialized["name"])
     }
-
+    
     // Helper functions to create test data
 
     private fun createMinimalResetParameters(): ResetParameters {

@@ -145,7 +145,7 @@ class ResetParameters(
             "outside_player_behavior" to outsidePlayerBehavior?.name?.lowercase(),
             "nether_behavior" to netherBehavior?.name?.lowercase(),
             "end_behavior" to endBehavior?.name?.lowercase()
-        )
+        ).filter { it.value != null }
     }
 
     enum class OutsidePlayerBehavior {

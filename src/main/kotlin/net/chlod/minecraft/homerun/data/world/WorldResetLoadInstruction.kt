@@ -5,16 +5,18 @@ import org.bukkit.Location
 
 class WorldResetLoadInstruction(
     sourceWorld: String,
+    sourceWorldEnvironmentId: Int,
     targetWorld: String,
     val chunks: List<Pair<Int, Int>>? = null,
     val spawnLocation: Location? = null,
     val outsidePlayerBehavior: ResetParameters.OutsidePlayerBehavior? = null
-) : ResetLoadInstructions(ResetLoadInstructionType.RESET, sourceWorld, targetWorld) {
+) : ResetLoadInstructions(ResetLoadInstructionType.RESET, sourceWorld, sourceWorldEnvironmentId, targetWorld) {
 
     companion object {
         @JvmStatic
         fun deserialize(args: Map<String, Object>): WorldResetLoadInstruction {
             val sourceWorld = args["sourceWorld"] as String
+            val sourceWorldEnvironmentId = args["sourceWorldEnvironmentId"] as Int
             val targetWorld = args["targetWorld"] as String
             val chunksRaw = args["chunks"] as List<*>
             val chunks = chunksRaw.map {
@@ -26,6 +28,7 @@ class WorldResetLoadInstruction(
 
             return WorldResetLoadInstruction(
                 sourceWorld,
+                sourceWorldEnvironmentId,
                 targetWorld,
                 chunks,
                 Location(

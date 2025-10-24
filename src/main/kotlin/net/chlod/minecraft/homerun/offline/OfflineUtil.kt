@@ -20,8 +20,20 @@ abstract class OfflineUtil {
         this.plugin = plugin
         this.resetInstructions = resetInstructions
         val worldContainer = plugin.server.worldContainer
-        val sourceWorldDirectory = File(worldContainer, resetInstructions.sourceWorld)
-        val targetWorldDirectory = File(worldContainer, resetInstructions.targetWorld)
+        var sourceWorldDirectory = File(worldContainer, resetInstructions.sourceWorld)
+        var targetWorldDirectory = File(worldContainer, resetInstructions.targetWorld)
+
+        if (resetInstructions.sourceWorldEnvironmentId != 0) {
+            // Not an overworld dimension. The region folder will be in a `DIM<ID>` subfolder.
+            sourceWorldDirectory = File(
+                sourceWorldDirectory,
+                "DIM${resetInstructions.sourceWorldEnvironmentId}"
+            )
+            targetWorldDirectory = File(
+                targetWorldDirectory,
+                "DIM${resetInstructions.sourceWorldEnvironmentId}"
+            )
+        }
 
         val sourceRegion = File(sourceWorldDirectory, "region")
         val sourcePoi = File(sourceWorldDirectory, "poi")

@@ -9,13 +9,13 @@ import net.chlod.minecraft.homerun.offline.WorldDataTransferUtil
 import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
 
-class ResetLoadTask(val plugin: Homerun, val resetLock: ResetLock): BukkitRunnable() {
+class ResetLoadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitRunnable() {
 
     val componentLogger = plugin.componentLogger
 
     override fun run() {
         for (resetInstructions in resetLock.resetInstructions) {
-            componentLogger.info("Running postload for world reset from ${resetInstructions.sourceWorld} to ${resetInstructions.targetWorld}...")
+            componentLogger.info("Running preload for world reset from ${resetInstructions.sourceWorld} to ${resetInstructions.targetWorld}...")
             when (resetInstructions.type) {
                 ResetLoadInstructions.ResetLoadInstructionType.RESET -> {
                     componentLogger.info("Running chunk transplant...")
@@ -26,6 +26,7 @@ class ResetLoadTask(val plugin: Homerun, val resetLock: ResetLock): BukkitRunnab
                     WorldDataTransferUtil(plugin, resetInstructions).transferData()
                     componentLogger.info("Finished copying player data, stats, and advancements")
                 }
+
                 ResetLoadInstructions.ResetLoadInstructionType.COPY,
                 ResetLoadInstructions.ResetLoadInstructionType.RENAME -> {
                     val serverFolder = plugin.server.worldContainer

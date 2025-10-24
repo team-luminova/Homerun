@@ -10,6 +10,9 @@ import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.data.HomerunNamespacedKeys
 import net.chlod.minecraft.homerun.data.PlayerLockout
 import net.chlod.minecraft.homerun.data.ResetLock
+import net.chlod.minecraft.homerun.data.world.WorldCopyLoadInstruction
+import net.chlod.minecraft.homerun.data.world.WorldRenameLoadInstruction
+import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import net.chlod.minecraft.homerun.listeners.PlayerLockoutListener
 import net.chlod.minecraft.homerun.listeners.PlayerUpgradeListener
 import net.chlod.minecraft.homerun.tasks.ResetLoadTask
@@ -22,10 +25,17 @@ class Homerun : JavaPlugin() {
 
     val keys = HomerunNamespacedKeys(this)
 
+    val resetRules = mutableListOf<ResetRule>()
     var appliedResetLocks = mutableListOf<ResetLock>()
 
     override fun onLoad() {
         ConfigurationSerialization.registerClass(ResetRule::class.java)
+        ConfigurationSerialization.registerClass(WorldResetLoadInstruction::class.java)
+        ConfigurationSerialization.registerClass(WorldCopyLoadInstruction::class.java)
+        ConfigurationSerialization.registerClass(WorldRenameLoadInstruction::class.java)
+
+
+        loadResetRules()
 
         // Load in the configuration
         ResetLock.findAll(this).forEach {
@@ -76,4 +86,31 @@ class Homerun : JavaPlugin() {
     override fun onDisable() {
         // Plugin shutdown logic
     }
+
+    private fun loadResetRules() {
+        resetRules.clear()
+
+        val resetRulesRaw = config.getList("reset_rules") ?: return
+        resetRulesRaw.forEachIndexed { index, maybeRule ->
+            @Suppress("UNCHECKED_CAST")
+            val rule = maybeRule as? ResetRule
+                ?: try {
+                    if (maybeRule !is Map<*, *>) {
+                        throw IllegalArgumentException("Invalid reset rule format (not a Map): #$index")
+                    }
+                    if (maybeRule.keys.any { key -> key !is String }) {
+                        throw IllegalArgumentException("Invalid reset rule format (non-string key): #$index")
+                    }
+                    ResetRule.deserialize(maybeRule as Map<String, Object>)
+                } catch (ex: Exception) {
+                    componentLogger.error("Failed to deserialize reset rule from config", ex)
+                    null
+                }
+
+            if (rule != null) {
+                resetRules.add(rule)
+            }
+        }
+    }
+
 }

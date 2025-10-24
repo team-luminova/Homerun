@@ -2,6 +2,8 @@ package net.chlod.minecraft.homerun.data
 
 import net.chlod.minecraft.homerun.data.world.ResetLoadInstructions
 import net.chlod.minecraft.homerun.data.world.ResetLoadInstructions.ResetLoadInstructionType
+import net.chlod.minecraft.homerun.data.world.WorldCopyLoadInstruction
+import net.chlod.minecraft.homerun.data.world.WorldRenameLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.plugin.Plugin
@@ -33,26 +35,45 @@ class ResetLock(
                 try {
                     val id = file.name.removeSuffix(".lock")
                     val time = config.getLong("time")
-                    val resetInstructionsList = config.getMapList("worlds")
+                    val resetInstructionsListRaw = config.getList("worlds")
+                        ?: throw IllegalArgumentException("Missing worlds data for reset lock ${file.name.removeSuffix(".lock")}")
+
+                    @Suppress("UNCHECKED_CAST")
+                    val resetInstructionsList =
+                        if (resetInstructionsListRaw.all { it is ResetLoadInstructions })
+                            resetInstructionsListRaw as List<ResetLoadInstructions>
+                        else {
+                            resetInstructionsListRaw.map {
+                                if (it is Map<*, *> && it.keys.all { key -> key is String }) {
+                                    val instructionType = (it["type"] as String).uppercase()
+                                    when (ResetLoadInstructionType.valueOf(instructionType)) {
+                                        ResetLoadInstructionType.RESET ->
+                                            WorldResetLoadInstruction.deserialize(it as Map<String, Object>)
+
+                                        ResetLoadInstructionType.COPY ->
+                                            WorldCopyLoadInstruction.deserialize(it as Map<String, Object>)
+
+                                        ResetLoadInstructionType.RENAME ->
+                                            WorldRenameLoadInstruction.deserialize(it as Map<String, Object>)
+                                    }
+                                } else {
+                                    throw IllegalArgumentException(
+                                        "Invalid world reset data #${
+                                            resetInstructionsListRaw.indexOf(
+                                                it
+                                            ) + 1
+                                        }"
+                                    )
+                                }
+                            }
+                        }
 
                     @Suppress("UNCHECKED_CAST")
                     val resetLock = ResetLock(
                         plugin,
                         id,
                         time,
-                        resetInstructionsList.map {
-                            if (it !is Map<*, *> || it.keys.any { key -> key !is String }) {
-                                throw IllegalArgumentException("Invalid world reset data #${resetInstructionsList.indexOf(it) + 1}")
-                            }
-                            when (ResetLoadInstructionType.valueOf(it["type"] as String)) {
-                                ResetLoadInstructionType.RESET ->
-                                    WorldResetLoadInstruction.deserialize(it as Map<String, Object>)
-                                ResetLoadInstructionType.COPY ->
-                                    WorldResetLoadInstruction.deserialize(it as Map<String, Object>)
-                                ResetLoadInstructionType.RENAME ->
-                                    WorldResetLoadInstruction.deserialize(it as Map<String, Object>)
-                            }
-                        }
+                        resetInstructionsList
                     )
                     locks.add(resetLock)
                 } catch (_: Exception) {

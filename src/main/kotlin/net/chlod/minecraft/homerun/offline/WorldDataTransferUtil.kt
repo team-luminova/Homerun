@@ -5,29 +5,39 @@ import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import org.apache.commons.io.FileUtils
 import java.io.File
 
-class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadInstruction) : OfflineUtil(plugin, resetInstructions)  {
+class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadInstruction) :
+    OfflineUtil(plugin, resetInstructions) {
 
-    val sourceWorldDirectory = sourceWorld.region.parent
-    val targetWorldDirectory = targetWorld.region.parent
+    val sourceWorldDirectory: String? = sourceWorld.region.parent
+    val targetWorldDirectory: String? = targetWorld.region.parent
 
     fun transferData() {
         // Transferring playerdata
-        FileUtils.copyDirectory(
-            File(sourceWorldDirectory, "playerdata"),
-            File(targetWorldDirectory, "playerdata")
-        )
+        val sourcePlayerData = File(sourceWorldDirectory, "playerdata")
+        if (sourcePlayerData.exists()) {
+            FileUtils.copyDirectory(
+                sourcePlayerData,
+                File(targetWorldDirectory, "playerdata")
+            )
+        }
 
         // Transferring stats
-        FileUtils.copyDirectory(
-            File(sourceWorldDirectory, "stats"),
-            File(targetWorldDirectory, "stats")
-        )
+        val sourceStats = File(sourceWorldDirectory, "stats")
+        if (sourceStats.exists()) {
+            FileUtils.copyDirectory(
+                sourceStats,
+                File(targetWorldDirectory, "stats")
+            )
+        }
 
         // Transferring advancements
-        FileUtils.copyDirectory(
-            File(sourceWorldDirectory, "advancements"),
-            File(targetWorldDirectory, "advancements")
-        )
+        val sourceAdvancements = File(sourceWorldDirectory, "advancements")
+        if (sourceAdvancements.exists()) {
+            FileUtils.copyDirectory(
+                sourceAdvancements,
+                File(targetWorldDirectory, "advancements")
+            )
+        }
     }
 
 }

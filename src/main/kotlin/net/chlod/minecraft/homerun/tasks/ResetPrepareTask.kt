@@ -4,7 +4,11 @@ import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.config.ResetParameters.DimensionResetBehavior
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.config.util.TargetWorldPatternSubstitutor
+import net.chlod.minecraft.homerun.data.PlayerLockout
 import net.chlod.minecraft.homerun.data.ResetLock
+import net.chlod.minecraft.homerun.data.world.ResetLoadInstructions
+import net.chlod.minecraft.homerun.data.world.WorldCopyLoadInstruction
+import net.chlod.minecraft.homerun.data.world.WorldRenameLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import net.minecraft.server.dedicated.DedicatedServer
 import net.minecraft.server.dedicated.DedicatedServerProperties
@@ -37,6 +41,13 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
             return
         }
 
+        val lockouts = mutableListOf<PlayerLockout>()
+        val lockout = PlayerLockout.of(sourceWorld)
+        lockouts.add(lockout)
+        lockout.lock()
+        lockout.kickAll()
+        sourceWorld.save(true)
+
         val worldPatternSubstitutor = TargetWorldPatternSubstitutor(plugin, rule)
         val targetWorldName = worldPatternSubstitutor.substitute(
             sourceWorld, rule.parameters.targetWorldPattern ?: $$"$${sourceWorld.name}_${timestamp}"
@@ -46,7 +57,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         cancel()
         setMetadata(sourceWorld, targetWorld)
 
-        val resetInstructionsList = mutableListOf<WorldResetLoadInstruction>()
+        val resetInstructionsList = mutableListOf<ResetLoadInstructions>()
         val resetInstructions = gatherWorldInformation(sourceWorld, targetWorldName)
         resetInstructionsList.add(resetInstructions)
 
@@ -58,10 +69,16 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                     componentLogger.warn("Source world Nether dimension not found, skipping Nether generation...")
                 }
 
-                null -> { /* do nothing. This condition exists for smart casting. */
+                null -> {
+                    /* do nothing. This condition exists for smart casting. */
                 }
 
                 else -> {
+                    val dimLockout = PlayerLockout.of(sourceWorldNether)
+                    lockouts.add(dimLockout)
+                    dimLockout.lock()
+                    dimLockout.kickAll()
+                    sourceWorldNether.save(true)
                     val dimResetInstructions = checkGenerateDimension(
                         sourceWorldNether,
                         targetWorldName,
@@ -88,6 +105,11 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                 }
 
                 else -> {
+                    val dimLockout = PlayerLockout.of(sourceWorldEnd)
+                    lockouts.add(dimLockout)
+                    dimLockout.lock()
+                    dimLockout.kickAll()
+                    sourceWorldEnd.save(true)
                     val dimResetInstructions = checkGenerateDimension(
                         sourceWorldEnd,
                         targetWorldName,
@@ -124,6 +146,8 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
             componentLogger.warn("Restart not requested, but server.properties was modified. This is dangerous!")
             componentLogger.warn("You should remove the \"restart\" parameter for this reset rule, or set it to true.")
         }
+
+        lockouts.forEach { it.unlock() }
     }
 
     fun modifyServerPropertiesViaReflection(targetWorldName: String) {
@@ -214,7 +238,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         sourceWorldDim: World,
         targetWorldName: String,
         behavior: DimensionResetBehavior?
-    ): Pair<World?, WorldResetLoadInstruction>? {
+    ): Pair<World?, ResetLoadInstructions>? {
         val dimensionSuffix = sourceWorldDim.environment.name.lowercase()
         when (behavior) {
             DimensionResetBehavior.NORMAL -> {
@@ -225,12 +249,24 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                 )
             }
 
-            DimensionResetBehavior.RENAME, DimensionResetBehavior.COPY -> {
+            DimensionResetBehavior.RENAME -> {
                 return Pair(
                     null,
-                    WorldResetLoadInstruction(
-                        sourceWorldDim.name + "_nether",
-                        targetWorldName + "_nether"
+                    WorldRenameLoadInstruction(
+                        sourceWorldDim.name + dimensionSuffix,
+                        sourceWorldDim.environment.id,
+                        targetWorldName + dimensionSuffix
+                    )
+                )
+            }
+
+            DimensionResetBehavior.COPY -> {
+                return Pair(
+                    null,
+                    WorldCopyLoadInstruction(
+                        sourceWorldDim.name + dimensionSuffix,
+                        sourceWorldDim.environment.id,
+                        targetWorldName + dimensionSuffix
                     )
                 )
             }
@@ -255,6 +291,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
 
         return WorldResetLoadInstruction(
             sourceWorld.name,
+            sourceWorld.environment.id,
             targetWorldName,
             retainedChunks,
             spawnLocation,
