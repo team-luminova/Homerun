@@ -33,7 +33,7 @@ reset_rules:
             # (the `level-name` value in the server.properties file). Use this if you want
             # to reset a world back to a specific set of chunks every time, but don't need
             # to keep changes to those chunks after resets.
-            world: world
+            #world: world
             # The pattern to follow for newly-created worlds. Pick a pattern which avoids
             # collisions, otherwise worlds may overwrite each other.
             #
