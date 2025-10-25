@@ -5,7 +5,7 @@ class WorldRenameLoadInstruction(sourceWorld: String, sourceWorldEnvironmentId: 
 
     companion object {
         @JvmStatic
-        fun deserialize(args: Map<String, Object>): WorldRenameLoadInstruction {
+        fun deserialize(args: Map<String, Any>): WorldRenameLoadInstruction {
             val sourceWorld = args["sourceWorld"] as String
             val sourceWorldEnvironmentId = args["sourceWorldEnvironmentId"] as Int
             val targetWorld = args["targetWorld"] as String

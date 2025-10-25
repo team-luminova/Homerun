@@ -14,7 +14,7 @@ class WorldResetLoadInstruction(
 
     companion object {
         @JvmStatic
-        fun deserialize(args: Map<String, Object>): WorldResetLoadInstruction {
+        fun deserialize(args: Map<String, Any>): WorldResetLoadInstruction {
             val sourceWorld = args["sourceWorld"] as String
             val sourceWorldEnvironmentId = args["sourceWorldEnvironmentId"] as Int
             val targetWorld = args["targetWorld"] as String

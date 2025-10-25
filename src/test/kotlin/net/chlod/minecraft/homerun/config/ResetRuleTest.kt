@@ -95,8 +95,7 @@ class ResetRuleTest {
         )
 
         // Deserialize the rule
-        @Suppress("UNCHECKED_CAST")
-        val rule = ResetRule.deserialize(serializedMap as Map<String, Object>)
+        val rule = ResetRule.deserialize(serializedMap)
 
         // Verify the deserialized rule
         assertEquals(1, rule.conditions.size)
@@ -117,8 +116,7 @@ class ResetRuleTest {
         )
 
         // Deserialize the rule
-        @Suppress("UNCHECKED_CAST")
-        val rule = ResetRule.deserialize(serializedMap as Map<String, Object>)
+        val rule = ResetRule.deserialize(serializedMap)
 
         // Verify the deserialized rule
         assertEquals(1, rule.conditions.size)
@@ -139,8 +137,7 @@ class ResetRuleTest {
         )
 
         // Deserialize the rule
-        @Suppress("UNCHECKED_CAST")
-        val rule = ResetRule.deserialize(serializedMap as Map<String, Object>)
+        val rule = ResetRule.deserialize(serializedMap)
 
         // Verify the deserialized rule
         assertEquals(2, rule.conditions.size)
@@ -162,7 +159,7 @@ class ResetRuleTest {
         val serialized = originalRule.serialize()
 
         @Suppress("UNCHECKED_CAST")
-        val deserialized = ResetRule.deserialize(serialized as Map<String, Object>)
+        val deserialized = ResetRule.deserialize(serialized as Map<String, Any>)
 
         // Verify the round trip
         assertEquals(originalRule.conditions.size, deserialized.conditions.size)
@@ -186,7 +183,7 @@ class ResetRuleTest {
         val serialized = originalRule.serialize()
 
         @Suppress("UNCHECKED_CAST")
-        val deserialized = ResetRule.deserialize(serialized as Map<String, Object>)
+        val deserialized = ResetRule.deserialize(serialized as Map<String, Any>)
 
         // Verify the round trip
         assertEquals(originalRule.conditions.size, deserialized.conditions.size)
@@ -213,8 +210,7 @@ class ResetRuleTest {
         )
 
         assertThrows<IllegalArgumentException> {
-            @Suppress("UNCHECKED_CAST")
-            ResetRule.deserialize(serializedMap as Map<String, Object>)
+            ResetRule.deserialize(serializedMap)
         }
     }
 
@@ -228,8 +224,7 @@ class ResetRuleTest {
         )
 
         assertThrows<IllegalArgumentException> {
-            @Suppress("UNCHECKED_CAST")
-            ResetRule.deserialize(serializedMap as Map<String, Object>)
+            ResetRule.deserialize(serializedMap)
         }
     }
 
@@ -245,8 +240,7 @@ class ResetRuleTest {
         )
 
         assertThrows<IllegalArgumentException> {
-            @Suppress("UNCHECKED_CAST")
-            ResetRule.deserialize(serializedMap as Map<String, Object>)
+            ResetRule.deserialize(serializedMap)
         }
     }
 
@@ -275,7 +269,7 @@ class ResetRuleTest {
 
         assertNull(serialized["name"])
     }
-    
+
     // Helper functions to create test data
 
     private fun createMinimalResetParameters(): ResetParameters {

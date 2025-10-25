@@ -5,7 +5,7 @@ class WorldCopyLoadInstruction(sourceWorld: String, sourceWorldEnvironmentId: In
 
     companion object {
         @JvmStatic
-        fun deserialize(args: Map<String, Object>): WorldCopyLoadInstruction {
+        fun deserialize(args: Map<String, Any>): WorldCopyLoadInstruction {
             val sourceWorld = args["sourceWorld"] as String
             val sourceWorldEnvironmentId = args["sourceWorldEnvironmentId"] as Int
             val targetWorld = args["targetWorld"] as String

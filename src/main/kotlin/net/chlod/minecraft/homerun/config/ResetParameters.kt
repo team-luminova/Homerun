@@ -61,7 +61,7 @@ class ResetParameters(
 
         @Suppress("unused")
         @JvmStatic
-        fun deserialize(args: Map<String, Object>): ResetParameters {
+        fun deserialize(args: Map<String, Any>): ResetParameters {
             val retainedChunksRaw = args["retained_chunks"]
             val retainedChunks: MutableList<ChunkSelectorSetting> = ArrayList()
             if (retainedChunksRaw is List<*>) {

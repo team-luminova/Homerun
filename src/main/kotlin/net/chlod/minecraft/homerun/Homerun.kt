@@ -123,7 +123,7 @@ class Homerun : JavaPlugin() {
                     if (maybeRule.keys.any { key -> key !is String }) {
                         throw IllegalArgumentException("Invalid reset rule format (non-string key): #$index")
                     }
-                    ResetRule.deserialize(maybeRule as Map<String, Object>)
+                    ResetRule.deserialize(maybeRule as Map<String, Any>)
                 } catch (ex: Exception) {
                     componentLogger.error("Failed to deserialize reset rule from config", ex)
                     null

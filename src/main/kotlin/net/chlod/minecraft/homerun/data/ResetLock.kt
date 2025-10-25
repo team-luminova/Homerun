@@ -48,13 +48,13 @@ class ResetLock(
                                     val instructionType = (it["type"] as String).uppercase()
                                     when (ResetLoadInstructionType.valueOf(instructionType)) {
                                         ResetLoadInstructionType.RESET ->
-                                            WorldResetLoadInstruction.deserialize(it as Map<String, Object>)
+                                            WorldResetLoadInstruction.deserialize(it as Map<String, Any>)
 
                                         ResetLoadInstructionType.COPY ->
-                                            WorldCopyLoadInstruction.deserialize(it as Map<String, Object>)
+                                            WorldCopyLoadInstruction.deserialize(it as Map<String, Any>)
 
                                         ResetLoadInstructionType.RENAME ->
-                                            WorldRenameLoadInstruction.deserialize(it as Map<String, Object>)
+                                            WorldRenameLoadInstruction.deserialize(it as Map<String, Any>)
                                     }
                                 } else {
                                     throw IllegalArgumentException(

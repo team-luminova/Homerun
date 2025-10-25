@@ -21,7 +21,7 @@ class ResetRule(
         )
 
         @JvmStatic
-        fun deserialize(args: Map<String, Object>): ResetRule {
+        fun deserialize(args: Map<String, Any>): ResetRule {
             val conditions = args["conditions"]
 
             if (conditions !is List<*>) {
@@ -66,7 +66,7 @@ class ResetRule(
                 throw IllegalArgumentException("Parameters map contains non-string keys")
             }
             @Suppress("UNCHECKED_CAST")
-            val resetParameters = ResetParameters.deserialize(parameters as Map<String, Object>)
+            val resetParameters = ResetParameters.deserialize(parameters as Map<String, Any>)
 
             val name = args["name"] as String?
             val enabled = args["enabled"] as Boolean?
