@@ -115,6 +115,9 @@ class ResetLock(
         if (resetLock.exists()) {
             resetLock.delete()
         }
+        if (lockFolder.listFiles().size == 0) {
+            lockFolder.delete()
+        }
     }
 
 }
