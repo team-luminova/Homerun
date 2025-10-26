@@ -17,6 +17,7 @@ class TpworldCommand {
     companion object {
         fun createCommand(commandName: String): LiteralCommandNode<CommandSourceStack> {
             return Commands.literal(commandName)
+                .requires { it.sender.hasPermission("homerun.commands.tpworld") }
                 .then(
                     Commands.argument("world", StringArgumentType.string())
                         .executes { ctx ->
