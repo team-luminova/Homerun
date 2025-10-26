@@ -11,7 +11,7 @@ properly.
 
 ## Features
 
-![Example of a Homerun-reset world with kept chunks, across two resets.](./assets/example.png)
+![Screenshot of Minecraft with three worlds overlayed on top of each other. The bottom section of the image, which shows chunks close to the spawn point, remains the same.](./assets/example.png)
 
 * Reset world based on time intervals
 * Keep specific chunks intact during resets
