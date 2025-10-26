@@ -1,4 +1,8 @@
 name: homerun
-version: '1.0-SNAPSHOT'
+version: '0.0.0-SNAPSHOT'
 main: net.chlod.minecraft.homerun.Homerun
+description: Reset your Minecraft server world periodically. Keep some chunks, or wipe everything completely.
+authors:
+    - Chlod
+website: https://modrinth.com/plugin/lmnv-homerun
 api-version: '1.21'
