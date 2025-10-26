@@ -5,8 +5,53 @@ plugins {
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.19"
 }
 
+fun getVersionFromGit(): String {
+    return try {
+        val tag = providers.exec {
+            commandLine("git", "describe", "--tags", "--match", "v*", "--abbrev=0")
+        }.standardOutput.asText.get().trim()
+
+        val commitTags = providers.exec {
+            commandLine("git", "tag", "--points-at", "HEAD")
+        }.standardOutput.asText.get().trim().lines().first().trim()
+
+        if (commitTags.isNotEmpty()) {
+            // Current commit has a tag
+            // Check if we have local changes
+            val status = providers.exec {
+                commandLine("git", "status", "--porcelain")
+            }.standardOutput.asText.get().trim()
+            return if (status.isEmpty()) {
+                // No local changes, use the tag as version
+                if (commitTags.startsWith("v"))
+                    commitTags.substring(1)
+                else commitTags
+            } else {
+                // Local changes present, append -SNAPSHOT
+                val baseTag = if (commitTags.startsWith("v"))
+                    commitTags.substring(1)
+                else
+                    commitTags
+
+                "$baseTag-SNAPSHOT"
+            }
+        } else {
+            // No tag on current commit, use the latest tag with -SNAPSHOT
+            val baseTag = if (tag.startsWith("v"))
+                tag.substring(1)
+            else
+                tag
+
+            "$baseTag-SNAPSHOT"
+        }
+    } catch (_: Exception) {
+        // Fallback to default version if no tag is found
+        "0.0.0-SNAPSHOT"
+    }
+}
+
 group = "net.chlod.minecraft"
-version = "0.1.0-SNAPSHOT"
+version = getVersionFromGit()
 
 repositories {
     mavenCentral()
