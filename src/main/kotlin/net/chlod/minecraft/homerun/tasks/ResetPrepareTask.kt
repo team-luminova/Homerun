@@ -288,6 +288,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         componentLogger.info("Getting source spawn location...")
         val spawnLocation = sourceWorld.spawnLocation.clone()
         spawnLocation.world = null
+        componentLogger.info("Spawn location: (${spawnLocation.x}, ${spawnLocation.y}, ${spawnLocation.z})")
 
         return WorldResetLoadInstruction(
             sourceWorld.name,

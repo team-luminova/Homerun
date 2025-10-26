@@ -36,10 +36,10 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
             return
         }
 
-        componentLogger.info("Setting spawn point for world ${resetInstructions.targetWorld}")
         val spawnX = resetInstructions.spawnLocation!!.x.toInt()
         val spawnY = resetInstructions.spawnLocation.y.toInt()
         val spawnZ = resetInstructions.spawnLocation.z.toInt()
+        componentLogger.info("Setting spawn point for world ${resetInstructions.targetWorld} (${spawnX}, ${spawnY}, ${spawnZ})...")
         val spawnYaw = resetInstructions.spawnLocation.yaw
         newWorld.setSpawnLocation(spawnX, spawnY, spawnZ, spawnYaw)
         componentLogger.info("Finished setting spawn point for world ${resetInstructions.targetWorld}")
@@ -83,7 +83,7 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
             (resetInstructions.outsidePlayerBehavior
                 ?: ResetParameters.OutsidePlayerBehavior.SPAWN).name.lowercase()
         )
-        
+
         rootTag.put("BukkitValues", bukkitValues)
     }
 
