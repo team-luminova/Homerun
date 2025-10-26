@@ -6,8 +6,13 @@ Homerun is a Minecraft server plugin that lets you reset the world under specifi
 your entire server world, it can be set to keep specific chunks or regions intact. With Minecraft 1.18's chunk blending
 functionality, Homerun can reset your world while keeping the borders with kept chunks smooth and natural.
 
-Minecraft can run **up to Minecraft 1.21.4**. Later versions are partially supported, as chunk blending does not work
-properly.
+Minecraft can run **up to Minecraft 1.21.4**. Later versions are supported only on a best-effort asis, as chunk blending
+does not work properly.
+
+> [!WARNING]
+> Homerun **directly modified** your world files during resets. It is **highly recommended** to back up your worlds
+> in some other way before using Homerun. Homerun **will persist old worlds** and avoid deleting worlds, but it is still
+> a good idea to have backups in case something goes wrong.
 
 ## Features
 
