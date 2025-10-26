@@ -61,7 +61,7 @@ class ResetLock(
                                         "Invalid world reset data #${
                                             resetInstructionsListRaw.indexOf(
                                                 it
-                                            ) + 1
+                                            )
                                         }"
                                     )
                                 }

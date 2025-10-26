@@ -3,13 +3,21 @@ package net.chlod.minecraft.homerun.config
 import net.chlod.minecraft.homerun.config.conditions.AlwaysResetCondition
 import net.chlod.minecraft.homerun.config.conditions.CronResetCondition
 import net.chlod.minecraft.homerun.config.conditions.ResetCondition
+import net.chlod.minecraft.homerun.config.warnings.BossBarWarningMethod
+import net.chlod.minecraft.homerun.config.warnings.ChatMessageWarningMethod
+import net.chlod.minecraft.homerun.config.warnings.PlayerListWarningMethod
+import net.chlod.minecraft.homerun.config.warnings.ResetWarningMethod
 import org.bukkit.configuration.serialization.ConfigurationSerializable
 
 class ResetRule(
     val conditions: List<ResetCondition>,
     val parameters: ResetParameters,
     val name: String?,
-    val enabled: Boolean? = false
+    val enabled: Boolean? = false,
+    /**
+     * Methods to use for warning players about an upcoming reset.
+     */
+    val warnings: List<ResetWarningMethod>? = null
 ) : ConfigurationSerializable {
 
     companion object {
@@ -68,6 +76,28 @@ class ResetRule(
             @Suppress("UNCHECKED_CAST")
             val resetParameters = ResetParameters.deserialize(parameters as Map<String, Any>)
 
+            val warningsRaw = args["warnings"] as? List<*>
+            val warnings: MutableList<ResetWarningMethod> = ArrayList()
+            warningsRaw?.forEachIndexed { i, warningMethod ->
+                try {
+                    val result = ResetWarningMethod.deserializeType(warningMethod as Map<String, Any>)
+                    warnings.add(
+                        when (result) {
+                            ResetWarningMethod.ResetWarningMethodType.BOSS_BAR ->
+                                BossBarWarningMethod.deserialize(warningMethod)
+
+                            ResetWarningMethod.ResetWarningMethodType.PLAYER_LIST ->
+                                PlayerListWarningMethod.deserialize(warningMethod)
+
+                            ResetWarningMethod.ResetWarningMethodType.CHAT_MESSAGE ->
+                                ChatMessageWarningMethod.deserialize(warningMethod)
+                        }
+                    )
+                } catch (e: Exception) {
+                    throw IllegalArgumentException("can't deserialize warning method #$i", e)
+                }
+            }
+
             val name = args["name"] as String?
             val enabled = args["enabled"] as Boolean?
 
@@ -75,7 +105,8 @@ class ResetRule(
                 deserializedConditions,
                 resetParameters,
                 name,
-                enabled
+                enabled,
+                warnings
             )
         }
 
@@ -95,6 +126,9 @@ class ResetRule(
                 put("enabled", enabled)
             }
             put("conditions", serializedConditions)
+            if (warnings != null) {
+                put("warnings", warnings.map { it.serialize() })
+            }
             put("parameters", parameters.serialize())
         }
     }

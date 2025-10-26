@@ -22,7 +22,7 @@ class CronResetCondition : ResetCondition {
         }
 
         @JvmStatic
-       val CRON_TYPE = CronType.UNIX
+        val CRON_TYPE = CronType.UNIX
     }
 
     val cron: Cron
@@ -43,6 +43,10 @@ class CronResetCondition : ResetCondition {
             val duration = java.time.Duration.between(now, it)
             duration.toMillis()
         }
+    }
+
+    override fun getNextReset(plugin: Homerun): ZonedDateTime? {
+        return nextReset
     }
 
     override fun isSatisfied(plugin: Homerun): Boolean {

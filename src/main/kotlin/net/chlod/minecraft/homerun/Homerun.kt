@@ -95,10 +95,26 @@ class Homerun : JavaPlugin() {
                             ResetPrepareTask(this, resetRule)
                                 .runTaskTimer(this, 0L, 20L)
                             break
+                        } else {
+                            val timeUntilResetMillis = condition.getTimeUntilNextReset(this) ?: continue
+                            val world = if (resetRule.parameters.world == null)
+                                server.worlds.firstOrNull() ?: continue
+                            else
+                                (server.getWorld(resetRule.parameters.world) ?: continue)
+
+                            resetRule.warnings?.forEach {
+                                it.displayWarningMessage(
+                                    this,
+                                    world,
+                                    resetRule,
+                                    condition,
+                                    timeUntilResetMillis
+                                )
+                            }
                         }
                     }
                 }
-            }, 0, 20L)
+            }, 0, 1L)
     }
 
     override fun onDisable() {

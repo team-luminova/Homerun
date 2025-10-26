@@ -5,7 +5,7 @@ import org.bukkit.Bukkit
 import org.bukkit.World
 import org.bukkit.entity.Player
 
-class PlayerLockout {
+class PlayerLockout : WorldLockout {
 
     companion object {
 
@@ -21,28 +21,11 @@ class PlayerLockout {
 
     }
 
-    val world: World?
+    private constructor(world: World) : super(world)
+    private constructor() : super()
 
-    constructor(world: World) {
-        this.world = world
-    }
-
-    private constructor() {
-        this.world = null
-    }
-
-    private var lockedOut = false
-
-    fun isLocked(): Boolean {
-        return lockedOut || (world != null && globalLockout.isLocked())
-    }
-
-    fun lock() {
-        lockedOut = true
-    }
-
-    fun unlock() {
-        lockedOut = false
+    override fun isLocked(): Boolean {
+        return super.isLocked() || (world != null && globalLockout.isLocked())
     }
 
     fun kickAll() {
