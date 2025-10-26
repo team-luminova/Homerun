@@ -71,5 +71,6 @@ reset_rules:
             end_behavior: normal
             # The list of chunks to retain. Each entry defines a method for selecting chunks to retain.
             retained_chunks:
-                # Retain chunks around the world spawn point
-                -   from_world_spawn: 8
+                # Retain 16 chunks centered on the world spawn point (i.e. 256 blocks across; 8 chunks in each direction).
+
+                -   from_world_spawn: 16
