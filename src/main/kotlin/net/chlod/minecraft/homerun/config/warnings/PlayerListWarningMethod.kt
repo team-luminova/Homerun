@@ -18,7 +18,9 @@ class PlayerListWarningMethod(
     companion object {
         @JvmStatic
         fun deserialize(args: Map<String, Any>): PlayerListWarningMethod {
-            val position = PlayerListWarningPosition.valueOf(args["position"] as String)
+            val position = PlayerListWarningPosition.valueOf(
+                (args["position"] as? String ?: "header").uppercase()
+            )
             val minSecondsBefore = args["min_seconds_before"] as? Int
             return PlayerListWarningMethod(position, minSecondsBefore)
         }
