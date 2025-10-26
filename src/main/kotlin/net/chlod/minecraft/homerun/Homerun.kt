@@ -87,6 +87,9 @@ class Homerun : JavaPlugin() {
         conditionCheckTask = server.scheduler
             .scheduleSyncRepeatingTask(this, {
                 resetRules.forEachIndexed { index, resetRule ->
+                    if (resetRule.enabled != true)
+                        return@forEachIndexed
+
                     for (condition in resetRule.conditions) {
                         if (condition.isSatisfied(this)) {
                             componentLogger.warn(
