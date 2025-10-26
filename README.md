@@ -54,9 +54,8 @@ Reset conditions are listed with the settings they need. The following reset con
     - cron: "0 0 1 */2 *" # Reset on every second month (first of odd numbered months)
   ```
 * `always` – Always reset the world when this rule is checked.
-  > [!WARNING]
-  > Using this condition when your world requires a restart (i.e. `restart: true` in parameters) may cause an infinite
-  restart loop.
+  > **WARNING:** Using this condition when your world requires a restart (i.e. `restart: true` in parameters) may cause
+  > an infinite restart loop.
   ```yaml
   conditions:
     - always: true
