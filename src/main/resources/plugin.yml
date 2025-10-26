@@ -1,5 +1,5 @@
 name: homerun
-version: '0.0.0-SNAPSHOT'
+version: '${version}'
 main: net.chlod.minecraft.homerun.Homerun
 description: Reset your Minecraft server world periodically. Keep some chunks, or wipe everything completely.
 authors:
