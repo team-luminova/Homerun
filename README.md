@@ -10,7 +10,7 @@ Minecraft can run **up to Minecraft 1.21.4**. Later versions are supported only 
 does not work properly.
 
 > [!WARNING]
-> Homerun **directly modified** your world files during resets. It is **highly recommended** to back up your worlds
+> Homerun **directly modifies** your world files during resets. It is **highly recommended** to back up your worlds
 > in some other way before using Homerun. Homerun **will persist old worlds** and avoid deleting worlds, but it is still
 > a good idea to have backups in case something goes wrong.
 
