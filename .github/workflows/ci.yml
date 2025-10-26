@@ -105,23 +105,14 @@ jobs:
                 id: get_version
                 run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-            -   name: Create Release
-                id: create_release
-                uses: actions/create-release@v1
+            -   name: Create release
+                uses: softprops/action-gh-release@v2
                 env:
                     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 with:
                     tag_name: ${{ steps.get_version.outputs.VERSION }}
-                    release_name: Release ${{ steps.get_version.outputs.VERSION }}
-                    draft: false
+                    release_name: ${{ steps.get_version.outputs.VERSION }}
+                    draft: true
                     prerelease: false
-
-            -   name: Upload Release Asset
-                uses: actions/upload-release-asset@v1
-                env:
-                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                with:
-                    upload_url: ${{ steps.create_release.outputs.upload_url }}
-                    asset_path: ./plugin-jar/
-                    asset_name: homerun-${{ steps.get_version.outputs.VERSION }}.jar
-                    asset_content_type: application/java-archive
+                    files: homerun-*-all.jar
+                    generate_release_notes: true
