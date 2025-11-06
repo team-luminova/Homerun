@@ -38,6 +38,15 @@ class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadIn
                 File(targetWorldDirectory, "advancements")
             )
         }
+
+        // Transferring datapacks
+        val sourceDatapacks = File(sourceWorldDirectory, "datapacks")
+        if (sourceDatapacks.exists()) {
+            FileUtils.copyDirectory(
+                sourceDatapacks,
+                File(targetWorldDirectory, "datapacks")
+            )
+        }
     }
 
 }
