@@ -36,14 +36,6 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
             return
         }
 
-        val spawnX = resetInstructions.spawnLocation!!.x.toInt()
-        val spawnY = resetInstructions.spawnLocation.y.toInt()
-        val spawnZ = resetInstructions.spawnLocation.z.toInt()
-        componentLogger.info("Setting spawn point for world ${resetInstructions.targetWorld} (${spawnX}, ${spawnY}, ${spawnZ})...")
-        val spawnYaw = resetInstructions.spawnLocation.yaw
-        newWorld.setSpawnLocation(spawnX, spawnY, spawnZ, spawnYaw)
-        componentLogger.info("Finished setting spawn point for world ${resetInstructions.targetWorld}")
-
         componentLogger.info("Checking player data...")
         val playersFolder = File(newWorld.worldFolder, "playerdata")
         val playerFiles = playersFolder.listFiles { file -> !file.extension.endsWith("_old") }

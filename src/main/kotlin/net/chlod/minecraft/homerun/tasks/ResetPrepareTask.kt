@@ -285,17 +285,11 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         }
         val retainedChunks = retainedChunkList.distinct()
 
-        componentLogger.info("Getting source spawn location...")
-        val spawnLocation = sourceWorld.spawnLocation.clone()
-        spawnLocation.world = null
-        componentLogger.info("Spawn location: (${spawnLocation.x}, ${spawnLocation.y}, ${spawnLocation.z})")
-
         return WorldResetLoadInstruction(
             sourceWorld.name,
             sourceWorld.environment.id,
             targetWorldName,
             retainedChunks,
-            spawnLocation,
             rule.parameters.outsidePlayerBehavior
         )
     }

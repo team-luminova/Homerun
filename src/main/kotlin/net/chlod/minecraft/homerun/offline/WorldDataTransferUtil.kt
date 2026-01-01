@@ -117,23 +117,39 @@ class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadIn
             return
         }
 
-        copyNbtTag(sourceDataTag, targetDataTag, "GameRules", true)
-        copyNbtTag(sourceDataTag, targetDataTag, "Difficulty", true)
-        copyNbtTag(sourceDataTag, targetDataTag, "hardcore", true)
-        copyNbtTag(sourceDataTag, targetDataTag, "GameType", true)
-        copyNbtTag(sourceDataTag, targetDataTag, "Time")
-        copyNbtTag(sourceDataTag, targetDataTag, "DayTime")
-        copyNbtTag(sourceDataTag, targetDataTag, "BorderSizeLerpTime")
-        copyNbtTag(sourceDataTag, targetDataTag, "BorderCenterX")
-        copyNbtTag(sourceDataTag, targetDataTag, "BorderCenterZ")
-        copyNbtTag(sourceDataTag, targetDataTag, "BorderWarningBlocks")
-        copyNbtTag(sourceDataTag, targetDataTag, "BorderDamagePerBlock")
-        copyNbtTag(sourceDataTag, targetDataTag, "raining")
-        copyNbtTag(sourceDataTag, targetDataTag, "rainTime")
-        copyNbtTag(sourceDataTag, targetDataTag, "thunderTime")
-        copyNbtTag(sourceDataTag, targetDataTag, "thundering")
-        copyNbtTag(sourceDataTag, targetDataTag, "clearWeatherTime")
-        copyNbtTag(sourceDataTag, targetDataTag, "BorderSafeZone")
+        val requiredTags = listOf(
+            "GameRules",
+            "Difficulty",
+            "hardcore",
+            "GameType",
+            "SpawnX",
+            "SpawnY",
+            "SpawnZ",
+            "SpawnAngle"
+        )
+
+        val extraTags = listOf(
+            "Time",
+            "DayTime",
+            "BorderSizeLerpTime",
+            "BorderCenterX",
+            "BorderCenterZ",
+            "BorderWarningBlocks",
+            "BorderDamagePerBlock",
+            "raining",
+            "rainTime",
+            "thunderTime",
+            "thundering",
+            "clearWeatherTime",
+            "BorderSafeZone"
+        )
+
+        for (tag in requiredTags) {
+            copyNbtTag(sourceDataTag, targetDataTag, tag, true)
+        }
+        for (tag in extraTags) {
+            copyNbtTag(sourceDataTag, targetDataTag, tag)
+        }
 
         targetRootTag.put("Data", targetDataTag)
 

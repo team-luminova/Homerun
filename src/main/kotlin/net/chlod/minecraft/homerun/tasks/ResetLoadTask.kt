@@ -22,9 +22,9 @@ class ResetLoadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitRunna
                     ChunkTransferUtil(plugin, resetInstructions as WorldResetLoadInstruction).transferChunks()
                     componentLogger.info("Finished chunk transplant")
 
-                    componentLogger.info("Copying player data, stats, and advancements...")
+                    componentLogger.info("Copying level data, player data, stats, and advancements...")
                     WorldDataTransferUtil(plugin, resetInstructions).transferData()
-                    componentLogger.info("Finished copying player data, stats, and advancements")
+                    componentLogger.info("Finished level data, copying player data, stats, and advancements")
                 }
 
                 ResetLoadInstructions.ResetLoadInstructionType.COPY,
