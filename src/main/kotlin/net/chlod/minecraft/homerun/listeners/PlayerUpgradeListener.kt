@@ -17,7 +17,7 @@ class PlayerUpgradeListener(val plugin: Homerun) : Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
     fun onJoinLate(event: PlayerJoinEvent) {
-
+        checkPlayerForResetFlags(event.player)
     }
 
     fun checkPlayerForResetFlags(player: Player) {

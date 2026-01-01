@@ -49,6 +49,7 @@ class Homerun : JavaPlugin() {
             // Directly run the task because we want this to be a blocking operation.
             // Otherwise, the server will load the world before we're done processing.
             ResetLoadTask(this, it).run()
+            appliedResetLocks.add(it)
             it.delete()
         }
     }

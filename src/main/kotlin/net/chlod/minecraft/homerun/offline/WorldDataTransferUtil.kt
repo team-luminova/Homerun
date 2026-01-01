@@ -19,6 +19,8 @@ class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadIn
                 sourcePlayerData,
                 File(targetWorldDirectory, "playerdata")
             )
+        } else {
+            plugin.componentLogger.warn("Source playerdata folder does not exist, skipping playerdata transfer.")
         }
 
         // Transferring stats
@@ -28,6 +30,8 @@ class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadIn
                 sourceStats,
                 File(targetWorldDirectory, "stats")
             )
+        } else {
+            plugin.componentLogger.warn("Source stats folder does not exist, skipping stats transfer.")
         }
 
         // Transferring advancements
@@ -37,6 +41,8 @@ class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadIn
                 sourceAdvancements,
                 File(targetWorldDirectory, "advancements")
             )
+        } else {
+            plugin.componentLogger.warn("Source advancements folder does not exist, skipping advancements transfer.")
         }
 
         // Transferring datapacks
@@ -46,6 +52,8 @@ class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadIn
                 sourceDatapacks,
                 File(targetWorldDirectory, "datapacks")
             )
+        } else {
+            plugin.componentLogger.warn("Source datapacks folder does not exist, skipping datapacks transfer.")
         }
     }
 

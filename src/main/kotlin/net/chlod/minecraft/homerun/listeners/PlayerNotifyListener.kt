@@ -17,7 +17,10 @@ class PlayerNotifyListener : Listener {
 
     constructor(plugin: Homerun, resetRules: List<ResetRule>) {
         for (resetRule in resetRules) {
-            if ((resetRule.enabled ?: false) && !(resetRule.notifyExit ?: false) && !(resetRule.notifyEnter ?: false))
+            if (
+                !(resetRule.enabled ?: false) ||
+                (!(resetRule.notifyExit ?: false) && !(resetRule.notifyEnter ?: false))
+            )
                 continue
 
             val world = plugin.server.getWorld(
@@ -55,11 +58,17 @@ class PlayerNotifyListener : Listener {
         val notifyEnter = worldData.first
         val notifyExit = worldData.second
         val retainedChunks = worldData.third
+        val lastState = playerLastState[event.player.name]
         val inRetainedChunk = Pair(playerChunkX, playerChunkZ) in retainedChunks
 
-        if (inRetainedChunk != playerLastState[event.player.name]) {
+        if (inRetainedChunk != lastState) {
             // Player is now in/out a retained chunk.
             playerLastState[event.player.name] = inRetainedChunk
+
+            // If this is the first state change, skip sending a message.
+            if (lastState == null) {
+                return
+            }
 
             if (notifyExit && !inRetainedChunk) {
                 // Send them a message

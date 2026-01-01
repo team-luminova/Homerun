@@ -48,7 +48,12 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
         val playersFolder = File(newWorld.worldFolder, "playerdata")
         val playerFiles = playersFolder.listFiles { file -> !file.extension.endsWith("_old") }
 
-        for (playerFile in playerFiles!!) {
+        if (playerFiles == null) {
+            componentLogger.info("No player data found for world ${resetInstructions.targetWorld}, skipping player data processing.")
+            return
+        }
+
+        for (playerFile in playerFiles) {
             val rootTag = NbtIo.readCompressed(Path(playerFile.path), NbtAccounter.unlimitedHeap())
             val playerName = if (rootTag.contains("bukkit") && rootTag.getCompound("bukkit").contains("lastKnownName"))
                 rootTag.getCompound("bukkit").getString("lastKnownName")
