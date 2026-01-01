@@ -61,7 +61,7 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
 
     private fun findClosestIntervalBelow(timeUntilResetMillis: Long): Long? {
         val timeUntilResetSeconds = round(timeUntilResetMillis / 1000.0).toInt()
-        return intervals.lastOrNull { it < timeUntilResetSeconds }?.toLong()
+        return intervals.lastOrNull { it <= timeUntilResetSeconds }?.toLong()
     }
 
     /**
