@@ -14,6 +14,8 @@ class ResetRule(
     val parameters: ResetParameters,
     val name: String?,
     val enabled: Boolean? = false,
+    val notifyEnter: Boolean? = false,
+    val notifyExit: Boolean? = false,
     /**
      * Methods to use for warning players about an upcoming reset.
      */
@@ -76,6 +78,9 @@ class ResetRule(
             @Suppress("UNCHECKED_CAST")
             val resetParameters = ResetParameters.deserialize(parameters as Map<String, Any>)
 
+            val notifyEnter = (args["notify_enter"] ?: args["notify"]) as? Boolean
+            val notifyExit = (args["notify_exit"] ?: args["notify"]) as? Boolean
+
             val warningsRaw = args["warnings"] as? List<*>
             val warnings: MutableList<ResetWarningMethod> = ArrayList()
             warningsRaw?.forEachIndexed { i, warningMethod ->
@@ -106,6 +111,8 @@ class ResetRule(
                 resetParameters,
                 name,
                 enabled,
+                notifyEnter,
+                notifyExit,
                 warnings
             )
         }
@@ -124,6 +131,12 @@ class ResetRule(
             }
             if (enabled != null) {
                 put("enabled", enabled)
+            }
+            if (notifyEnter != null) {
+                put("notify_enter", notifyEnter)
+            }
+            if (notifyExit != null) {
+                put("notify_exit", notifyExit)
             }
             put("conditions", serializedConditions)
             if (warnings != null) {

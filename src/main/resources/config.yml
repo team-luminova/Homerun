@@ -25,6 +25,10 @@
 reset_rules:
     -   name: default
         enabled: false
+        # Notify users when they're entering this area?
+        notify_enter: true
+        # Notify users when they're leaving this area?
+        notify_exit: true
         conditions:
             # Run a reset every day at midnight on the server's local time.
             -   cron: "0 0 * * *" # Every day at midnight
@@ -36,7 +40,7 @@ reset_rules:
             -   type: player_list
             # Send chat messages at the specified intervals before the reset
             -   type: chat_message
-                intervals: [ 86400, 43200, 21600, 3600, 600, 300, 60, 30, 10, 5, 4, 3, 2, 1 ]
+                intervals: [ 86400, 43200, 21600, 3600, 1800, 600, 300, 60, 30, 10, 5, 4, 3, 2, 1 ]
         parameters:
             # The name of the world to reset from. By default, this is the default world
             # (the `level-name` value in the server.properties file). Use this if you want

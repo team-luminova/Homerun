@@ -14,6 +14,7 @@ import net.chlod.minecraft.homerun.data.world.WorldCopyLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldRenameLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import net.chlod.minecraft.homerun.listeners.PlayerLockoutListener
+import net.chlod.minecraft.homerun.listeners.PlayerNotifyListener
 import net.chlod.minecraft.homerun.listeners.PlayerUpgradeListener
 import net.chlod.minecraft.homerun.tasks.ResetLoadTask
 import net.chlod.minecraft.homerun.tasks.ResetPrepareTask
@@ -59,6 +60,7 @@ class Homerun : JavaPlugin() {
         // Registering event listeners
         server.pluginManager.registerEvents(PlayerUpgradeListener(this), this)
         server.pluginManager.registerEvents(PlayerLockoutListener(this), this)
+        server.pluginManager.registerEvents(PlayerNotifyListener(this, resetRules), this)
 
         // Registering commands
         @Suppress("UnstableApiUsage")
