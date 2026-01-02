@@ -29,6 +29,10 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
         }
     }
 
+    /**
+     * A sorted set of intervals in seconds at which to send warning messages.
+     * Order is ascending (lowest to highest).
+     */
     lateinit var intervals: List<Int>
 
     /**
@@ -54,14 +58,20 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
         }
     }
 
+    /**
+     * Finds the closest interval above the given time until reset in milliseconds.
+     */
     private fun findClosestIntervalAbove(timeUntilResetMillis: Long): Long? {
         val timeUntilResetSeconds = round(timeUntilResetMillis / 1000.0).toInt()
         return intervals.firstOrNull { it > timeUntilResetSeconds }?.toLong()
     }
 
+    /**
+     * Finds the closest interval lower than the given time until reset in milliseconds.
+     */
     private fun findClosestIntervalBelow(timeUntilResetMillis: Long): Long? {
         val timeUntilResetSeconds = round(timeUntilResetMillis / 1000.0).toInt()
-        return intervals.lastOrNull { it <= timeUntilResetSeconds }?.toLong()
+        return intervals.lastOrNull { it < timeUntilResetSeconds }?.toLong()
     }
 
     /**
@@ -130,15 +140,14 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
         timeUntilResetMillis: Long
     ) {
         if (!willSendNextMessage(condition, timeUntilResetMillis)) return
-        val referenceInterval =
-            (findClosestIntervalBelow(timeUntilResetMillis) ?: (timeUntilResetMillis / 1000)) * 1000L
+        val referenceIntervalMillis = lastUpdateConditionMap[condition]?.first ?: timeUntilResetMillis
 
         val nextReset = condition.getNextReset(plugin)!!
         var text = Component.text("This world will reset in ")
 
-        val hoursUntil = (referenceInterval / 3600000) % 24
-        val minutesUntil = (referenceInterval / 60000) % 60
-        val secondsUntil = (referenceInterval / 1000) % 60
+        val hoursUntil = (referenceIntervalMillis / 3600000) % 24
+        val minutesUntil = (referenceIntervalMillis / 60000) % 60
+        val secondsUntil = (referenceIntervalMillis / 1000) % 60
 
         if (hoursUntil > 0) {
             text = text.append(
@@ -149,7 +158,7 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
                             hoursUntil
                         )
                     )
-                    .color(getWarningTextColor(referenceInterval))
+                    .color(getWarningTextColor(referenceIntervalMillis))
                     .decorate(TextDecoration.BOLD)
             )
         }
@@ -165,7 +174,7 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
                             minutesUntil
                         )
                     )
-                    .color(getWarningTextColor(referenceInterval))
+                    .color(getWarningTextColor(referenceIntervalMillis))
                     .decorate(TextDecoration.BOLD)
             )
         }
@@ -181,7 +190,7 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
                             secondsUntil
                         )
                     )
-                    .color(getWarningTextColor(referenceInterval))
+                    .color(getWarningTextColor(referenceIntervalMillis))
                     .decorate(TextDecoration.BOLD)
             )
         }
