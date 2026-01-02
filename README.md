@@ -32,13 +32,15 @@ conditions and parameters, and can have a name, be disabled, or have warnings.
 
 #### Reset rules
 
-| Key          | Default | Type                             | Description                                                                                              |
-|--------------|---------|----------------------------------|----------------------------------------------------------------------------------------------------------|
-| `name`       | *none*  | `string` (optional)              | An optional name for the reset rule.                                                                     |
-| `disabled`   | `false` | `boolean` (optional)             | If true, this rule will be disabled. This can be used to easily disable rules.                           |
-| `conditions` | *none*  | list of ResetCondition           | A set of conditions to be used for resetting the server. See [Reset conditions](#reset-conditions) below |
-| `parameters` | *none*  | ResetParameters                  | A set of parameters for the reset. See [Reset parameters](#reset-parameters) below                       |
-| `warnings`   | *none*  | list of ResetWarnings (optional) | A list of warnings to be issued before the reset occurs. See [Warnings](#warnings) below                 |
+| Key            | Default | Type                             | Description                                                                                              |
+|----------------|---------|----------------------------------|----------------------------------------------------------------------------------------------------------|
+| `name`         | *none*  | `string` (optional)              | An optional name for the reset rule.                                                                     |
+| `disabled`     | `false` | `boolean` (optional)             | If true, this rule will be disabled. This can be used to easily disable rules.                           |
+| `notify_enter` | `false` | `boolean` (optional)             | If true, players will be notified when they enter a reset-protected area.                                |
+| `notify_exit`  | `false` | `boolean` (optional)             | If true, players will be notified when they leave a reset-protected area.                                |
+| `conditions`   | *none*  | list of ResetCondition           | A set of conditions to be used for resetting the server. See [Reset conditions](#reset-conditions) below |
+| `parameters`   | *none*  | ResetParameters                  | A set of parameters for the reset. See [Reset parameters](#reset-parameters) below                       |
+| `warnings`     | *none*  | list of ResetWarnings (optional) | A list of warnings to be issued before the reset occurs. See [Warnings](#warnings) below                 |
 
 #### Reset conditions
 
