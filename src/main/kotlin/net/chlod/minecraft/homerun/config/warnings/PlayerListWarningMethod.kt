@@ -19,7 +19,7 @@ class PlayerListWarningMethod(
         @JvmStatic
         fun deserialize(args: Map<String, Any>): PlayerListWarningMethod {
             val position = PlayerListWarningPosition.valueOf(
-                (args["position"] as? String ?: "header").uppercase()
+                (args["position"] as? String ?: "both").uppercase()
             )
             val minSecondsBefore = args["min_seconds_before"] as? Int
             return PlayerListWarningMethod(position, minSecondsBefore)
@@ -44,8 +44,12 @@ class PlayerListWarningMethod(
         condition: ResetCondition,
         timeUntilResetMillis: Long
     ) {
+        if (minSecondsBefore != null && timeUntilResetMillis > minSecondsBefore * 1000) {
+            return
+        }
+
         val nextReset = condition.getNextReset(plugin)!!
-        val text = Component.text("World reset at ")
+        val resetTime = Component.text("World reset at ")
             .color(NamedTextColor.GRAY)
             .append(
                 Component
@@ -58,10 +62,7 @@ class PlayerListWarningMethod(
                     )
                     .color(NamedTextColor.WHITE)
             )
-            .append(
-                Component.text(", ")
-                    .color(NamedTextColor.GRAY)
-            )
+        val countdown = Component.text()
             .append(
                 Component
                     .text(
@@ -79,14 +80,28 @@ class PlayerListWarningMethod(
                 Component.text(" remaining")
                     .color(NamedTextColor.GRAY)
             )
+            .build()
 
-        if (position == PlayerListWarningPosition.HEADER) {
+        if (position == PlayerListWarningPosition.BOTH) {
             world.players.forEach { player ->
-                player.sendPlayerListHeader(text)
+                player.sendPlayerListHeader(resetTime)
+                player.sendPlayerListFooter(countdown)
             }
         } else {
-            world.players.forEach { player ->
-                player.sendPlayerListFooter(text)
+            val combinedText = resetTime
+                .append(
+                    Component.text(", ")
+                        .color(NamedTextColor.GRAY)
+                )
+                .append(countdown)
+            if (position == PlayerListWarningPosition.HEADER) {
+                world.players.forEach { player ->
+                    player.sendPlayerListHeader(combinedText)
+                }
+            } else {
+                world.players.forEach { player ->
+                    player.sendPlayerListFooter(combinedText)
+                }
             }
         }
     }
@@ -100,6 +115,7 @@ class PlayerListWarningMethod(
 
     enum class PlayerListWarningPosition {
         HEADER,
-        FOOTER
+        FOOTER,
+        BOTH
     }
 }
