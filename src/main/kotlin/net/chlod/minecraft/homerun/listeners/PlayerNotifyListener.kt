@@ -1,21 +1,34 @@
 package net.chlod.minecraft.homerun.listeners
 
 import net.chlod.minecraft.homerun.Homerun
+import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.World
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.event.world.WorldLoadEvent
 
 class PlayerNotifyListener : Listener {
+
+    private val plugin: Homerun
+    private val resetRules: List<ResetRule>
 
     private val worldRetainedChunks = mutableMapOf<String, Triple<Boolean, Boolean, Set<Pair<Int, Int>>>>()
     private val playerLastState = mutableMapOf<String, Boolean>()
 
     constructor(plugin: Homerun, resetRules: List<ResetRule>) {
+        this.plugin = plugin
+        this.resetRules = resetRules
+
+        this.cacheRetainedChunks()
+    }
+
+    private fun cacheRetainedChunks() {
         for (resetRule in resetRules) {
             if (
                 !(resetRule.enabled ?: false) ||
@@ -27,25 +40,50 @@ class PlayerNotifyListener : Listener {
                 resetRule.parameters.world ?: plugin.server.worlds[0].name
             )
             if (world == null) continue
-            val retainedChunkSets = resetRule.parameters.retainedChunks.map {
-                it.getRetainedChunks(plugin, world)
+            cacheRetainedChunksForWorld(resetRule, world)
+
+            if (resetRule.parameters.netherBehavior == ResetParameters.DimensionResetBehavior.NORMAL) {
+                val netherWorld = plugin.server.getWorld("${world.name}_nether") ?: run {
+                    plugin.componentLogger.warn("Nether world for '${world.name}' not found, skipping retained chunk processing for it.")
+                    null
+                } ?: continue
+                cacheRetainedChunksForWorld(resetRule, netherWorld)
             }
-            for (retainedChunks in retainedChunkSets) {
-                if (world.name in this.worldRetainedChunks) {
-                    this.worldRetainedChunks[world.name] = Triple(
-                        resetRule.notifyExit ?: false,
-                        resetRule.notifyExit ?: false,
-                        this.worldRetainedChunks[world.name]!!.third.union(retainedChunks)
-                    )
-                } else {
-                    this.worldRetainedChunks[world.name] = Triple(
-                        resetRule.notifyExit ?: false,
-                        resetRule.notifyExit ?: false,
-                        retainedChunks
-                    )
-                }
+            if (resetRule.parameters.endBehavior == ResetParameters.DimensionResetBehavior.NORMAL) {
+                val endWorld = plugin.server.getWorld("${world.name}_the_end") ?: run {
+                    plugin.componentLogger.warn("End world for '${world.name}' not found, skipping retained chunk processing for it.")
+                    null
+                } ?: continue
+                cacheRetainedChunksForWorld(resetRule, endWorld)
             }
         }
+        plugin.componentLogger.info("Cached retained chunks in ${worldRetainedChunks.size} world for player notifications.")
+    }
+
+    private fun cacheRetainedChunksForWorld(resetRule: ResetRule, world: World) {
+        val retainedChunkSets = resetRule.parameters.retainedChunks.map {
+            it.getRetainedChunks(plugin, world)
+        }
+        for (retainedChunks in retainedChunkSets) {
+            if (world.name in this.worldRetainedChunks) {
+                this.worldRetainedChunks[world.name] = Triple(
+                    resetRule.notifyExit ?: false,
+                    resetRule.notifyExit ?: false,
+                    this.worldRetainedChunks[world.name]!!.third.union(retainedChunks)
+                )
+            } else {
+                this.worldRetainedChunks[world.name] = Triple(
+                    resetRule.notifyExit ?: false,
+                    resetRule.notifyExit ?: false,
+                    retainedChunks
+                )
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    fun onWorldLoad(event: WorldLoadEvent) {
+        this.cacheRetainedChunks()
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
