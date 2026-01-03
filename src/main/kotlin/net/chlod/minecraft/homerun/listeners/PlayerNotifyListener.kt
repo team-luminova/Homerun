@@ -72,11 +72,11 @@ class PlayerNotifyListener : Listener {
 
             if (notifyExit && !inRetainedChunk) {
                 // Send them a message
-                event.player.sendMessage {
+                event.player.sendActionBar {
                     Component.text()
                         .append(
                             Component.text(
-                                "You have left the safe area.",
+                                "You have entered the reset area.",
                                 NamedTextColor.RED,
                                 TextDecoration.BOLD
                             )
@@ -87,8 +87,8 @@ class PlayerNotifyListener : Listener {
                         .build()
                 }
             } else if (notifyEnter && inRetainedChunk) {
-                event.player.sendMessage {
-                    Component.text("You have entered the safe area.")
+                event.player.sendActionBar {
+                    Component.text("You have left the reset area.")
                         .color(NamedTextColor.GREEN)
                 }
             }
