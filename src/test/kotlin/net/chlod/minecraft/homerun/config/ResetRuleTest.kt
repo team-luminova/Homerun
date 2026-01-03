@@ -280,10 +280,7 @@ class ResetRuleTest {
             world = null,
             targetWorldPattern = null,
             modifyServerProperties = null,
-            restart = null,
-            outsidePlayerBehavior = null,
-            netherBehavior = null,
-            endBehavior = null
+            restart = null
         )
     }
 

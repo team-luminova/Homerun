@@ -40,15 +40,15 @@ class ResetParameters(
      * "ignore" will leave them where they are, and "highest" will teleport them
      * to the highest non-air block at their current X/Z coordinates.
      */
-    val outsidePlayerBehavior: OutsidePlayerBehavior? = null,
+    val outsidePlayerBehavior: OutsidePlayerBehavior = OutsidePlayerBehavior.SPAWN,
     /**
      * Whether to reset the Nether dimension along with the Overworld.
      */
-    val netherBehavior: DimensionResetBehavior? = null,
+    val netherBehavior: DimensionResetBehavior = DimensionResetBehavior.NORMAL,
     /**
      * Whether to reset the End dimension along with the Overworld.
      */
-    val endBehavior: DimensionResetBehavior? = null
+    val endBehavior: DimensionResetBehavior = DimensionResetBehavior.NORMAL
 ) : ConfigurationSerializable {
 
     companion object {
@@ -100,15 +100,15 @@ class ResetParameters(
 
             val outsidePlayerBehavior = when (val behavior = args["outside_player_behavior"]) {
                 is String -> OutsidePlayerBehavior.valueOf(behavior.uppercase())
-                else -> null
+                else -> OutsidePlayerBehavior.SPAWN
             }
             val netherBehavior = when (val behavior = args["nether_behavior"]) {
                 is String -> DimensionResetBehavior.valueOf(behavior.uppercase())
-                else -> null
+                else -> DimensionResetBehavior.NORMAL
             }
             val endBehavior = when (val behavior = args["end_behavior"]) {
                 is String -> DimensionResetBehavior.valueOf(behavior.uppercase())
-                else -> null
+                else -> DimensionResetBehavior.NORMAL
             }
 
             val world = args["world"] as String?
