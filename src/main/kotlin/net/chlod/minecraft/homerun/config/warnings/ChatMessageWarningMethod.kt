@@ -154,7 +154,7 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
                 Component
                     .text(
                         String.format(
-                            "%02d hour" + if (hoursUntil != 1L) "s" else "",
+                            "%d hour" + if (hoursUntil != 1L) "s" else "",
                             hoursUntil
                         )
                     )
@@ -170,7 +170,7 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
                 Component
                     .text(
                         String.format(
-                            "%02d minute" + if (minutesUntil != 1L) "s" else "",
+                            "%d minute" + if (minutesUntil != 1L) "s" else "",
                             minutesUntil
                         )
                     )
@@ -186,7 +186,7 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
                 Component
                     .text(
                         String.format(
-                            "%02d second" + if (secondsUntil != 1L) "s" else "",
+                            "%d second" + if (secondsUntil != 1L) "s" else "",
                             secondsUntil
                         )
                     )
