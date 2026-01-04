@@ -61,7 +61,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         val resetInstructions = gatherWorldInformation(sourceWorld, targetWorldName)
         resetInstructionsList.add(resetInstructions)
 
-        if (sourceWorld.environment != Environment.NORMAL && rule.parameters.netherBehavior != null) {
+        if (sourceWorld.environment != Environment.NORMAL && rule.parameters.netherBehavior != DimensionResetBehavior.WIPE) {
             componentLogger.warn("Tried to reset Nether for world of ${sourceWorld.environment.name} dimension. Skipping...")
         } else {
             when (val sourceWorldNether = server.getWorld("${sourceWorld.name}_nether")) {
@@ -93,7 +93,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                 }
             }
         }
-        if (sourceWorld.environment != Environment.NORMAL && rule.parameters.endBehavior != null) {
+        if (sourceWorld.environment != Environment.NORMAL && rule.parameters.endBehavior != DimensionResetBehavior.WIPE) {
             componentLogger.warn("Tried to reset End for world of ${sourceWorld.environment.name} dimension. Skipping...")
         } else {
             when (val sourceWorldEnd = server.getWorld("${sourceWorld.name}_the_end")) {
