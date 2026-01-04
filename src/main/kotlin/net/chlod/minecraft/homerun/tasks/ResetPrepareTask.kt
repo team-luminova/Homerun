@@ -60,6 +60,9 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         val resetInstructionsList = mutableListOf<ResetLoadInstructions>()
         val resetInstructions = gatherWorldInformation(sourceWorld, targetWorldName)
         resetInstructionsList.add(resetInstructions)
+        // Generate chunks in the expected import region so that an .mca file will be made
+        // for that region.
+        generateWorldChunks(resetInstructions.chunks!!, targetWorld)
 
         if (sourceWorld.environment != Environment.NORMAL && rule.parameters.netherBehavior != DimensionResetBehavior.WIPE) {
             componentLogger.warn("Tried to reset Nether for world of ${sourceWorld.environment.name} dimension. Skipping...")
@@ -218,6 +221,15 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         return newWorld
     }
 
+    fun generateWorldChunks(chunkList: List<Pair<Int, Int>>, world: World) {
+        componentLogger.info("Generating ${chunkList.size} chunks in world '${world.name}'...")
+        for (chunkCoords in chunkList) {
+            world.loadChunk(chunkCoords.first, chunkCoords.second, true)
+        }
+        world.save(true)
+        componentLogger.info("Finished generating chunks in world '${world.name}'.")
+    }
+
     fun setMetadata(sourceWorld: World, targetWorld: World) {
         targetWorld.persistentDataContainer.set(
             plugin.keys.resetCount,
@@ -243,10 +255,12 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         when (behavior) {
             DimensionResetBehavior.NORMAL -> {
                 val world = generateWorld(sourceWorldDim, "${targetWorldName}_${dimensionSuffix}")
-                return Pair(
+                val generateInfo = Pair(
                     world,
                     gatherWorldInformation(sourceWorldDim, "${targetWorldName}_${dimensionSuffix}")
                 )
+                generateWorldChunks(generateInfo.second.chunks!!, world!!)
+                return generateInfo
             }
 
             DimensionResetBehavior.RENAME -> {
