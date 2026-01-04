@@ -21,6 +21,7 @@ import net.querz.mcaselector.version.java_1_20.ChunkFilter_24w10a
 import net.querz.mcaselector.version.java_1_21.ChunkFilter_1_21_5_RC2
 import net.querz.mcaselector.version.java_1_21.ChunkFilter_24w18a
 import net.querz.mcaselector.version.java_1_21.ChunkFilter_25w02a
+import net.querz.mcaselector.version.java_1_21.ChunkFilter_25w32a
 import net.querz.mcaselector.version.java_1_9.ChunkFilter_15w32a
 import net.querz.mcaselector.version.java_null.ChunkFilter_Null
 import java.lang.reflect.Field
@@ -60,6 +61,7 @@ class MCASelectorVersionImplLoader {
             ChunkFilter_1_21_5_RC2::class.java,
             ChunkFilter_24w18a::class.java,
             ChunkFilter_25w02a::class.java,
+            ChunkFilter_25w32a::class.java,
             ChunkFilter_15w32a::class.java,
             ChunkFilter_Null::class.java,
         )
@@ -105,7 +107,7 @@ class MCASelectorVersionImplLoader {
                 }
             }
             // Get VersionHandler.implementations field (private static final)
-            // This is a hashmap, so let's indiviudally set each entry
+            // This is a hashmap, so let's individually set each entry
             val implementationsField: Field = VersionHandler::class.java.getDeclaredField("implementations")
             implementationsField.isAccessible = true
             val versionHandlerImplementations = implementationsField.get(null) as HashMap<Class<*>, TreeMap<Int?, Any?>>
