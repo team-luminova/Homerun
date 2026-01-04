@@ -63,6 +63,17 @@ class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadIn
         } else {
             plugin.componentLogger.warn("Source datapacks folder does not exist, skipping datapacks transfer.")
         }
+
+        // Transferring data
+        val sourceData = File(sourceWorldDirectory, "data")
+        if (sourceData.exists()) {
+            FileUtils.copyDirectory(
+                sourceData,
+                File(targetWorldDirectory, "data")
+            )
+        } else {
+            plugin.componentLogger.warn("Source data folder does not exist, skipping data transfer.")
+        }
     }
 
     private fun findLevelDat(worldDirectory: String): java.nio.file.Path {
