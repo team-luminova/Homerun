@@ -57,7 +57,7 @@ class PlayerNotifyListener : Listener {
                 cacheRetainedChunksForWorld(resetRule, endWorld)
             }
         }
-        plugin.componentLogger.info("Cached retained chunks in ${worldRetainedChunks.size} world for player notifications.")
+        plugin.componentLogger.info("Cached retained chunks in ${worldRetainedChunks.size} worlds for player notifications.")
     }
 
     private fun cacheRetainedChunksForWorld(resetRule: ResetRule, world: World) {
