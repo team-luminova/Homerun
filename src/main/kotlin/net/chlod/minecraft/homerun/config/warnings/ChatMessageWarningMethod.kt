@@ -40,7 +40,7 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
      * Pair is of (lastUpdateInMilliseconds, nextUpdateInMilliseconds).
      * Inherently, the second value in the pair is always less than the first.
      */
-    val lastUpdateConditionMap = mutableMapOf<ResetCondition, Pair<Long, Long>>()
+    val lastUpdateConditionMap = mutableMapOf<Pair<World, ResetCondition>, Pair<Long, Long>>()
 
     private constructor(intervals: List<Int>) : this() {
         this.intervals = intervals.toSortedSet().toList()
@@ -80,9 +80,10 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
      *
      * This is a stateful method that updates the last update time for the condition.
      */
-    fun willSendNextMessage(condition: ResetCondition, timeUntilResetMillis: Long): Boolean {
+    fun willSendNextMessage(world: World, condition: ResetCondition, timeUntilResetMillis: Long): Boolean {
         // Check if we should send a message at this interval
-        val lastUpdatePair = lastUpdateConditionMap[condition]
+        val conditionPair = Pair(world, condition)
+        val lastUpdatePair = lastUpdateConditionMap[conditionPair]
         if (lastUpdatePair != null) {
             val (lastUpdateMillis, nextUpdateMillis) = lastUpdatePair
             if (timeUntilResetMillis <= nextUpdateMillis) {
@@ -91,7 +92,7 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
                 val nextIntervalMillis =
                     if (nextIntervalSeconds != null) nextIntervalSeconds * 1000L else Long.MIN_VALUE
                 // nextUpdateMillis here is now the current (interval time) millis
-                lastUpdateConditionMap[condition] = Pair(nextUpdateMillis, nextIntervalMillis)
+                lastUpdateConditionMap[conditionPair] = Pair(nextUpdateMillis, nextIntervalMillis)
 
                 return true
             } else if (timeUntilResetMillis > lastUpdateMillis) {
@@ -101,7 +102,7 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
                 val nextUpdateMillis = findClosestIntervalBelow(timeUntilResetMillis)
 
                 // These two values should never be null here, but just in case, we set them to extreme values
-                lastUpdateConditionMap[condition] = Pair(
+                lastUpdateConditionMap[conditionPair] = Pair(
                     if (newLastUpdateMillis != null) newLastUpdateMillis * 1000L else Long.MAX_VALUE,
                     if (nextUpdateMillis != null) nextUpdateMillis * 1000L else Long.MIN_VALUE
                 )
@@ -123,7 +124,7 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
             }
 
             // These two values should never be null here, but just in case, we set them to extreme values
-            lastUpdateConditionMap[condition] = Pair(
+            lastUpdateConditionMap[conditionPair] = Pair(
                 newLastUpdateMillis * 1000L,
                 if (nextUpdateMillis != null) nextUpdateMillis * 1000L else Long.MIN_VALUE
             )
@@ -139,8 +140,9 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
         condition: ResetCondition,
         timeUntilResetMillis: Long
     ) {
-        if (!willSendNextMessage(condition, timeUntilResetMillis)) return
-        val referenceIntervalMillis = lastUpdateConditionMap[condition]?.first ?: timeUntilResetMillis
+        if (!willSendNextMessage(world, condition, timeUntilResetMillis)) return
+        val conditionPair = Pair(world, condition)
+        val referenceIntervalMillis = lastUpdateConditionMap[conditionPair]?.first ?: timeUntilResetMillis
 
         val nextReset = condition.getNextReset(plugin)!!
         var text = Component.text("This world will reset in ")

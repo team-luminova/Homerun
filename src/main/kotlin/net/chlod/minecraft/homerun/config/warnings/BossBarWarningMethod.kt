@@ -13,7 +13,7 @@ class BossBarWarningMethod(
     val secondsBefore: Int
 ) : ResetWarningMethod(ResetWarningMethodType.BOSS_BAR) {
 
-    val bossBars = mutableMapOf<ResetCondition, BossBar>()
+    val bossBars = mutableMapOf<Pair<World, ResetCondition>, BossBar>()
 
     companion object {
         @JvmStatic
@@ -65,14 +65,15 @@ class BossBarWarningMethod(
             )
             .append(Component.text("."))
 
-        var bossBar = bossBars[condition]
+        val conditionKey = Pair(world, condition)
+        var bossBar = bossBars[conditionKey]
         if (bossBar != null) {
             bossBar
                 .name(name)
                 .progress(1 - (timeUntilResetMillis / (secondsBefore * 1000f)))
                 .color(getWarningBossBarColor(timeUntilResetMillis))
         } else {
-            bossBar = bossBars.getOrPut(condition) {
+            bossBar = bossBars.getOrPut(conditionKey) {
                 // Create a new BossBar for this condition
                 BossBar.bossBar(
                     name,
@@ -81,7 +82,7 @@ class BossBarWarningMethod(
                     BossBar.Overlay.PROGRESS
                 )
             }
-            bossBars[condition] = bossBar
+            bossBars[conditionKey] = bossBar
 
             world.forEachAudience { audience -> audience.showBossBar(bossBar) }
         }

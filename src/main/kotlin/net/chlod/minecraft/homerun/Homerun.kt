@@ -6,6 +6,7 @@ import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEven
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.chlod.minecraft.homerun.command.ResetCommand
 import net.chlod.minecraft.homerun.command.TpworldCommand
+import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.data.HomerunNamespacedKeys
 import net.chlod.minecraft.homerun.data.PlayerLockout
@@ -116,6 +117,35 @@ class Homerun : JavaPlugin() {
                                     condition,
                                     timeUntilResetMillis
                                 )
+                            }
+
+                            if (resetRule.parameters.netherBehavior == ResetParameters.DimensionResetBehavior.NORMAL) {
+                                val netherWorld = server.getWorld("${world.name}_nether")
+                                if (netherWorld != null) {
+                                    resetRule.warnings?.forEach {
+                                        it.displayWarningMessage(
+                                            this,
+                                            netherWorld,
+                                            resetRule,
+                                            condition,
+                                            timeUntilResetMillis
+                                        )
+                                    }
+                                }
+                            }
+                            if (resetRule.parameters.endBehavior == ResetParameters.DimensionResetBehavior.NORMAL) {
+                                val endWorld = server.getWorld("${world.name}_the_end")
+                                if (endWorld != null) {
+                                    resetRule.warnings?.forEach {
+                                        it.displayWarningMessage(
+                                            this,
+                                            endWorld,
+                                            resetRule,
+                                            condition,
+                                            timeUntilResetMillis
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
