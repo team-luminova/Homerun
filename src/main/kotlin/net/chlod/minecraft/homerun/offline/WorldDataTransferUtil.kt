@@ -19,6 +19,19 @@ class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadIn
         copyGameRules()
     }
 
+    fun copyDatapacks() {
+        // Transferring datapacks
+        val sourceDatapacks = File(sourceWorldDirectory, "datapacks")
+        if (sourceDatapacks.exists()) {
+            FileUtils.copyDirectory(
+                sourceDatapacks,
+                File(targetWorldDirectory, "datapacks")
+            )
+        } else {
+            plugin.componentLogger.warn("Source datapacks folder does not exist, skipping datapacks transfer.")
+        }
+    }
+
     fun copyDataFolders() {
         // Transferring playerdata
         val sourcePlayerData = File(sourceWorldDirectory, "playerdata")
@@ -51,17 +64,6 @@ class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadIn
             )
         } else {
             plugin.componentLogger.warn("Source advancements folder does not exist, skipping advancements transfer.")
-        }
-
-        // Transferring datapacks
-        val sourceDatapacks = File(sourceWorldDirectory, "datapacks")
-        if (sourceDatapacks.exists()) {
-            FileUtils.copyDirectory(
-                sourceDatapacks,
-                File(targetWorldDirectory, "datapacks")
-            )
-        } else {
-            plugin.componentLogger.warn("Source datapacks folder does not exist, skipping datapacks transfer.")
         }
 
         // Transferring data
