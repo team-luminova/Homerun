@@ -14,16 +14,40 @@ class FromWorldSpawnSelector : ChunkSelectorSetting {
         @Suppress("unused")
         @JvmStatic
         fun deserialize(args: Map<String, Any>): FromWorldSpawnSelector {
+            val dimensions = when (val dims = args["dimensions"]) {
+                is List<*> -> dims.mapNotNull {
+                    if (it is String) {
+                        try {
+                            World.Environment.valueOf(it.uppercase())
+                        } catch (e: IllegalArgumentException) {
+                            null
+                        }
+                    } else {
+                        null
+                    }
+                }
+
+                is String -> {
+                    try {
+                        listOf(World.Environment.valueOf(dims.uppercase()))
+                    } catch (e: IllegalArgumentException) {
+                        listOf(World.Environment.NORMAL)
+                    }
+                }
+
+                else -> null
+            }
+
             val expression = args["from_world_spawn"]
             if (expression is Int) {
-                return FromWorldSpawnSelector(expression)
+                return FromWorldSpawnSelector(expression, dimensions)
             }
             if (expression is Map<*, *>) {
                 val x = expression["x"]
                 val z = expression["z"]
 
                 if (x is Int && z is Int) {
-                    return FromWorldSpawnSelector(z, x)
+                    return FromWorldSpawnSelector(z, x, dimensions)
                 }
 
                 val north = expression["north"]
@@ -32,7 +56,7 @@ class FromWorldSpawnSelector : ChunkSelectorSetting {
                 val east = expression["east"]
 
                 if (north is Int && south is Int && west is Int && east is Int) {
-                    return FromWorldSpawnSelector(north, south, west, east)
+                    return FromWorldSpawnSelector(north, south, west, east, dimensions)
                 }
             }
             throw IllegalArgumentException(
@@ -51,20 +75,24 @@ class FromWorldSpawnSelector : ChunkSelectorSetting {
      * North range (negative Z direction)
      */
     val negativeZRange: Int
+
     /**
      * South range (positive Z direction)
      */
     val positiveZRange: Int
+
     /**
      * West range (negative X direction)
      */
     val negativeXRange: Int
+
     /**
      * East range (positive X direction)
      */
     val positiveXRange: Int
 
     private val mode: Mode
+    private val dimensions: List<World.Environment>?
 
     /**
      * Constructor for symmetrical range in all directions.
@@ -72,12 +100,14 @@ class FromWorldSpawnSelector : ChunkSelectorSetting {
      *  This is a diameter. If there are an odd number of chunks, the uneven chunk is added
      *  to the north and west.
      */
-    constructor(range: Int) {
+    constructor(range: Int, dimensions: List<World.Environment>? = null) {
         mode = Mode.SYMMETRICAL
         negativeZRange = ceil(range / 2.0).toInt()
         positiveZRange = floor(range / 2.0).toInt()
         negativeXRange = ceil(range / 2.0).toInt()
         positiveXRange = floor(range / 2.0).toInt()
+
+        this.dimensions = dimensions
     }
 
     /**
@@ -91,13 +121,16 @@ class FromWorldSpawnSelector : ChunkSelectorSetting {
      */
     constructor(
         zRange: Int,
-        xRange: Int
+        xRange: Int,
+        dimensions: List<World.Environment>? = null
     ) {
         mode = Mode.ASYMMETRICAL
         negativeZRange = ceil(zRange / 2.0).toInt()
         positiveZRange = floor(zRange / 2.0).toInt()
         negativeXRange = ceil(xRange / 2.0).toInt()
         positiveXRange = floor(xRange / 2.0).toInt()
+
+        this.dimensions = dimensions
     }
 
     /**
@@ -107,20 +140,37 @@ class FromWorldSpawnSelector : ChunkSelectorSetting {
      * @param west The range in chunks to retain to the west (negative X direction) from the world spawn.
      * @param east The range in chunks to retain to the east (positive X direction) from the world spawn.
      */
-    constructor(north: Int, south: Int, west: Int, east: Int) {
+    constructor(
+        north: Int,
+        south: Int,
+        west: Int,
+        east: Int,
+        dimensions: List<World.Environment>? = null
+    ) {
         mode = Mode.FULLY_CUSTOM
         negativeZRange = north
         positiveZRange = south
         negativeXRange = west
         positiveXRange = east
+
+        this.dimensions = dimensions
     }
 
     override fun getHumanReadableDescription(): String {
+        val dimensionString = when {
+            dimensions == null -> ""
+            else -> " in the " + dimensions.joinToString(", ") {
+                it.name.lowercase()
+                    .split("_").joinToString(" ") { word ->
+                        word.replaceFirstChar { c -> c.uppercase() }
+                    }
+            }
+        }
         return when (mode) {
-            Mode.SYMMETRICAL -> "a ${negativeZRange + positiveZRange}x${negativeXRange + positiveXRange} chunk area centered on spawn"
-            Mode.ASYMMETRICAL -> "a ${negativeXRange + positiveXRange} (X) by ${negativeZRange + positiveZRange} (Z) chunk area centered on spawn"
+            Mode.SYMMETRICAL -> "a ${negativeZRange + positiveZRange}x${negativeXRange + positiveXRange} chunk area centered on spawn${dimensionString}"
+            Mode.ASYMMETRICAL -> "a ${negativeXRange + positiveXRange} (X) by ${negativeZRange + positiveZRange} (Z) chunk area centered on spawn${dimensionString}"
             Mode.FULLY_CUSTOM -> "an area extending $negativeZRange chunks north, $positiveZRange chunks south, " +
-                    "$negativeXRange chunks west, and $positiveXRange chunks east from spawn"
+                    "$negativeXRange chunks west, and $positiveXRange chunks east from spawn${dimensionString}"
         }
     }
 
@@ -128,6 +178,10 @@ class FromWorldSpawnSelector : ChunkSelectorSetting {
         plugin: Homerun,
         world: World
     ): Set<Pair<Int, Int>> {
+        if (dimensions != null && !dimensions.contains(world.environment)) {
+            return emptySet()
+        }
+
         val retainedChunks = mutableSetOf<Pair<Int, Int>>()
         val spawnChunk = world.spawnLocation.chunk
         val minX = spawnChunk.x - negativeXRange
@@ -150,12 +204,14 @@ class FromWorldSpawnSelector : ChunkSelectorSetting {
             Mode.SYMMETRICAL -> {
                 result["from_world_spawn"] = negativeZRange + positiveZRange
             }
+
             Mode.ASYMMETRICAL -> {
                 result["from_world_spawn"] = mapOf(
                     "x" to (negativeXRange + positiveXRange),
                     "z" to (negativeZRange + positiveZRange)
                 )
             }
+
             Mode.FULLY_CUSTOM -> {
                 result["from_world_spawn"] = mapOf(
                     "north" to negativeZRange,
@@ -164,6 +220,11 @@ class FromWorldSpawnSelector : ChunkSelectorSetting {
                     "east" to positiveXRange
                 )
             }
+        }
+        if (dimensions == null) {
+            // Default dimensions, do not serialize
+        } else {
+            result["dimensions"] = dimensions.map { it.name.lowercase() }
         }
         return result
     }
