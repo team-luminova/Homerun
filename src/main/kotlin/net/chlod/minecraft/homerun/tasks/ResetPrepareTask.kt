@@ -89,8 +89,9 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                         rule.parameters.netherBehavior
                     )
                     if (dimResetInstructions != null) {
-                        if (dimResetInstructions.first != null) {
-                            setMetadata(sourceWorld, targetWorld)
+                        val targetWorldNether = dimResetInstructions.first
+                        if (targetWorldNether != null) {
+                            setMetadata(sourceWorldNether, targetWorldNether)
                         }
                         resetInstructionsList.add(dimResetInstructions.second)
                     }
@@ -120,8 +121,9 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                         rule.parameters.endBehavior
                     )
                     if (dimResetInstructions != null) {
-                        if (dimResetInstructions.first != null) {
-                            setMetadata(sourceWorld, targetWorld)
+                        val targetWorldEnd = dimResetInstructions.first
+                        if (targetWorldEnd != null) {
+                            setMetadata(sourceWorldEnd, targetWorldEnd)
                         }
                         resetInstructionsList.add(dimResetInstructions.second)
                     }
@@ -252,6 +254,26 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
             PersistentDataType.STRING,
             sourceWorld.name
         )
+        targetWorld.persistentDataContainer.set(
+            plugin.keys.resetSourceSeed,
+            PersistentDataType.LONG,
+            sourceWorld.seed
+        )
+        if (!targetWorld.persistentDataContainer.has(
+                plugin.keys.resetOriginalSeed,
+                PersistentDataType.LONG
+            )
+        ) {
+            val originalSeed = sourceWorld.persistentDataContainer.get(
+                plugin.keys.resetOriginalSeed,
+                PersistentDataType.LONG
+            ) ?: sourceWorld.seed
+            targetWorld.persistentDataContainer.set(
+                plugin.keys.resetOriginalSeed,
+                PersistentDataType.LONG,
+                originalSeed
+            )
+        }
     }
 
     fun checkGenerateDimension(
