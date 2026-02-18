@@ -8,6 +8,11 @@ class HomerunNamespacedKeys(val plugin: Homerun) {
     // World metadata
 
     /**
+     * Generic "has this world been reset by Homerun" flag.
+     */
+    val reset = NamespacedKey(plugin, "reset")
+
+    /**
      * Key for the number of times a world has been reset.
      */
     val resetCount = NamespacedKey(plugin, "reset_count")

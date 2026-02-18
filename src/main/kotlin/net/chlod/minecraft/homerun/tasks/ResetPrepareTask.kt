@@ -242,6 +242,11 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
 
     fun setMetadata(sourceWorld: World, targetWorld: World) {
         targetWorld.persistentDataContainer.set(
+            plugin.keys.reset,
+            PersistentDataType.BOOLEAN,
+            true
+        )
+        targetWorld.persistentDataContainer.set(
             plugin.keys.resetCount,
             PersistentDataType.INTEGER,
             (sourceWorld.persistentDataContainer.get(
