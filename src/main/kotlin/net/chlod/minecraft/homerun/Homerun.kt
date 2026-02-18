@@ -14,6 +14,7 @@ import net.chlod.minecraft.homerun.data.ResetLock
 import net.chlod.minecraft.homerun.data.world.WorldCopyLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldRenameLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
+import net.chlod.minecraft.homerun.listeners.EndPillarCleanupListener
 import net.chlod.minecraft.homerun.listeners.PlayerLockoutListener
 import net.chlod.minecraft.homerun.listeners.PlayerNotifyListener
 import net.chlod.minecraft.homerun.listeners.PlayerUpgradeListener
@@ -60,6 +61,7 @@ class Homerun : JavaPlugin() {
         saveDefaultConfig()
 
         // Registering event listeners
+        server.pluginManager.registerEvents(EndPillarCleanupListener(this), this)
         server.pluginManager.registerEvents(PlayerUpgradeListener(this), this)
         server.pluginManager.registerEvents(PlayerLockoutListener(this), this)
         server.pluginManager.registerEvents(PlayerNotifyListener(this, resetRules), this)
