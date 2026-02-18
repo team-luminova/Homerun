@@ -48,7 +48,13 @@ class ResetParameters(
     /**
      * Whether to reset the End dimension along with the Overworld.
      */
-    val endBehavior: DimensionResetBehavior = DimensionResetBehavior.NORMAL
+    val endBehavior: DimensionResetBehavior = DimensionResetBehavior.NORMAL,
+    /**
+     * Whether to clean up end pillars after a reset. This covers both removing existing
+     * end pillars and preventing from end crystals from respawning post-reset when they're
+     * not supposed to. This option is only ever used when the endBehavior is not NORMAL.
+     */
+    val endPillarCleanup: Boolean? = true
 ) : ConfigurationSerializable {
 
     companion object {
@@ -115,6 +121,7 @@ class ResetParameters(
             val targetWorldPattern = args["target_world_pattern"] as String?
             val modifyServerProperties = args["modify_server_properties"] as Boolean?
             val restart = args["restart"] as Boolean?
+            val endPillarCleanup = args["end_pillar_cleanup"] as Boolean?
 
             return ResetParameters(
                 retainedChunks,
@@ -124,7 +131,8 @@ class ResetParameters(
                 restart,
                 outsidePlayerBehavior,
                 netherBehavior,
-                endBehavior
+                endBehavior,
+                endPillarCleanup
             )
         }
 
@@ -142,9 +150,10 @@ class ResetParameters(
             "target_world_pattern" to targetWorldPattern,
             "modify_server_properties" to modifyServerProperties,
             "restart" to restart,
-            "outside_player_behavior" to outsidePlayerBehavior?.name?.lowercase(),
-            "nether_behavior" to netherBehavior?.name?.lowercase(),
-            "end_behavior" to endBehavior?.name?.lowercase()
+            "outside_player_behavior" to outsidePlayerBehavior.name.lowercase(),
+            "nether_behavior" to netherBehavior.name.lowercase(),
+            "end_behavior" to endBehavior.name.lowercase(),
+            "end_pillar_cleanup" to endPillarCleanup
         ).filter { it.value != null }
     }
 

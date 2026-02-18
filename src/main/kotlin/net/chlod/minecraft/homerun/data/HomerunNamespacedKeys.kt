@@ -32,6 +32,17 @@ class HomerunNamespacedKeys(val plugin: Homerun) {
      */
     val resetOriginalSeed = NamespacedKey(plugin, "reset_original_seed")
 
+    // Repair work
+
+    /**
+     * Array containing the locations of all end crystals in the world which are naturally-generated.
+     * After the reset, if there are any naturally-generated crystals not in this array, they will
+     * be removed.
+     *
+     * @see net.chlod.minecraft.homerun.listeners.EndPillarCleanupListener
+     */
+    val endCrystals = NamespacedKey(plugin, "end_crystals")
+
     // Player metadata
 
     /**

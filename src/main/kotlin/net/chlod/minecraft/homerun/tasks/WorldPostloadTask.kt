@@ -4,10 +4,13 @@ import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.data.ResetLock
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
+import net.chlod.minecraft.homerun.helpers.EndPillarCleanup
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.NbtAccounter
 import net.minecraft.nbt.NbtIo
 import net.minecraft.nbt.Tag
+import org.bukkit.World
+import org.bukkit.World.Environment
 import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
 import kotlin.io.path.Path
@@ -36,6 +39,15 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
             return
         }
 
+        processPlayerData(resetInstructions, newWorld)
+
+        if (newWorld.environment == Environment.THE_END) {
+            componentLogger.info("Cleaning up end world '${newWorld.name}'...")
+            EndPillarCleanup(plugin).cleanupEndWorld(newWorld)
+        }
+    }
+
+    fun processPlayerData(resetInstructions: WorldResetLoadInstruction, newWorld: World) {
         componentLogger.info("Checking player data...")
         val playersFolder = File(newWorld.worldFolder, "playerdata")
         val playerFiles = playersFolder.listFiles { file -> !file.extension.endsWith("_old") }

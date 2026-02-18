@@ -154,7 +154,8 @@ class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadIn
             "thunderTime",
             "thundering",
             "clearWeatherTime",
-            "BorderSafeZone"
+            "BorderSafeZone",
+            "DragonFight"
         )
 
         for (tag in requiredTags) {

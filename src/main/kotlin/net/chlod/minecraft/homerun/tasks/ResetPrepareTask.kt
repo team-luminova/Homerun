@@ -19,6 +19,7 @@ import org.bukkit.World
 import org.bukkit.World.Environment
 import org.bukkit.WorldCreator
 import org.bukkit.craftbukkit.CraftServer
+import org.bukkit.entity.EnderCrystal
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
@@ -279,6 +280,25 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                 originalSeed
             )
         }
+
+        val knownEndCrystalLocations = mutableListOf<Pair<Double, Double>>()
+        for (crystal in sourceWorld.getEntitiesByClass(EnderCrystal::class.java)) {
+            if (crystal.isShowingBottom) {
+                knownEndCrystalLocations.add(Pair(crystal.x, crystal.z))
+            }
+        }
+        val serializedLocations = knownEndCrystalLocations.map { (x, z) ->
+            // Create a byte array with both coordinates
+            val bytes = ByteArray(16) // 8 bytes per double
+            java.nio.ByteBuffer.wrap(bytes).putDouble(x).putDouble(z)
+            bytes
+        }
+
+        targetWorld.persistentDataContainer.set(
+            plugin.keys.endCrystals,
+            PersistentDataType.LIST.byteArrays(),
+            serializedLocations
+        )
     }
 
     fun checkGenerateDimension(

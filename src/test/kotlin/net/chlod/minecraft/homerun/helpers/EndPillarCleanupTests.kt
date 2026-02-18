@@ -1,9 +1,9 @@
-package net.chlod.minecraft.homerun.listeners
+package net.chlod.minecraft.homerun.helpers
 
 import kotlin.test.Test
 import kotlin.test.assertContains
 
-class EndPillarCleanupListenerTests {
+class EndPillarCleanupTests {
 
     @Test
     fun `test end crystal spawn locations`() {
@@ -20,7 +20,7 @@ class EndPillarCleanupListenerTests {
             Pair(42, 0),
         )
 
-        val actualLocations = EndPillarCleanupListener.endCrystalSpawnLocations
+        val actualLocations = EndPillarCleanup.endCrystalSpawnLocations
 
         assert(expectedLocations.size == actualLocations.size) { "Expected ${expectedLocations.size} locations, but got ${actualLocations.size}" }
 
