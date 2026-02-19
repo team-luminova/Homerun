@@ -41,7 +41,19 @@ class PlayerLockout : WorldLockout {
     }
 
     fun handleLockout(player: Player) {
-        player.kick(Component.text("Server is resetting the world. Please reconnect shortly."))
+        player.kick(
+            Component.text(
+                "Server is resetting the world. Please reconnect shortly."
+            )
+        )
+    }
+
+    fun handleSoftLockout(player: Player) {
+        player.sendMessage(
+            Component.text(
+                "Server is resetting the destination world. Please try again shortly."
+            )
+        )
     }
 
 }

@@ -5,8 +5,8 @@ import net.chlod.minecraft.homerun.data.PlayerLockout
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
-import org.bukkit.event.player.PlayerChangedWorldEvent
 import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerTeleportEvent
 
 class PlayerLockoutListener(val plugin: Homerun) : Listener {
 
@@ -19,10 +19,11 @@ class PlayerLockoutListener(val plugin: Homerun) : Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    fun onWorldChange(event: PlayerChangedWorldEvent) {
-        val lockout = PlayerLockout.of(event.player.world)
+    fun onTeleport(event: PlayerTeleportEvent) {
+        val lockout = PlayerLockout.of(event.to.world)
         if (lockout.isLocked()) {
-            lockout.handleLockout(event.player)
+            event.isCancelled = true
+            lockout.handleSoftLockout(event.player)
         }
     }
 
