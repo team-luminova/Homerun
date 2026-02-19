@@ -8,24 +8,24 @@ import kotlin.math.floor
 /**
  * Selects chunks to retain based on their distance from the world spawn point.
  */
-class FromWorldSpawnSelector : ChunkSelectorSetting {
+open class FromWorldOriginSelector : ChunkSelectorSetting {
 
     companion object {
         @Suppress("unused")
         @JvmStatic
-        fun deserialize(args: Map<String, Any>): FromWorldSpawnSelector {
+        fun deserialize(args: Map<String, Any>): FromWorldOriginSelector {
             val dimensions = deserializeDimensions(args)
 
-            val expression = args["from_world_spawn"]
+            val expression = args["from_world_origin"]
             if (expression is Int) {
-                return FromWorldSpawnSelector(expression, dimensions)
+                return FromWorldOriginSelector(expression, dimensions)
             }
             if (expression is Map<*, *>) {
                 val x = expression["x"]
                 val z = expression["z"]
 
                 if (x is Int && z is Int) {
-                    return FromWorldSpawnSelector(z, x, dimensions)
+                    return FromWorldOriginSelector(z, x, dimensions)
                 }
 
                 val north = expression["north"]
@@ -34,11 +34,11 @@ class FromWorldSpawnSelector : ChunkSelectorSetting {
                 val east = expression["east"]
 
                 if (north is Int && south is Int && west is Int && east is Int) {
-                    return FromWorldSpawnSelector(north, south, west, east, dimensions)
+                    return FromWorldOriginSelector(north, south, west, east, dimensions)
                 }
             }
             throw IllegalArgumentException(
-                "Couldn't deserialize FromWorldSpawnSelector: invalid setting (must be range, x/z range, or north/south/west/east range)"
+                "Couldn't deserialize FromWorldOriginSelector: invalid setting (must be range, x/z range, or north/south/west/east range)"
             )
         }
     }
@@ -153,11 +153,10 @@ class FromWorldSpawnSelector : ChunkSelectorSetting {
         }
 
         val retainedChunks = mutableSetOf<Pair<Int, Int>>()
-        val spawnChunk = world.spawnLocation.chunk
-        val minX = spawnChunk.x - negativeXRange
-        val maxX = spawnChunk.x + positiveXRange - 1
-        val minZ = spawnChunk.z - negativeZRange
-        val maxZ = spawnChunk.z + positiveZRange - 1
+        val minX = -negativeXRange
+        val maxX = positiveXRange - 1
+        val minZ = -negativeZRange
+        val maxZ = +positiveZRange - 1
 
         for (x in minX..maxX) {
             for (z in minZ..maxZ) {
@@ -172,18 +171,18 @@ class FromWorldSpawnSelector : ChunkSelectorSetting {
         val result = mutableMapOf<String?, Any?>()
         when (mode) {
             Mode.SYMMETRICAL -> {
-                result["from_world_spawn"] = negativeZRange + positiveZRange
+                result["from_world_origin"] = negativeZRange + positiveZRange
             }
 
             Mode.ASYMMETRICAL -> {
-                result["from_world_spawn"] = mapOf(
+                result["from_world_origin"] = mapOf(
                     "x" to (negativeXRange + positiveXRange),
                     "z" to (negativeZRange + positiveZRange)
                 )
             }
 
             Mode.FULLY_CUSTOM -> {
-                result["from_world_spawn"] = mapOf(
+                result["from_world_origin"] = mapOf(
                     "north" to negativeZRange,
                     "south" to positiveZRange,
                     "west" to negativeXRange,

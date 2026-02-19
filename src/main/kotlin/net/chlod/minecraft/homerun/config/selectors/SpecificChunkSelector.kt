@@ -3,7 +3,7 @@ package net.chlod.minecraft.homerun.config.selectors
 import net.chlod.minecraft.homerun.Homerun
 import org.bukkit.World
 
-class SpecificChunkSelector(val chunks: List<Pair<Int, Int>>, val verbose: Boolean?) : ChunkSelectorSetting {
+class SpecificChunkSelector(val chunks: List<Pair<Int, Int>>, val verbose: Boolean?) : ChunkSelectorSetting() {
 
     companion object {
         @Suppress("unused")
