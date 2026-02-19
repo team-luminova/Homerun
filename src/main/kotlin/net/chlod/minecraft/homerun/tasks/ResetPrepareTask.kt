@@ -30,108 +30,98 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
     val componentLogger = plugin.componentLogger
     val server = plugin.server
 
+    inner class DimensionResetSubtask(val sourceWorld: World, val sourceBehavior: DimensionResetBehavior?) {
+        fun onLockout(): PlayerLockout {
+            val dimLockout = PlayerLockout.of(sourceWorld)
+            dimLockout.lock()
+            dimLockout.kickAll()
+            return dimLockout
+        }
+
+        fun onGenerate(targetWorldName: String): ResetLoadInstructions? {
+            sourceWorld.save(true)
+            val dimResetInstructions = checkGenerateDimension(
+                sourceWorld,
+                targetWorldName,
+                sourceBehavior,
+            )
+            if (dimResetInstructions != null) {
+                val targetWorldDim = dimResetInstructions.first
+                if (targetWorldDim != null) {
+                    setMetadata(sourceWorld, targetWorldDim)
+                }
+                return dimResetInstructions.second
+            } else {
+                return null
+            }
+        }
+    }
+
     override fun run() {
         if (Bukkit.isTickingWorlds()) {
             return
         }
 
-        // Load old world
+        // 1. Load old world
         val sourceWorld = server.getWorld(rule.parameters.world ?: server.worlds[0].name)
         if (sourceWorld == null) {
-            componentLogger.error("Could not reset world: world '${rule.parameters.world}' not found")
+            componentLogger.error("Could not reset world: world '${rule.parameters.world}' not loaded")
             cancel()
             return
         }
 
+        // 2. Kick out all players and prevent new joins or teleports until we're done
         val lockouts = mutableListOf<PlayerLockout>()
         val lockout = PlayerLockout.of(sourceWorld)
         lockouts.add(lockout)
         lockout.lock()
         lockout.kickAll()
-        sourceWorld.save(true)
 
+        // 2a. Process dimensions and, if they also need to lockout, lockout.
+        val netherResetSubtask = processNether(sourceWorld)
+        val endResetSubtask = processEnd(sourceWorld)
+        if (netherResetSubtask != null) {
+            lockouts.add(netherResetSubtask.onLockout())
+        }
+        if (endResetSubtask != null) {
+            lockouts.add(endResetSubtask.onLockout())
+        }
+
+        // 2b. We can consider this task as "past the point of no return"; let's cancel it to prevent it from running
+        // on next tick.
+        cancel()
+
+        // 3. Generate new world with substituted name, and save old world to ensure all data is written to disk.
         val worldPatternSubstitutor = TargetWorldPatternSubstitutor(plugin, rule)
         val targetWorldName = worldPatternSubstitutor.substitute(
             sourceWorld, rule.parameters.targetWorldPattern ?: $$"$${sourceWorld.name}_${timestamp}"
         )
-
         val targetWorld = generateWorld(sourceWorld, targetWorldName) ?: return
-        cancel()
+        sourceWorld.save(true)
         setMetadata(sourceWorld, targetWorld)
 
+        // 4. Gather information about the world to be used for loading, and generate chunks in the import area of the
+        // new world to ensure an .mca file is created for the region.
         val resetInstructionsList = mutableListOf<ResetLoadInstructions>()
         val resetInstructions = gatherWorldInformation(sourceWorld, targetWorldName)
         resetInstructionsList.add(resetInstructions)
-        // Generate chunks in the expected import region so that an .mca file will be made
-        // for that region.
         generateWorldChunks(resetInstructions.chunks!!, targetWorld)
 
-        if (sourceWorld.environment != Environment.NORMAL && rule.parameters.netherBehavior != DimensionResetBehavior.WIPE) {
-            componentLogger.warn("Tried to reset Nether for world of ${sourceWorld.environment.name} dimension. Skipping...")
-        } else {
-            when (val sourceWorldNether = server.getWorld("${sourceWorld.name}_nether")) {
-                null if rule.parameters.netherBehavior != DimensionResetBehavior.WIPE -> {
-                    componentLogger.warn("Source world Nether dimension not found, skipping Nether generation...")
-                }
-
-                null -> {
-                    /* do nothing. This condition exists for smart casting. */
-                }
-
-                else -> {
-                    val dimLockout = PlayerLockout.of(sourceWorldNether)
-                    lockouts.add(dimLockout)
-                    dimLockout.lock()
-                    dimLockout.kickAll()
-                    sourceWorldNether.save(true)
-                    val dimResetInstructions = checkGenerateDimension(
-                        sourceWorldNether,
-                        targetWorldName,
-                        rule.parameters.netherBehavior
-                    )
-                    if (dimResetInstructions != null) {
-                        val targetWorldNether = dimResetInstructions.first
-                        if (targetWorldNether != null) {
-                            setMetadata(sourceWorldNether, targetWorldNether)
-                        }
-                        resetInstructionsList.add(dimResetInstructions.second)
-                    }
-                }
+        // 4a. Do the same for dimensions, if necessary.
+        if (netherResetSubtask != null) {
+            val netherResetInstructions = netherResetSubtask.onGenerate(targetWorldName)
+            if (netherResetInstructions != null) {
+                resetInstructionsList.add(netherResetInstructions)
             }
         }
-        if (sourceWorld.environment != Environment.NORMAL && rule.parameters.endBehavior != DimensionResetBehavior.WIPE) {
-            componentLogger.warn("Tried to reset End for world of ${sourceWorld.environment.name} dimension. Skipping...")
-        } else {
-            when (val sourceWorldEnd = server.getWorld("${sourceWorld.name}_the_end")) {
-                null if rule.parameters.endBehavior != DimensionResetBehavior.WIPE -> {
-                    componentLogger.warn("Source world End dimension not found, skipping End generation...")
-                }
-
-                null -> { /* do nothing. This condition exists for smart casting. */
-                }
-
-                else -> {
-                    val dimLockout = PlayerLockout.of(sourceWorldEnd)
-                    lockouts.add(dimLockout)
-                    dimLockout.lock()
-                    dimLockout.kickAll()
-                    sourceWorldEnd.save(true)
-                    val dimResetInstructions = checkGenerateDimension(
-                        sourceWorldEnd,
-                        targetWorldName,
-                        rule.parameters.endBehavior
-                    )
-                    if (dimResetInstructions != null) {
-                        val targetWorldEnd = dimResetInstructions.first
-                        if (targetWorldEnd != null) {
-                            setMetadata(sourceWorldEnd, targetWorldEnd)
-                        }
-                        resetInstructionsList.add(dimResetInstructions.second)
-                    }
-                }
+        if (endResetSubtask != null) {
+            val endResetInstructions = endResetSubtask.onGenerate(targetWorldName)
+            if (endResetInstructions != null) {
+                resetInstructionsList.add(endResetInstructions)
             }
         }
 
+        // 5. Create instruction list
         val resetLock = ResetLock.create(
             plugin,
             resetInstructionsList
@@ -139,17 +129,18 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         resetLock.save()
         componentLogger.info("Reset instructions list saved.")
 
-        // Copy datapacks
+        // 6. Copy datapacks now to ensure they're in place when the world is loaded, otherwise they will be marked
+        // as missing before our plugin load listeners even fire.
         for (instructions in resetInstructionsList) {
             if (instructions is WorldResetLoadInstruction) {
                 WorldDataTransferUtil(plugin, instructions).copyDatapacks()
             }
         }
 
+        // 7. Modify server properties to set new world as spawn world, and restart if necessary.
         if (rule.parameters.modifyServerProperties ?: true) {
             modifyServerPropertiesViaReflection(targetWorldName)
         }
-
         if (rule.parameters.restart ?: (rule.parameters.modifyServerProperties ?: false)) {
             componentLogger.info("Restarting server...")
             server.restart()
@@ -161,7 +152,51 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
             componentLogger.warn("You should remove the \"restart\" parameter for this reset rule, or set it to true.")
         }
 
+        // If the server isn't restarting, we can unlock the world immediately since players will be kicked and
+        // won't be able to rejoin until they see the new world name in the server list.
         lockouts.forEach { it.unlock() }
+    }
+
+    fun processNether(sourceWorld: World): DimensionResetSubtask? {
+        if (sourceWorld.environment != Environment.NORMAL && rule.parameters.netherBehavior != DimensionResetBehavior.WIPE) {
+            componentLogger.warn("Tried to reset Nether for world of ${sourceWorld.environment.name} dimension. Skipping...")
+            return null
+        } else {
+            when (val sourceWorldNether = server.getWorld("${sourceWorld.name}_nether")) {
+                null if rule.parameters.netherBehavior != DimensionResetBehavior.WIPE -> {
+                    componentLogger.warn("Source world Nether dimension not found, skipping Nether generation...")
+                    return null
+                }
+
+                null -> {
+                    /* do nothing. This condition exists for smart casting. */
+                    return null
+                }
+
+                else -> return DimensionResetSubtask(sourceWorldNether, rule.parameters.netherBehavior)
+            }
+        }
+    }
+
+    fun processEnd(sourceWorld: World): DimensionResetSubtask? {
+        if (sourceWorld.environment != Environment.NORMAL && rule.parameters.endBehavior != DimensionResetBehavior.WIPE) {
+            componentLogger.warn("Tried to reset End for world of ${sourceWorld.environment.name} dimension. Skipping...")
+            return null
+        } else {
+            when (val sourceWorldEnd = server.getWorld("${sourceWorld.name}_the_end")) {
+                null if rule.parameters.endBehavior != DimensionResetBehavior.WIPE -> {
+                    componentLogger.warn("Source world End dimension not found, skipping End generation...")
+                    return null
+                }
+
+                null -> {
+                    /* do nothing. This condition exists for smart casting. */
+                    return null
+                }
+
+                else -> return DimensionResetSubtask(sourceWorldEnd, rule.parameters.endBehavior)
+            }
+        }
     }
 
     fun modifyServerPropertiesViaReflection(targetWorldName: String) {
