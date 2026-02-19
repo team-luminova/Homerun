@@ -4,6 +4,7 @@ import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler
 import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
+import net.chlod.minecraft.homerun.command.LockoutCommand
 import net.chlod.minecraft.homerun.command.ResetCommand
 import net.chlod.minecraft.homerun.command.TpworldCommand
 import net.chlod.minecraft.homerun.config.ResetParameters
@@ -78,6 +79,10 @@ class Homerun : JavaPlugin() {
                 commands.registrar().register(
                     ResetCommand.createCommand(this, "reset"),
                     "Forces a reset with the specified rule"
+                )
+                commands.registrar().register(
+                    LockoutCommand.createCommand("lockout"),
+                    "Handle world lockouts created by Homerun"
                 )
             })
 
