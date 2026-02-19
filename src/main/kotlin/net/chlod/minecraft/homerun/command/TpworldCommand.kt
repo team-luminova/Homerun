@@ -39,9 +39,10 @@ class TpworldCommand {
                                         sender.location.yaw, sender.location.pitch
                                     )
                                 )
+                                Command.SINGLE_SUCCESS
+                            } else {
+                                return@executes 0
                             }
-
-                            Command.SINGLE_SUCCESS
                         }
                 )
                 .build()
