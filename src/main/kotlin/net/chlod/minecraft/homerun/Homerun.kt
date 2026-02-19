@@ -15,10 +15,8 @@ import net.chlod.minecraft.homerun.data.ResetLock
 import net.chlod.minecraft.homerun.data.world.WorldCopyLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldRenameLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
-import net.chlod.minecraft.homerun.listeners.EndPillarCleanupListener
-import net.chlod.minecraft.homerun.listeners.PlayerLockoutListener
-import net.chlod.minecraft.homerun.listeners.PlayerNotifyListener
-import net.chlod.minecraft.homerun.listeners.PlayerUpgradeListener
+import net.chlod.minecraft.homerun.helpers.RetainedChunkCache
+import net.chlod.minecraft.homerun.listeners.*
 import net.chlod.minecraft.homerun.tasks.ResetLoadTask
 import net.chlod.minecraft.homerun.tasks.ResetPrepareTask
 import net.chlod.minecraft.homerun.tasks.WorldPostloadTask
@@ -31,6 +29,7 @@ class Homerun : JavaPlugin() {
     val keys = HomerunNamespacedKeys(this)
 
     val resetRules = mutableListOf<ResetRule>()
+    val retainedChunkCache = RetainedChunkCache(this, resetRules)
     private var appliedResetLocks = mutableListOf<ResetLock>()
     private var conditionCheckTask: Int? = null
 
@@ -65,7 +64,8 @@ class Homerun : JavaPlugin() {
         server.pluginManager.registerEvents(EndPillarCleanupListener(this), this)
         server.pluginManager.registerEvents(PlayerUpgradeListener(this), this)
         server.pluginManager.registerEvents(PlayerLockoutListener(this), this)
-        server.pluginManager.registerEvents(PlayerNotifyListener(this, resetRules), this)
+        server.pluginManager.registerEvents(PlayerNotifyListener(this), this)
+        server.pluginManager.registerEvents(RetainedChunkCacheListener(this), this)
 
         // Registering commands
         @Suppress("UnstableApiUsage")
@@ -91,6 +91,10 @@ class Homerun : JavaPlugin() {
         for (appliedResetLock in appliedResetLocks) {
             WorldPostloadTask(this, appliedResetLock).run()
         }
+
+        // Caching retained chunks for player notifications
+        retainedChunkCache.cacheRetainedChunks()
+
         // Unlock player joins
         PlayerLockout.global.unlock()
 
