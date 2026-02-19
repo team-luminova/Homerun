@@ -281,16 +281,19 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
             )
         }
 
-        val knownEndCrystalLocations = mutableListOf<Pair<Double, Double>>()
+        val knownEndCrystalLocations = mutableListOf<Triple<Double, Double, Double>>()
         for (crystal in sourceWorld.getEntitiesByClass(EnderCrystal::class.java)) {
             if (crystal.isShowingBottom) {
-                knownEndCrystalLocations.add(Pair(crystal.x, crystal.z))
+                knownEndCrystalLocations.add(Triple(crystal.x, crystal.y, crystal.z))
             }
         }
-        val serializedLocations = knownEndCrystalLocations.map { (x, z) ->
+        val serializedLocations = knownEndCrystalLocations.map { (x, y, z) ->
             // Create a byte array with both coordinates
-            val bytes = ByteArray(16) // 8 bytes per double
-            java.nio.ByteBuffer.wrap(bytes).putDouble(x).putDouble(z)
+            val bytes = ByteArray(8 * 3) // 8 bytes per double
+            java.nio.ByteBuffer.wrap(bytes)
+                .putDouble(x)
+                .putDouble(y)
+                .putDouble(z)
             bytes
         }
 

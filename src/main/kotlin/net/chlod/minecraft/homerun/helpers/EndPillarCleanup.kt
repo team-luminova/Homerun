@@ -8,27 +8,8 @@ import org.bukkit.boss.DragonBattle
 import org.bukkit.entity.EnderCrystal
 import org.bukkit.entity.Entity
 import org.bukkit.persistence.PersistentDataType
-import kotlin.math.cos
-import kotlin.math.floor
-import kotlin.math.sin
 
 open class EndPillarCleanup {
-
-    companion object {
-        val endCrystalSpawnLocations: List<Pair<Int, Int>> by lazy {
-            calculateEndCrystalSpawnLocations()
-        }
-
-        private fun calculateEndCrystalSpawnLocations(): List<Pair<Int, Int>> {
-            val locations = mutableListOf<Pair<Int, Int>>()
-            for (i in 0..9) {
-                val centerX = floor(42.0 * cos(2.0 * (-Math.PI + (Math.PI / 10) * i)))
-                val centerZ = floor(42.0 * sin(2.0 * (-Math.PI + (Math.PI / 10) * i)))
-                locations.add(Pair(centerX.toInt(), centerZ.toInt()))
-            }
-            return locations
-        }
-    }
 
     protected val plugin: Homerun
     protected val worldUtils: WorldUtils
@@ -65,8 +46,9 @@ open class EndPillarCleanup {
         val knownEndCrystalLocations = serializedLocations.map { bytes ->
             val buffer = java.nio.ByteBuffer.wrap(bytes)
             val x = buffer.double  // Read first double (x coordinate)
+            val y = buffer.double  // Read first double (x coordinate)
             val z = buffer.double  // Read second double (z coordinate)
-            Pair(x, z)
+            Triple(x, y, z)
         }
 
         val foundCrystals = world.getEntitiesByClass(EnderCrystal::class.java)
@@ -81,67 +63,19 @@ open class EndPillarCleanup {
                 continue
             }
             val crystalX = crystal.location.x
+            val crystalY = crystal.location.y
             val crystalZ = crystal.location.z
-            if (knownEndCrystalLocations.any { (x, z) ->
-                    x in (crystalX - 1)..(crystalX + 1) && z in (crystalZ - 1)..(crystalZ + 1)
+            if (knownEndCrystalLocations.any { (x, y, z) ->
+                    x in (crystalX - 1)..(crystalX + 1) &&
+                            y in (crystalY - 1)..(crystalY + 1) &&
+                            z in (crystalZ - 1)..(crystalZ + 1)
                 }) {
-                // This end crystal is in a known spawn location. Ignore it.
+                // This end crystal is recognized. Ignore it.
                 continue
             }
-            // This end crystal is not in a known spawn location. Destroy it.
+            // This end crystal is not recognized. Destroy it.
             plugin.logger.info("Detected unrecognized end crystal at ${crystal.location}. Removing it.")
             crystal.remove()
-        }
-    }
-
-    fun cleanupExistingEndCrystal(world: World, endCrystal: Entity) {
-        // TODO: Keep track of crystals that exist at reset time and delete all crystals (within spike radii) that
-        // aren't in that list for any reason (upon world postload).
-
-        // Check if this is a valid end spike crystal.
-        // A crystal is valid if it is within the spawn range of an end spike. The end spike spawn locations are
-        // determinable by a known formula, regardless of seed. More info: https://minecraft.wiki/w/End_Spike#Construction
-        var isPositionValid = false
-        for (spawnLocation in endCrystalSpawnLocations) {
-            val spawnX = spawnLocation.first
-            val spawnZ = spawnLocation.second
-            if (
-                endCrystal.location.blockX !in (spawnX - 1)..(spawnX + 1)
-                || endCrystal.location.blockZ !in (spawnZ - 1)..(spawnZ + 1)
-            ) {
-                // This end crystal is outside the spawn range of an end spike.
-                isPositionValid = true
-                break
-            }
-        }
-        if (!isPositionValid) {
-            // This end crystal is not within the spawn range of any end spike. Ignore it.
-            return
-        }
-
-        // If we're here, then this is a valid end spike crystal. We need to check if it's positioned correctly.
-        // Not on bedrock? Destroy it. This handles floating end crystals.
-        val crystalBaseBlock = world.getBlockAt(
-            endCrystal.location.blockX,
-            endCrystal.location.blockY - 1,
-            endCrystal.location.blockZ
-        )
-        if (crystalBaseBlock.type !== Material.BEDROCK) {
-            plugin.logger.info("Detected end crystal at ${endCrystal.location} that is not positioned on bedrock. Removing it.")
-            endCrystal.remove()
-            return
-        }
-        val crystalBlock = world.getBlockAt(
-            endCrystal.location.blockX,
-            endCrystal.location.blockY,
-            endCrystal.location.blockZ
-        )
-        // Positioned inside of obsidian? Destroy it and the bedrock block below it. This handles end crystals that are
-        // stuck inside a spike.
-        if (crystalBlock.type === Material.OBSIDIAN) {
-            plugin.logger.info("Detected end crystal at ${endCrystal.location} that is stuck in obsidian. Removing it.")
-            endCrystal.remove()
-            crystalBaseBlock.type = Material.OBSIDIAN
         }
     }
 
