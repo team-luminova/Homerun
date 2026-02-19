@@ -1,9 +1,6 @@
 package net.chlod.minecraft.homerun.config
 
-import net.chlod.minecraft.homerun.config.selectors.ChunkSelectorSetting
-import net.chlod.minecraft.homerun.config.selectors.FromWorldOriginSelector
-import net.chlod.minecraft.homerun.config.selectors.FromWorldSpawnSelector
-import net.chlod.minecraft.homerun.config.selectors.SpecificChunkSelector
+import net.chlod.minecraft.homerun.config.selectors.*
 import org.bukkit.configuration.serialization.ConfigurationSerializable
 
 class ResetParameters(
@@ -64,7 +61,8 @@ class ResetParameters(
         val SELECTORS = listOf(
             FromWorldSpawnSelector,
             SpecificChunkSelector,
-            FromWorldOriginSelector
+            FromWorldOriginSelector,
+            EndMainIslandSelector
         )
 
         @Suppress("unused")

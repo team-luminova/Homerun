@@ -78,5 +78,5 @@ reset_rules:
                 # Retain 16 chunks centered on the world spawn point (i.e. 256 blocks across; 8 chunks in each direction).
                 -   from_world_spawn: 16
                 # Retain the entire End center island (the island at 0,0).
-                -   from_world_spawn: 20
-                    dimensions: the_end
+                # This selector only works for the End dimension, and is ignored for other dimensions.
+                -   end_main_island: true
