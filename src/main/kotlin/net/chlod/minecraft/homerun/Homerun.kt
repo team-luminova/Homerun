@@ -5,6 +5,7 @@ import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler
 import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.chlod.minecraft.homerun.command.LockoutCommand
+import net.chlod.minecraft.homerun.command.ReloadChunkCacheCommand
 import net.chlod.minecraft.homerun.command.ResetCommand
 import net.chlod.minecraft.homerun.command.TpworldCommand
 import net.chlod.minecraft.homerun.config.ResetParameters
@@ -83,6 +84,10 @@ class Homerun : JavaPlugin() {
                 commands.registrar().register(
                     LockoutCommand.createCommand("lockout"),
                     "Handle world lockouts created by Homerun"
+                )
+                commands.registrar().register(
+                    ReloadChunkCacheCommand.createCommand(this, "reloadchunkcache"),
+                    "Reloads the retained chunk cache used for player notifications"
                 )
             })
 

@@ -42,20 +42,18 @@ class RetainedChunkCache(val plugin: Homerun, val resetRules: List<ResetRule>) {
                 cacheRetainedChunksForWorld(resetRule, endWorld)
             }
         }
-        plugin.componentLogger.info("Cached retained chunks in ${worldChunks.size} worlds for player notifications.")
+        val totalChunks = worldChunks.values.sumOf { it -> it.values.sumOf { it.size } }
+        plugin.componentLogger.info("Cached $totalChunks retained chunks in ${worldChunks.size} worlds for player notifications.")
     }
 
     private fun cacheRetainedChunksForWorld(resetRule: ResetRule, world: World) {
         val retainedChunkSets = resetRule.parameters.retainedChunks.map {
             it.getRetainedChunks(plugin, world)
         }
-        for (retainedChunks in retainedChunkSets) {
-            if (world.name !in worldChunks) {
-                worldChunks[world.name] = mutableMapOf()
-            }
-
-            worldChunks[world.name]!![resetRule] = retainedChunks
+        if (world.name !in worldChunks) {
+            worldChunks[world.name] = mutableMapOf()
         }
+        worldChunks[world.name]!![resetRule] = retainedChunkSets.flatten().toSet()
     }
 
 }
