@@ -10,7 +10,7 @@ class RetainedChunkCacheListener(val plugin: Homerun) : Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     fun onWorldLoad(event: WorldLoadEvent) {
-        plugin.retainedChunkCache.cacheRetainedChunks()
+        plugin.retainedChunkCache.flushCaches()
     }
 
 }
