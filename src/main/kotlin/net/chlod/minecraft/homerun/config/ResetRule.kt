@@ -1,5 +1,8 @@
 package net.chlod.minecraft.homerun.config
 
+import net.chlod.minecraft.homerun.config.borders.HighestBlockBorderType
+import net.chlod.minecraft.homerun.config.borders.ParticleBorderType
+import net.chlod.minecraft.homerun.config.borders.ResetBorder
 import net.chlod.minecraft.homerun.config.conditions.AlwaysResetCondition
 import net.chlod.minecraft.homerun.config.conditions.CronResetCondition
 import net.chlod.minecraft.homerun.config.conditions.ResetCondition
@@ -16,6 +19,7 @@ class ResetRule(
     val enabled: Boolean? = false,
     val notifyEnter: Boolean? = false,
     val notifyExit: Boolean? = false,
+    val borders: List<ResetBorder>? = null,
     /**
      * Methods to use for warning players about an upcoming reset.
      */
@@ -81,10 +85,31 @@ class ResetRule(
             val notifyEnter = (args["notify_enter"] ?: args["notify"]) as? Boolean
             val notifyExit = (args["notify_exit"] ?: args["notify"]) as? Boolean
 
+            val bordersRaw = args["borders"] as? List<*>
+            val borders: MutableList<ResetBorder> = ArrayList()
+            bordersRaw?.forEachIndexed { i, border ->
+                try {
+                    @Suppress("UNCHECKED_CAST")
+                    val result = ResetBorder.deserializeType(border as Map<String, Any>)
+                    borders.add(
+                        when (result) {
+                            ResetBorder.BorderType.HIGHEST_BLOCK ->
+                                HighestBlockBorderType.deserialize(border)
+
+                            ResetBorder.BorderType.PARTICLES ->
+                                ParticleBorderType.deserialize(border)
+                        }
+                    )
+                } catch (e: Exception) {
+                    throw IllegalArgumentException("can't deserialize border type #$i", e)
+                }
+            }
+
             val warningsRaw = args["warnings"] as? List<*>
             val warnings: MutableList<ResetWarningMethod> = ArrayList()
             warningsRaw?.forEachIndexed { i, warningMethod ->
                 try {
+                    @Suppress("UNCHECKED_CAST")
                     val result = ResetWarningMethod.deserializeType(warningMethod as Map<String, Any>)
                     warnings.add(
                         when (result) {
@@ -113,6 +138,7 @@ class ResetRule(
                 enabled,
                 notifyEnter,
                 notifyExit,
+                borders,
                 warnings
             )
         }
@@ -137,6 +163,9 @@ class ResetRule(
             }
             if (notifyExit != null) {
                 put("notify_exit", notifyExit)
+            }
+            if (borders != null) {
+                put("borders", borders.map { it.serialize() })
             }
             put("conditions", serializedConditions)
             if (warnings != null) {

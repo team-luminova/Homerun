@@ -36,6 +36,27 @@ class Adjacency {
                 }
             }.toMap()
         }
+
+        fun findAdjacentUnflaggedPositions(
+            allPositions: Set<Pair<Int, Int>>,
+            flaggedPositions: Set<Pair<Int, Int>>
+        ): Map<Pair<Int, Int>, List<Direction>> {
+            return flaggedPositions.mapNotNull { position ->
+                val unflaggedDirections = Direction.entries.filter { direction ->
+                    val neighbor = Pair(
+                        position.first + direction.dx,
+                        position.second + direction.dz
+                    )
+                    neighbor in allPositions && neighbor !in flaggedPositions
+                }
+
+                if (unflaggedDirections.isNotEmpty()) {
+                    position to unflaggedDirections
+                } else {
+                    null
+                }
+            }.toMap()
+        }
     }
 
 }

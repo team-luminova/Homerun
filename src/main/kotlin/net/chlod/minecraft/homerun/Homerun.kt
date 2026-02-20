@@ -33,6 +33,7 @@ class Homerun : JavaPlugin() {
     val retainedChunkCache = RetainedChunkCache(this, resetRules)
     private var appliedResetLocks = mutableListOf<ResetLock>()
     private var conditionCheckTask: Int? = null
+    private var borderCheckTask: Int? = null
 
     override fun onLoad() {
         ConfigurationSerialization.registerClass(ResetRule::class.java)
@@ -66,6 +67,7 @@ class Homerun : JavaPlugin() {
         server.pluginManager.registerEvents(PlayerUpgradeListener(this), this)
         server.pluginManager.registerEvents(PlayerLockoutListener(this), this)
         server.pluginManager.registerEvents(PlayerNotifyListener(this), this)
+        server.pluginManager.registerEvents(PlayerBorderListener(this), this)
         server.pluginManager.registerEvents(RetainedChunkCacheListener(this), this)
 
         // Registering commands
@@ -167,14 +169,22 @@ class Homerun : JavaPlugin() {
                     }
                 }
             }, 0, 1L)
+        borderCheckTask = server.scheduler
+            .scheduleSyncRepeatingTask(this, {
+                resetRules.forEach { resetRule ->
+                    resetRule.borders?.forEach { it.onTick(this, resetRule) }
+                }
+            }, 0, 4L)
     }
 
     override fun onDisable() {
         // Plugin shutdown logic
-        if (conditionCheckTask == null || conditionCheckTask == -1) {
-            return
+        if (conditionCheckTask != null && conditionCheckTask != -1) {
+            server.scheduler.cancelTask(conditionCheckTask!!)
         }
-        server.scheduler.cancelTask(conditionCheckTask!!)
+        if (borderCheckTask != null && borderCheckTask != -1) {
+            server.scheduler.cancelTask(borderCheckTask!!)
+        }
     }
 
     private fun loadResetRules() {

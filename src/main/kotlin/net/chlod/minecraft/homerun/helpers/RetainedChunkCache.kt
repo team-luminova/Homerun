@@ -9,16 +9,71 @@ import org.bukkit.World
 class RetainedChunkCache(val plugin: Homerun, val resetRules: List<ResetRule>) {
 
     class ChunkAdjacency(
+        val x: Int,
+        val z: Int,
         /**
          * Whether this is a retained chunk.
          */
         val retained: Boolean,
         /**
-         * The directions in which this chunk is adjacent to retained chunks. This is empty if the
-         * chunk itself is retained.
+         * The directions in which this chunk is adjacent to retained chunks. If this is a retained chunk
+         * itself, the directions in which it is adjacent to non-retained chunks.
          */
         val directions: List<Adjacency.Direction>
-    )
+    ) {
+        /**
+         * Get local coordinates of border blocks for this chunk based on the directions. For example, if the chunk
+         * has a border on the north side, all blocks with local z coordinate 0 are border blocks, and their coordinates
+         * (<0, 0> to <15, 0>) are returned.
+         */
+        fun getBorderBlocks(): List<Pair<Int, Int>> {
+            val borderBlocks = mutableListOf<Pair<Int, Int>>()
+            for (direction in directions) {
+                when (direction) {
+                    Adjacency.Direction.NORTH -> {
+                        for (x in 0..15) {
+                            borderBlocks.add(Pair(x, 0))
+                        }
+                    }
+
+                    Adjacency.Direction.SOUTH -> {
+                        for (x in 0..15) {
+                            borderBlocks.add(Pair(x, 15))
+                        }
+                    }
+
+                    Adjacency.Direction.EAST -> {
+                        for (z in 0..15) {
+                            borderBlocks.add(Pair(15, z))
+                        }
+                    }
+
+                    Adjacency.Direction.WEST -> {
+                        for (z in 0..15) {
+                            borderBlocks.add(Pair(0, z))
+                        }
+                    }
+
+                    Adjacency.Direction.NORTHEAST -> {
+                        borderBlocks.add(Pair(15, 0))
+                    }
+
+                    Adjacency.Direction.SOUTHEAST -> {
+                        borderBlocks.add(Pair(15, 15))
+                    }
+
+                    Adjacency.Direction.SOUTHWEST -> {
+                        borderBlocks.add(Pair(0, 15))
+                    }
+
+                    Adjacency.Direction.NORTHWEST -> {
+                        borderBlocks.add(Pair(0, 0))
+                    }
+                }
+            }
+            return borderBlocks
+        }
+    }
 
     private val worldChunks = mutableMapOf<String, MutableMap<ResetRule, Set<Pair<Int, Int>>>>()
     private val chunkAdjacencyCache = mutableMapOf<String, MutableMap<Pair<Int, Int>, ChunkAdjacency>>()
@@ -28,24 +83,33 @@ class RetainedChunkCache(val plugin: Homerun, val resetRules: List<ResetRule>) {
     }
 
     /**
-     * Finds all chunks that are adjacent to retained chunks for the given world. Only chunks which are in allChunks
-     * are checked; if a chunk is adjacent to a retained chunk but not in allChunks, it will be ignored for performance.
-     * If allChunks contains all surrounding adjacent chunks of an inner chunk, the result is cached.
+     * Finds all chunks adjacencies for the given chunks. For chunks that are retained, this returns directions
+     * of non-retained chunks. For chunks that are not retained, this returns directions of adjacent retained chunks.
      *
      * If the world is not cached, returns null.
      */
-    fun getAdjacentRetainedChunks(world: World, allChunks: Set<Pair<Int, Int>>): Map<Pair<Int, Int>, ChunkAdjacency>? {
+    fun getChunkAdjacency(world: World, allChunks: Set<Pair<Int, Int>>): Map<Pair<Int, Int>, ChunkAdjacency>? {
         val result = mutableMapOf<Pair<Int, Int>, ChunkAdjacency>()
         val worldCache = chunkAdjacencyCache[world.name] ?: return null
         for (chunk in allChunks) {
             var chunkAdjacency = worldCache[chunk]
             if (chunkAdjacency == null) {
-                chunkAdjacency = ChunkAdjacency(false, emptyList())
+                chunkAdjacency = ChunkAdjacency(chunk.first, chunk.second, false, emptyList())
                 worldCache[chunk] = chunkAdjacency
             }
             result[chunk] = chunkAdjacency
         }
         return result
+    }
+
+    fun getChunkAdjacency(world: World, chunk: Pair<Int, Int>): ChunkAdjacency? {
+        val worldCache = chunkAdjacencyCache[world.name] ?: return null
+        var chunkAdjacency = worldCache[chunk]
+        if (chunkAdjacency == null) {
+            chunkAdjacency = ChunkAdjacency(chunk.first, chunk.second, false, emptyList())
+            worldCache[chunk] = chunkAdjacency
+        }
+        return chunkAdjacency
     }
 
     fun flushCaches() {
@@ -110,17 +174,17 @@ class RetainedChunkCache(val plugin: Homerun, val resetRules: List<ResetRule>) {
         }
         // Now find the adjacent chunks for the retained chunks and cache them
         val unretainedDirections = Adjacency.findAdjacentFlaggedPositions(allChunks, retainedChunks)
+        val retainedUnflaggedDirections = Adjacency.findAdjacentUnflaggedPositions(allChunks, retainedChunks)
         if (world.name !in chunkAdjacencyCache) {
             chunkAdjacencyCache[world.name] = mutableMapOf()
         } else {
-            chunkAdjacencyCache.clear()
+            chunkAdjacencyCache[world.name]!!.clear()
         }
         for ((chunk, directions) in unretainedDirections) {
-            chunkAdjacencyCache[world.name]!![chunk] = ChunkAdjacency(false, directions)
+            chunkAdjacencyCache[world.name]!![chunk] = ChunkAdjacency(chunk.first, chunk.second, false, directions)
         }
-        // Cache the retained chunks themselves with empty directions
-        for (chunk in retainedChunks) {
-            chunkAdjacencyCache[world.name]!![chunk] = ChunkAdjacency(true, emptyList())
+        for ((chunk, directions) in retainedUnflaggedDirections) {
+            chunkAdjacencyCache[world.name]!![chunk] = ChunkAdjacency(chunk.first, chunk.second, true, directions)
         }
     }
 

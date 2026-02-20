@@ -29,6 +29,28 @@ reset_rules:
         notify_enter: true
         # Notify users when they're leaving this area?
         notify_exit: true
+        # Distance from a chunk bordered at which to show a physical border (shown as blocks). Setting this to 0 or
+        # lower will disable the physical border, but players will still be notified when they cross the border if
+        # notify_enter and notify_exit are enabled.
+        borders:
+            # Change the highest block of the unretained chunks when the player is 3 blocks away from a retained chunk
+            # border. By default, a redstone block is used for the border, but this can be customized with "block".
+            # The block will show up on the highest non-fluid block. If you want a different heightmap, you can set
+            # "heightmap" with any of the available heightmaps: https://minecraft.wiki/w/Heightmap
+            -   type: highest_block
+                distance_chunks: 3
+                heightmap: ocean_floor
+            # Show particles above the start of unretained chunks when the player is 7 blocks away from a retained
+            # chunk border. The particles look like redstone dust by default, but this can be customized with "color".
+            -   type: particles
+                particle: dust
+                data:
+                    color: red
+                    size: 1.0
+                count: 1
+                distance_blocks: 7
+                height: 1
+                pattern: random
         conditions:
             # Run a reset every day at midnight on the server's local time.
             -   cron: "0 0 * * *" # Every day at midnight
@@ -73,6 +95,11 @@ reset_rules:
             # - "rename" will rename the dimension folder from the source world to the new world, retaining all changes.
             nether_behavior: normal
             end_behavior: normal
+            # Enable end pillar cleanup due to end pillars being broken and not regenerating properly due to changes in
+            # the world seed (which is used to calculate the radius and height of the pillars). Leave this on unless you
+            # have a specific reason to disable it. Otherwise, respawning the dragon may form floating pillars and
+            # loading in a reset End dimension may spawn stray End Crystals.
+            end_pillar_cleanup: true
             # The list of chunks to retain. Each entry defines a method for selecting chunks to retain.
             retained_chunks:
                 # Retain 16 chunks centered on the world spawn point (i.e. 256 blocks across; 8 chunks in each direction).
