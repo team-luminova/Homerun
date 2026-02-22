@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "2.3.0-Beta1"
+    kotlin("jvm") version "2.3.0"
     id("com.gradleup.shadow") version "8.3.0"
     id("xyz.jpenilla.run-paper") version "2.3.1"
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.19"
@@ -53,26 +53,34 @@ fun getVersionFromGit(): String {
 group = "net.chlod.minecraft"
 version = getVersionFromGit()
 
+val targetJavaVersion = 21
+val minecraftVersion = "1.21.4"
+
+kotlin {
+    jvmToolchain(targetJavaVersion)
+}
+
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/") {
         name = "papermc-repo"
     }
-    maven("https://jitpack.io") {
-        name = "jitpack-repo"
-    }
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    // PaperMC and Kotlin itself
+    @Suppress("VulnerableLibrariesLocal", "RedundantSuppression")
+    compileOnly("io.papermc.paper:paper-api:${minecraftVersion}-R0.1-SNAPSHOT")
+    compileOnly(kotlin("stdlib"))
+
+    // cron stuff. Maybe replace in the future?
     implementation("com.cronutils:cron-utils:9.2.1")
 
     // NMS
-    paperweight.paperDevBundle("1.21.4-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("${minecraftVersion}-R0.1-SNAPSHOT")
 
     // Testing
-    testImplementation("org.jetbrains.kotlin:kotlin-test")
+    testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
 }
 
@@ -81,7 +89,17 @@ tasks {
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
-        minecraftVersion("1.21.4")
+        minecraftVersion(minecraftVersion)
+
+        downloadPlugins {
+            // 1.5.1-k2.3.0
+            github(
+                "4drian3d",
+                "MCKotlin",
+                "1.5.1-k${kotlin.coreLibrariesVersion}",
+                "MCKotlinPaper-1.5.1-k${kotlin.coreLibrariesVersion}.jar"
+            )
+        }
     }
 
     build {
@@ -107,9 +125,4 @@ tasks {
             expand(props)
         }
     }
-}
-
-val targetJavaVersion = 21
-kotlin {
-    jvmToolchain(targetJavaVersion)
 }

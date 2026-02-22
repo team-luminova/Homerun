@@ -6,3 +6,5 @@ authors:
     - Chlod
 website: https://modrinth.com/plugin/lmnv-homerun
 api-version: '1.21'
+depend:
+    - MCKotlin-Paper
