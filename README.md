@@ -199,7 +199,10 @@ Warnings provide a way to notify players of an upcoming reset. The following war
 Though Homerun mostly works through configuration files, it also provides some commands for server operators:
 
 * `/reset <rule>` – Immediately reset the world using the specified rule
-* `/tpworld <world>` – Teleport to the specified world
+* `/tpworld <world>` – Teleport to the specified world, keeping position and rotation of the player
+* `/reloadcachedchunks` – Reload the chunk cache, which powers reset borders and entry/exit notifications.
+* `/lockout <enable/disable> <world>` – Enable or disable lockouts for a world. Lockouts prevent a player from joining
+  or teleporting into a world that is currently being reset.
 
 ## License
 
