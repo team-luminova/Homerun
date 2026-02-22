@@ -115,20 +115,21 @@ class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadIn
         val targetLevelDat = findLevelDat(targetWorldDirectory)
 
         val sourceRootTag = NbtIo.readCompressed(sourceLevelDat, NbtAccounter.unlimitedHeap())
-        val sourceDataTag = if (sourceRootTag.contains("Data")) {
-            sourceRootTag.getCompound("Data")
-        } else {
+        val sourceDataTag = sourceRootTag.getCompound("Data")
+
+        if (sourceDataTag.isEmpty) {
             plugin.componentLogger.error("Source level.dat data tag could not be found. Some data won't be transferred!")
             return
         }
+        val sourceDataTagValue = sourceDataTag.get()
 
         val targetRootTag = NbtIo.readCompressed(targetLevelDat, NbtAccounter.unlimitedHeap())
-        val targetDataTag = if (targetRootTag.contains("Data")) {
-            targetRootTag.getCompound("Data")
-        } else {
+        val targetDataTag = targetRootTag.getCompound("Data")
+        if (targetDataTag.isEmpty) {
             plugin.componentLogger.error("Target level.dat data tag could not be found in target world. Some data won't be transferred!")
             return
         }
+        val targetDataTagValue = targetDataTag.get()
 
         val requiredTags = listOf(
             "GameRules",
@@ -159,13 +160,22 @@ class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadIn
         )
 
         for (tag in requiredTags) {
-            copyNbtTag(sourceDataTag, targetDataTag, tag, true)
+            copyNbtTag(
+                sourceDataTagValue,
+                targetDataTagValue,
+                tag,
+                true
+            )
         }
         for (tag in extraTags) {
-            copyNbtTag(sourceDataTag, targetDataTag, tag)
+            copyNbtTag(
+                sourceDataTagValue,
+                targetDataTagValue,
+                tag
+            )
         }
 
-        targetRootTag.put("Data", targetDataTag)
+        targetRootTag.put("Data", targetDataTagValue)
 
         NbtIo.writeCompressed(targetRootTag, targetLevelDat)
     }

@@ -3,7 +3,6 @@ package net.chlod.minecraft.homerun.online
 import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.Tag
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.chunk.storage.RegionFileStorage
@@ -250,10 +249,16 @@ class NMSChunkTransferUtil(
         // Wipe light data, which needs to be recalculated. Otherwise, lighting looks weird.
         tag.remove("isLightOn")
         tag.remove("starlight.light_version")
-        if (tag.contains("sections", Tag.TAG_LIST.toInt())) {
-            val sections = tag.getList("sections", Tag.TAG_COMPOUND.toInt())
+        val sectionsTag = tag.getList("sections")
+        if (!sectionsTag.isEmpty) {
+            val sections = sectionsTag.get()
             for (i in 0 until sections.size) {
-                val section = sections.getCompound(i)
+                val sectionTag = sections.getCompound(i)
+                if (sectionTag.isEmpty) {
+                    // safe bail
+                    continue
+                }
+                val section = sectionTag.get()
                 // Wipe a bunch of data that gets invalidated anyway.
                 section.remove("BlockLight")
                 section.remove("SkyLight")

@@ -8,11 +8,11 @@ import net.chlod.minecraft.homerun.helpers.EndPillarCleanup
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.NbtAccounter
 import net.minecraft.nbt.NbtIo
-import net.minecraft.nbt.Tag
 import org.bukkit.World
 import org.bukkit.World.Environment
 import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
+import java.util.*
 import kotlin.io.path.Path
 
 class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitRunnable() {
@@ -59,8 +59,12 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
 
         for (playerFile in playerFiles) {
             val rootTag = NbtIo.readCompressed(Path(playerFile.path), NbtAccounter.unlimitedHeap())
-            val playerName = if (rootTag.contains("bukkit") && rootTag.getCompound("bukkit").contains("lastKnownName"))
-                rootTag.getCompound("bukkit").getString("lastKnownName")
+            val bukkitTag = rootTag.getCompound("bukkit")
+            val lastKnownNameTag = if (bukkitTag.isPresent)
+                rootTag.getCompound("bukkit").get().getString("lastKnownName")
+            else null
+            val playerName = if (lastKnownNameTag?.isPresent == true)
+                lastKnownNameTag.get()
             else playerFile.nameWithoutExtension
 
             // Fix the world UUID, or else they'll be teleported to world spawn
@@ -68,13 +72,28 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
             rootTag.putLong("WorldUUIDMost", newWorld.uid.mostSignificantBits)
 
             // Check if the player is currently outside a retained chunk
-            val posTag = rootTag.getList("Pos", Tag.TAG_DOUBLE.toInt())
-            val posX = posTag.getDouble(0)
-            val posZ = posTag.getDouble(2)
-            val chunkX = posX.toInt() shr 4
-            val chunkZ = posZ.toInt() shr 4
+            val posTag = rootTag.getList("Pos")
+            var willReset = false
+            if (posTag.isEmpty) {
+                val pos = posTag.get()
+                val posXTag = pos.getDouble(0)
+                val posZTag = pos.getDouble(2)
+                if (posXTag.isEmpty || posZTag.isEmpty) {
+                    // Uhh... they're... somewhere????????
+                    // What?
+                    willReset = true
+                } else {
+                    val chunkX = posXTag.get().toInt() shr 4
+                    val chunkZ = posZTag.get().toInt() shr 4
+                    willReset = !resetInstructions.chunks!!.contains(Pair(chunkX, chunkZ))
+                }
+            } else {
+                // Uhh... they're... nowhere?
+                // Reset them. Just in case...
+                willReset = true
+            }
 
-            if (!resetInstructions.chunks!!.contains(Pair(chunkX, chunkZ))) {
+            if (willReset) {
                 componentLogger.info("Player data '$playerName' is outside retained chunks, handling...")
                 handlePlayerOutsideRetainedChunk(resetInstructions, rootTag)
             }
@@ -84,8 +103,11 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
     }
 
     fun handlePlayerOutsideRetainedChunk(resetInstructions: WorldResetLoadInstruction, rootTag: CompoundTag) {
-        val bukkitValues = if (rootTag.contains("BukkitValues"))
-            rootTag.getCompound("BukkitValues") else CompoundTag()
+        var bukkitValuesTag = rootTag.getCompound("BukkitValues")
+        if (bukkitValuesTag.isEmpty) {
+            bukkitValuesTag = Optional.of(CompoundTag())
+        }
+        val bukkitValues = bukkitValuesTag.get()
 
         bukkitValues.putString(
             plugin.keys.playerResetDisposition.asString(),
