@@ -32,15 +32,16 @@ conditions and parameters, and can have a name, be disabled, or have warnings.
 
 #### Reset rules
 
-| Key            | Default | Type                             | Description                                                                                              |
-|----------------|---------|----------------------------------|----------------------------------------------------------------------------------------------------------|
-| `name`         | *none*  | `string` (optional)              | An optional name for the reset rule.                                                                     |
-| `disabled`     | `false` | `boolean` (optional)             | If true, this rule will be disabled. This can be used to easily disable rules.                           |
-| `notify_enter` | `false` | `boolean` (optional)             | If true, players will be notified when they enter a reset-protected area.                                |
-| `notify_exit`  | `false` | `boolean` (optional)             | If true, players will be notified when they leave a reset-protected area.                                |
-| `conditions`   | *none*  | list of ResetCondition           | A set of conditions to be used for resetting the server. See [Reset conditions](#reset-conditions) below |
-| `parameters`   | *none*  | ResetParameters                  | A set of parameters for the reset. See [Reset parameters](#reset-parameters) below                       |
-| `warnings`     | *none*  | list of ResetWarnings (optional) | A list of warnings to be issued before the reset occurs. See [Warnings](#warnings) below                 |
+| Key            | Default | Type                             | Description                                                                                                                         |
+|----------------|---------|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| `name`         | *none*  | `string` (optional)              | An optional name for the reset rule.                                                                                                |
+| `disabled`     | `false` | `boolean` (optional)             | If true, this rule will be disabled. This can be used to easily disable rules.                                                      |
+| `notify_enter` | `false` | `boolean` (optional)             | If true, players will be notified when they enter a reset-protected area.                                                           |
+| `notify_exit`  | `false` | `boolean` (optional)             | If true, players will be notified when they leave a reset-protected area.                                                           |
+| `borders`      | *none*  | list of BorderTypes (optional)   | A list of borders that can appear to the player when they get near a reset-protected area. See [Border types](#border-types) below. | 
+| `conditions`   | *none*  | list of ResetCondition           | A set of conditions to be used for resetting the server. See [Reset conditions](#reset-conditions) below.                           |
+| `parameters`   | *none*  | ResetParameters                  | A set of parameters for the reset. See [Reset parameters](#reset-parameters) below.                                                 |
+| `warnings`     | *none*  | list of ResetWarnings (optional) | A list of warnings to be issued before the reset occurs. See [Warnings](#warnings) below.                                           |
 
 #### Reset conditions
 
@@ -82,6 +83,7 @@ Reset parameters define how the reset should be performed. The following reset p
 | `outside_player_behavior`  | `spawn`  | OutsidePlayerBehavior (optional)  | Defines what to do with players outside of retained chunks after a reset. Available behaviors include: `spawn` (teleport player to their spawn point), `kill` (kills the player), `world_spawn` (teleport player to the world spawn), `ignore` (do nothing, player may suffocate), `highest` (teleport player to highest block at their X/Z pre-reset), and `closest` (teleport the player to the closest block at their X/Y/Z pre-reset) |
 | `nether_behavior`          | `normal` | DimensionResetBehavior (optional) | Defines how to handle the Nether dimension during a reset. Available behaviors include: `normal` (reset the Nether like any other world), `wipe` (recreates the Nether based on the new world's seed), `copy` (copies the Nether from the previous world without resetting it), and `rename` (renames the previous Nether to match the new world's name)                                                                                  |
 | `end_behavior`             | `normal` | DimensionResetBehavior (optional) | Defines how to handle The End dimension during a reset. Available options match the options for the Nether.                                                                                                                                                                                                                                                                                                                               |
+| `end_pillar_cleanup`       | `normal` | `boolean` (optional)              | Whether end pillars should be cleaned up during resets and dragon respawns. The radius and height of End Spikes are based on the seed, which can change during a reset. Disabling this will prevent spikes from being fully wiped during respawns and stray end crystals from being deleted after resets.                                                                                                                                 |
 
 ##### Chunk selectors
 
@@ -116,6 +118,55 @@ Chunk selectors define which chunks should be kept during a reset. The following
         - [ 0, 0 ] # Keep chunk (0, 0)
         - x: 1
           z: -1 # Keep chunk (1, -1)
+  ```
+
+#### Border types
+
+Border types appear as visual indicators in the world that tell a player where the reset-unprotected areas are. These
+usually show up on the first block that is reset-unprotected (i.e. it shows up on the edges of chunks that will be
+reset.)
+The following border types are available:
+
+* `type: highest_block` – Displays a border block on top of the highest block at the border chunk. Note that this
+  currently does not work well underground. The block is client-side only, so it will not actually be placed or cause
+  any block updates.
+  ```yaml
+  borders:
+    - type: highest_block
+      block: redstone_block # The block to use for the border.
+      distance_chunks: 3 # How many chunks away does the player have to be for the blocks to show up? Default is 3.
+      # The heightmap to use for determining the highest block. Default is MOTION_BLOCKING.
+      # You can use something else like ocean_floor if you want the border blocks to show up underwater instead of over.
+      # You can find all possible heightmaps in the Minecraft Wiki: https://minecraft.wiki/w/Heightmap
+      heightmap: MOTION_BLOCKING
+  ```
+* `type: particles` – Displays a line of particles at the border chunk. The particles are client-side only.
+  ```yaml
+  borders:
+    - type: particles
+      particle: dust # The particle to use for the border. In this case, red dust.
+      # Additional particle data.
+      # - For dust, this includes the `color` (can be a named color, chat color code, or RGB value in hexadecimal
+      #   format: #RRGGBB) and `size` (a float value for the size of the particle).
+      # - For particles that copy blocks (e.g. "block" or "falling_dust"), this is the name of the block to copy, or a 
+      #   `block` (the name) and `data` (the block data, as a string, e.g. for a `redstone_lamp`, you can use
+      #   `data: '[lit="true"]'`; note that the quotes are necessary).
+      # - For particles that copy items (e.g. "item"), this is the name of the item to copy, or an `item` (the name) and
+      #   `data` (the item data, as a map).
+      # - This should be left blank if the particle does not require additional data, e.g. "flame" or "heart".
+      data:
+        color: red
+        size: 1.5
+      distance_blocks: 3 # How many blocks away does the particles have to be for the particles to show up? Default is 3.
+      # The height controls how tall the particle line is. It starts at the height of the player, and grows both up and
+      # down, with more priority going up. When the height is less than 3, the particles will always spawn on the topmost
+      # passable block next to the player. This makes it visible even when in caves or swimming.
+      height: 2
+      # A pattern to use for the particles. This controls how the particles are spawned at the border.
+      # - `random` (default) spawns particles randomly within the block at the border.
+      # - `dot` spawns particles at the center of the block at the border, creating a dotted line effect.
+      # - `vertical` spawns particles in a vertical line at the border, creating the illusion of jail bars.
+      pattern: random
   ```
 
 #### Reset warnings
