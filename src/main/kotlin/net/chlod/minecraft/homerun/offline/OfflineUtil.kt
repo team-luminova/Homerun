@@ -2,7 +2,6 @@ package net.chlod.minecraft.homerun.offline
 
 import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
-import net.querz.mcaselector.io.WorldDirectories
 import java.io.File
 
 /**

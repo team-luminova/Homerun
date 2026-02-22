@@ -11,8 +11,8 @@ import java.io.File
 class WorldDataTransferUtil(plugin: Homerun, resetInstructions: WorldResetLoadInstruction) :
     OfflineUtil(plugin, resetInstructions) {
 
-    val sourceWorldDirectory: String = sourceWorld.region.parent
-    val targetWorldDirectory: String = targetWorld.region.parent
+    val sourceWorldDirectory: String = sourceWorld.region.parent!!
+    val targetWorldDirectory: String = targetWorld.region.parent!!
 
     fun transferData() {
         copyDataFolders()
