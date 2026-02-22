@@ -48,7 +48,7 @@ conditions and parameters, and can have a name, be disabled, or have warnings.
 Reset conditions are listed with the settings they need. The following reset conditions are available:
 
 * `cron` – Reset the world on a cron schedule (see [crontab.guru](https://crontab.guru/) for help with cron syntax). The
-  cron is based on the server's local time.
+  cron is based on the server's local time and timezone.
   ```yaml
   conditions:
     - cron: "0 0 * * *" # Reset every day at midnight
