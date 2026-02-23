@@ -82,16 +82,19 @@ jobs:
             -   name: Rename plugin JAR
                 id: rename
                 run: |
-                    JAR_FILE=$(ls build/libs/*-all.jar)
-                    mv "$JAR_FILE" "homerun-v${GITHUB_REF#refs/tags/v}.jar"
+                    cd build/libs/
+                    PLUGIN_JAR=$(ls homerun-*-SNAPSHOT-all.jar)
+                    VERSION=$(echo $PLUGIN_JAR | sed -E 's/homerun-(.*)-all\.jar/\1/')
+                    NEW_JAR="homerun-v${VERSION}.jar"
+                    mv "$PLUGIN_JAR" "$NEW_JAR"
                     # Export the new JAR name for later steps
-                    echo "PLUGIN_JAR=homerun-v${GITHUB_REF#refs/tags/v}.jar" >> $GITHUB_OUTPUT
+                    echo "PLUGIN_JAR=$NEW_JAR" >> $GITHUB_OUTPUT
 
             -   name: Upload plugin JAR
                 uses: actions/upload-artifact@v4
                 with:
                     name: plugin-jar
-                    path: build/libs/${{ steps.rename.outputs.PLUGIN_JAR }}.jar
+                    path: build/libs/${{ steps.rename.outputs.PLUGIN_JAR }}
                     retention-days: 30
     release:
         runs-on: ubuntu-latest
