@@ -50,4 +50,13 @@ class HomerunNamespacedKeys(val plugin: Homerun) {
      */
     val playerResetDisposition = NamespacedKey(plugin, "player_reset_disposition")
 
+    // World metadata
+
+    /**
+     * Set to `true` on worlds that have had their spawns modified already. This is used to ensure that the
+     * "from world spawn" reset types work properly even in other dimensions. This (and its underlying functionality)
+     * is only set once; this allows operators to modify their spawn points manually.
+     */
+    val spawnModified = NamespacedKey(plugin, "spawn_modified")
+
 }

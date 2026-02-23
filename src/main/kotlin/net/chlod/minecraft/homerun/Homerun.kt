@@ -86,6 +86,7 @@ class Homerun : JavaPlugin() {
         server.pluginManager.registerEvents(PlayerNotifyListener(this), this)
         server.pluginManager.registerEvents(PlayerBorderListener(this), this)
         server.pluginManager.registerEvents(RetainedChunkCacheListener(this), this)
+        server.pluginManager.registerEvents(DimensionSpawnFixListener(this), this)
 
         // Registering commands
         @Suppress("UnstableApiUsage")
