@@ -15,7 +15,7 @@ class ReloadChunkCacheCommand {
             return Commands.literal(commandName)
                 .requires { it.sender.hasPermission("homerun.commands.reloadchunkcache") }
                 .executes { ctx ->
-                    plugin.retainedChunkCache.flushCaches()
+                    plugin.retainedChunkCache.flushCaches(true)
                     ctx.source.sender.sendMessage("Reloaded retained chunk cache.")
                     Command.SINGLE_SUCCESS
                 }
