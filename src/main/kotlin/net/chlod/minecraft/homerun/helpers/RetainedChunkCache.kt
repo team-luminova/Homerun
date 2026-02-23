@@ -5,7 +5,6 @@ import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.math.Adjacency
 import org.bukkit.World
-import org.bukkit.scheduler.BukkitRunnable
 
 class RetainedChunkCache(val plugin: Homerun, val resetRules: List<ResetRule>) {
 
@@ -73,12 +72,6 @@ class RetainedChunkCache(val plugin: Homerun, val resetRules: List<ResetRule>) {
                 }
             }
             return borderBlocks
-        }
-    }
-
-    internal class RetainedChunkCacheRefreshTask(val retainedChunkCache: RetainedChunkCache) : BukkitRunnable() {
-        override fun run() {
-            retainedChunkCache.flushCaches(false)
         }
     }
 
