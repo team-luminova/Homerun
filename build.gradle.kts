@@ -77,7 +77,7 @@ dependencies {
     // cron stuff. Maybe replace in the future?
     implementation("com.cronutils:cron-utils:9.2.1")
 
-    // NMS
+    // net.minecraft.server
     paperweight.paperDevBundle("${lowestSupportedMinecraftVersion}-R0.1-SNAPSHOT")
 
     // Testing
@@ -99,6 +99,7 @@ tasks {
                 "1.5.1-k${kotlin.coreLibrariesVersion}",
                 "MCKotlinPaper-1.5.1-k${kotlin.coreLibrariesVersion}.jar"
             )
+            // To make development easier.
             modrinth(
                 "viaversion",
                 "5.7.1"
