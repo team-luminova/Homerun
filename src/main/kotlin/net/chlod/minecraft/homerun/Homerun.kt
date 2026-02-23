@@ -5,7 +5,6 @@ import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler
 import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.chlod.minecraft.homerun.command.*
-import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.data.ExtraData
 import net.chlod.minecraft.homerun.data.HomerunNamespacedKeys
@@ -17,12 +16,10 @@ import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import net.chlod.minecraft.homerun.helpers.MinecraftVersion
 import net.chlod.minecraft.homerun.helpers.RetainedChunkCache
 import net.chlod.minecraft.homerun.listeners.*
-import net.chlod.minecraft.homerun.tasks.ResetLoadTask
-import net.chlod.minecraft.homerun.tasks.ResetPrepareTask
-import net.chlod.minecraft.homerun.tasks.RetainedChunkCacheRefreshTask
-import net.chlod.minecraft.homerun.tasks.WorldPostloadTask
+import net.chlod.minecraft.homerun.tasks.*
 import org.bukkit.configuration.serialization.ConfigurationSerialization
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.scheduler.BukkitTask
 import java.util.*
 
 class Homerun : JavaPlugin() {
@@ -33,8 +30,8 @@ class Homerun : JavaPlugin() {
     val resetRules = mutableListOf<ResetRule>()
     val retainedChunkCache = RetainedChunkCache(this, resetRules)
     private var appliedResetLocks = mutableListOf<ResetLock>()
-    private var conditionCheckTask: Int? = null
-    private var borderCheckTask: Int? = null
+    private var conditionCheckTask: BukkitTask? = null
+    private var borderCheckTask: BukkitTask? = null
 
     override fun onLoad() {
         // Version check
@@ -128,84 +125,16 @@ class Homerun : JavaPlugin() {
         PlayerLockout.global.unlock()
 
         // Start processing new reset rules
-        conditionCheckTask = server.scheduler
-            .scheduleSyncRepeatingTask(this, {
-                resetRules.forEachIndexed { index, resetRule ->
-                    if (resetRule.enabled != true)
-                        return@forEachIndexed
-
-                    for (condition in resetRule.conditions) {
-                        if (condition.isSatisfied(this)) {
-                            componentLogger.warn(
-                                "Reset condition satisfied for rule ${resetRule.name ?: index}, executing reset."
-                            )
-                            ResetPrepareTask(this, resetRule)
-                                .runTaskTimer(this, 0L, 20L)
-                            break
-                        } else {
-                            val timeUntilResetMillis = condition.getTimeUntilNextReset(this) ?: continue
-                            val world = if (resetRule.parameters.world == null)
-                                server.worlds.firstOrNull() ?: continue
-                            else
-                                (server.getWorld(resetRule.parameters.world) ?: continue)
-
-                            resetRule.warnings?.forEach {
-                                it.displayWarningMessage(
-                                    this,
-                                    world,
-                                    resetRule,
-                                    condition,
-                                    timeUntilResetMillis
-                                )
-                            }
-
-                            if (resetRule.parameters.netherBehavior == ResetParameters.DimensionResetBehavior.NORMAL) {
-                                val netherWorld = server.getWorld("${world.name}_nether")
-                                if (netherWorld != null) {
-                                    resetRule.warnings?.forEach {
-                                        it.displayWarningMessage(
-                                            this,
-                                            netherWorld,
-                                            resetRule,
-                                            condition,
-                                            timeUntilResetMillis
-                                        )
-                                    }
-                                }
-                            }
-                            if (resetRule.parameters.endBehavior == ResetParameters.DimensionResetBehavior.NORMAL) {
-                                val endWorld = server.getWorld("${world.name}_the_end")
-                                if (endWorld != null) {
-                                    resetRule.warnings?.forEach {
-                                        it.displayWarningMessage(
-                                            this,
-                                            endWorld,
-                                            resetRule,
-                                            condition,
-                                            timeUntilResetMillis
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }, 0, 1L)
-        borderCheckTask = server.scheduler
-            .scheduleSyncRepeatingTask(this, {
-                resetRules.forEach { resetRule ->
-                    resetRule.borders?.forEach { it.onTick(this, resetRule) }
-                }
-            }, 0, 4L)
+        conditionCheckTask = ConditionCheckTask(this).runTaskTimer(this, 0, 1L)
+        borderCheckTask = BorderCheckTask(this).runTaskTimer(this, 0, 4L)
     }
 
     override fun onDisable() {
         // Plugin shutdown logic
-        if (conditionCheckTask != null && conditionCheckTask != -1) {
-            server.scheduler.cancelTask(conditionCheckTask!!)
-        }
-        if (borderCheckTask != null && borderCheckTask != -1) {
-            server.scheduler.cancelTask(borderCheckTask!!)
+        for (task in arrayOf(conditionCheckTask, borderCheckTask)) {
+            if (task != null && !task.isCancelled) {
+                task.cancel()
+            }
         }
     }
 
