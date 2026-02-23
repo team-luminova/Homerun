@@ -10,7 +10,7 @@ import net.chlod.minecraft.homerun.data.world.ResetLoadInstructions
 import net.chlod.minecraft.homerun.data.world.WorldCopyLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldRenameLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
-import net.chlod.minecraft.homerun.offline.WorldDataTransferUtil
+import net.chlod.minecraft.homerun.online.NMSChunkTransferUtil
 import net.minecraft.server.dedicated.DedicatedServer
 import net.minecraft.server.dedicated.DedicatedServerProperties
 import net.minecraft.server.dedicated.DedicatedServerSettings
@@ -133,7 +133,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         // as missing before our plugin load listeners even fire.
         for (instructions in resetInstructionsList) {
             if (instructions is WorldResetLoadInstruction) {
-                WorldDataTransferUtil(plugin, instructions).copyDatapacks()
+                NMSChunkTransferUtil(plugin, instructions, false).copyDatapacks()
             }
         }
 

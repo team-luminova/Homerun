@@ -3,9 +3,12 @@ package net.chlod.minecraft.homerun.online
 import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.NbtAccounter
+import net.minecraft.nbt.NbtIo
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.chunk.storage.RegionFileStorage
+import org.apache.commons.io.FileUtils
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 import java.nio.file.Path
@@ -37,7 +40,8 @@ import java.util.logging.Logger
  */
 class NMSChunkTransferUtil(
     private val plugin: Homerun,
-    private val resetInstructions: WorldResetLoadInstruction
+    private val resetInstructions: WorldResetLoadInstruction,
+    private val preLoad: Boolean,
 ) {
 
     companion object {
@@ -55,6 +59,8 @@ class NMSChunkTransferUtil(
 
     private val sourceWorldDir: Path
     private val targetWorldDir: Path
+    private val sourceLevelDat: Path
+    private val targetLevelDat: Path
 
     private val logger: Logger
 
@@ -63,19 +69,34 @@ class NMSChunkTransferUtil(
         var srcDir = File(worldContainer, resetInstructions.sourceWorld)
         var dstDir = File(worldContainer, resetInstructions.targetWorld)
 
+        var srcLevelDat = File(srcDir, "level.dat")
+        require(srcLevelDat.isFile) {
+            "Source $srcDir does not have a level.dat file."
+        }
+        sourceLevelDat = srcLevelDat.toPath()
+        var dstLevelDat = File(dstDir, "level.dat")
+        require(dstLevelDat.isFile) {
+            "Target $dstDir does not have a level.dat file."
+        }
+        targetLevelDat = dstLevelDat.toPath()
+
         if (resetInstructions.sourceWorldEnvironmentId != 0) {
             srcDir = File(srcDir, "DIM${resetInstructions.sourceWorldEnvironmentId}")
             dstDir = File(dstDir, "DIM${resetInstructions.sourceWorldEnvironmentId}")
         }
 
-        // Ensure target directories exist
-        for (subdir in listOf("region", "entities", "poi")) {
-            File(srcDir, subdir).also {
-                require(it.isDirectory) {
-                    "Source $subdir directory missing: ${it.path}"
+        if (preLoad) {
+            // This CTU is for pre-load operations. Check if the necessary files exist.
+
+            // Ensure target directories exist
+            for (subdir in listOf("region", "entities", "poi")) {
+                File(srcDir, subdir).also {
+                    require(it.isDirectory) {
+                        "Source $subdir directory missing: ${it.path}"
+                    }
                 }
+                File(dstDir, subdir).mkdirs()
             }
-            File(dstDir, subdir).mkdirs()
         }
 
         sourceWorldDir = srcDir.toPath()
@@ -269,6 +290,122 @@ class NMSChunkTransferUtil(
 
         // Wipe heightmaps, which need recalculation.
         tag.remove("Heightmaps")
+    }
+
+    /**
+     * Copies player data, stats, advancements, map/scoreboard data, and
+     * game-rules from the source world to the target world.
+     */
+    fun transferData() {
+        copyDataFolders()
+        copyLevelDat()
+    }
+
+    /**
+     * Copies the datapacks folder from the source world to the target world.
+     * Called during the prepare phase so packs are in place before the world
+     * is loaded.
+     */
+    fun copyDatapacks() {
+        val src = sourceWorldDir.resolve("datapacks").toFile()
+        if (src.exists()) {
+            FileUtils.copyDirectory(src, targetWorldDir.resolve("datapacks").toFile())
+        } else {
+            logger.warning("Source datapacks folder does not exist, skipping datapacks transfer.")
+        }
+    }
+
+    private fun copyDataFolders() {
+        for (folder in listOf("playerdata", "stats", "advancements", "data")) {
+            val src = sourceWorldDir.resolve(folder).toFile()
+            if (src.exists()) {
+                FileUtils.copyDirectory(src, targetWorldDir.resolve(folder).toFile())
+            } else {
+                logger.warning("Source $folder folder does not exist, skipping $folder transfer.")
+            }
+        }
+    }
+
+    private fun copyNbtTag(
+        source: CompoundTag,
+        target: CompoundTag,
+        tagName: String,
+        required: Boolean = false
+    ) {
+        if (source.contains(tagName)) {
+            target.put(tagName, source.get(tagName)!!)
+        } else if (required) {
+            logger.severe("Source level.dat $tagName tag could not be found. Some data won't be transferred!")
+        } else {
+            logger.warning("Source level.dat $tagName tag could not be found. Skipping $tagName transfer.")
+        }
+    }
+
+    private fun copyLevelDat() {
+        val sourceRootTag = NbtIo.readCompressed(sourceLevelDat, NbtAccounter.unlimitedHeap())
+        val sourceDataTag = sourceRootTag.getCompound("Data")
+
+        if (sourceDataTag.isEmpty) {
+            logger.severe("Source level.dat Data tag could not be found. Some data won't be transferred!")
+            return
+        }
+        val sourceData = sourceDataTag.get()
+
+        val targetRootTag = NbtIo.readCompressed(targetLevelDat, NbtAccounter.unlimitedHeap())
+        val targetDataTag = targetRootTag.getCompound("Data")
+        if (targetDataTag.isEmpty) {
+            logger.severe("Target level.dat Data tag could not be found. Some data won't be transferred!")
+            return
+        }
+        val targetData = targetDataTag.get()
+
+        val sourceDataVersionTag = sourceData.getInt("DataVersion")
+        if (sourceDataVersionTag.isEmpty) {
+            logger.severe("Target level.dat does not have a valid DataVersion.")
+            logger.severe("Data cannot be copied over. You will have a broken world!")
+            return
+        }
+
+        val targetDataVersionTag = targetData.getInt("DataVersion")
+        if (targetDataVersionTag.isEmpty) {
+            logger.severe("Target level.dat does not have a valid DataVersion.")
+            logger.severe("Data cannot be copied over. You will have a broken world!")
+            return
+        }
+
+        if (sourceDataVersionTag.get() != targetDataVersionTag.get()) {
+            logger.severe("A Minecraft server update occurred when a reset was occurring. This is unsupported.")
+            logger.severe("Homerun can only reset worlds on the same version, not between different ones.")
+            logger.severe("Data will still be copied, but note that the level.dat may not be fully transferred.")
+        }
+
+        val dataVersion = sourceDataVersionTag.get()
+        // 1.21.8
+        if (dataVersion <= 4440) {
+            logger.info("Copying >=1.21.4 Minecraft level.dat tags...")
+            copy1_21_5Nbt(sourceData, targetData)
+        }
+
+        targetRootTag.put("Data", targetData)
+        NbtIo.writeCompressed(targetRootTag, targetLevelDat)
+    }
+
+    @Suppress("FunctionName")
+    private fun copy1_21_5Nbt(source: CompoundTag, target: CompoundTag) {
+        val requiredTags = listOf(
+            "GameRules", "Difficulty", "hardcore", "GameType",
+            "SpawnX", "SpawnY", "SpawnZ", "SpawnAngle"
+        )
+        val extraTags = listOf(
+            "Time", "DayTime",
+            "BorderSizeLerpTime", "BorderCenterX", "BorderCenterZ",
+            "BorderWarningBlocks", "BorderDamagePerBlock",
+            "raining", "rainTime", "thunderTime", "thundering", "clearWeatherTime",
+            "BorderSafeZone", "DragonFight"
+        )
+
+        for (tag in requiredTags) copyNbtTag(source, target, tag, required = true)
+        for (tag in extraTags) copyNbtTag(source, target, tag)
     }
 }
 
