@@ -380,13 +380,20 @@ class NMSChunkTransferUtil(
         }
 
         val dataVersion = sourceDataVersionTag.get()
-        // 1.21.8
-        if (dataVersion <= 4440) {
-            logger.info("Copying >=1.21.4 Minecraft level.dat tags...")
-            copy1_21_5Nbt(sourceData, targetData)
-        } else {
+        if (dataVersion >= 4671) {
+            logger.info("Copying >=1.21.11 Minecraft level.dat tags...")
+            if (dataVersion > 4671) {
+                logger.warning("This world is over the maximum supported version for Homerun.")
+                logger.warning("Some info might not be transferred correctly!")
+            }
+            copy1_21_11Nbt(sourceData, targetData)
+        } else if (dataVersion >= 4554) {
             logger.info("Copying >=1.21.9 Minecraft level.dat tags...")
             copy1_21_9Nbt(sourceData, targetData)
+        }
+        if (dataVersion >= 4325) {
+            logger.info("Copying >=1.21.5 Minecraft level.dat tags...")
+            copy1_21_5Nbt(sourceData, targetData)
         }
 
         targetRootTag.put("Data", targetData)
@@ -412,7 +419,7 @@ class NMSChunkTransferUtil(
     }
 
     /**
-     * Copy over data from after 1.21.9. Border data is now in its own folder, and spawn is now
+     * Copy over data from 1.21.9 and after. Border data is now in its own folder, and spawn is now
      * in a `spawn` compound tag.
      */
     @Suppress("FunctionName")
@@ -426,6 +433,33 @@ class NMSChunkTransferUtil(
             "DragonFight"
         )
 
+        copySpawnCompoundTag(source, target)
+
+        for (tag in requiredTags) copyNbtTag(source, target, tag, required = true)
+        for (tag in extraTags) copyNbtTag(source, target, tag)
+    }
+
+    /**
+     * Copy over data from 1.21.11 and after.
+     */
+    @Suppress("FunctionName")
+    private fun copy1_21_11Nbt(source: CompoundTag, target: CompoundTag) {
+        val requiredTags = listOf(
+            "game_rules", "Difficulty", "hardcore", "GameType"
+        )
+        val extraTags = listOf(
+            "Time", "DayTime",
+            "raining", "rainTime", "thunderTime", "thundering", "clearWeatherTime",
+            "DragonFight"
+        )
+
+        copySpawnCompoundTag(source, target)
+
+        for (tag in requiredTags) copyNbtTag(source, target, tag, required = true)
+        for (tag in extraTags) copyNbtTag(source, target, tag)
+    }
+
+    private fun copySpawnCompoundTag(source: CompoundTag, target: CompoundTag) {
         // Copy over the spawn tag. We only want to copy the position, pitch, and yaw.
         val sourceSpawnCompoundTag = source.getCompound("spawn")
         var targetSpawnCompoundTag = target.getCompound("spawn")
@@ -477,9 +511,6 @@ class NMSChunkTransferUtil(
             target.put("spawn", targetSpawn)
             logger.info("Set spawn point compound tag with new world dimension.")
         }
-
-        for (tag in requiredTags) copyNbtTag(source, target, tag, required = true)
-        for (tag in extraTags) copyNbtTag(source, target, tag)
     }
 }
 
