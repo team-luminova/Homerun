@@ -74,13 +74,19 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
             // Check if the player is currently outside a retained chunk
             val posTag = rootTag.getList("Pos")
             var willReset = false
-            if (posTag.isEmpty) {
+            if (posTag.isPresent) {
                 val pos = posTag.get()
                 val posXTag = pos.getDouble(0)
                 val posZTag = pos.getDouble(2)
-                if (posXTag.isEmpty || posZTag.isEmpty) {
+                if (posXTag.isEmpty) {
                     // Uhh... they're... somewhere????????
                     // What?
+                    componentLogger.info("Could not find X position of player '$playerName'. Handling...")
+                    willReset = true
+                } else if (posZTag.isEmpty) {
+                    // Uhh... they're... somewhere????????
+                    // What?
+                    componentLogger.info("Could not find Z position of player '$playerName'. Handling...")
                     willReset = true
                 } else {
                     val chunkX = posXTag.get().toInt() shr 4
@@ -90,6 +96,7 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
             } else {
                 // Uhh... they're... nowhere?
                 // Reset them. Just in case...
+                componentLogger.info("Could not find position of player '$playerName'. Handling...")
                 willReset = true
             }
 
