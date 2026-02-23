@@ -117,7 +117,9 @@ class Homerun : JavaPlugin() {
         }
 
         // Caching retained chunks for player notifications
-        retainedChunkCache.flushCaches()
+        retainedChunkCache.flushCaches(true)
+        RetainedChunkCache.RetainedChunkCacheRefreshTask(retainedChunkCache)
+            .runTaskTimer(this, 0, 20 * 60 * 5L) // Refresh every 5 minutes
 
         // Unlock player joins
         PlayerLockout.global.unlock()
