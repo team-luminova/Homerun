@@ -79,11 +79,19 @@ jobs:
             -   name: Build plugin JAR
                 run: ./gradlew shadowJar --no-daemon --stacktrace
 
+            -   name: Rename plugin JAR
+                id: rename
+                run: |
+                    JAR_FILE=$(ls build/libs/*-all.jar)
+                    mv "$JAR_FILE" "homerun-v${GITHUB_REF#refs/tags/v}.jar"
+                    # Export the new JAR name for later steps
+                    echo "PLUGIN_JAR=homerun-v${GITHUB_REF#refs/tags/v}.jar" >> $GITHUB_OUTPUT
+
             -   name: Upload plugin JAR
                 uses: actions/upload-artifact@v4
                 with:
                     name: plugin-jar
-                    path: build/libs/*-all.jar
+                    path: build/libs/${{ steps.rename.outputs.PLUGIN_JAR }}.jar
                     retention-days: 30
     release:
         runs-on: ubuntu-latest
@@ -114,5 +122,5 @@ jobs:
                     release_name: ${{ steps.get_version.outputs.VERSION }}
                     draft: true
                     prerelease: false
-                    files: homerun-*-all.jar
-                    generate_release_notes: true
+                    files: homerun-v*.jar
+                    generate_release_notes: false
