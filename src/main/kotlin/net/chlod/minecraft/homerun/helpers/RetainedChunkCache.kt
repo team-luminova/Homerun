@@ -5,6 +5,7 @@ import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.math.Adjacency
 import org.bukkit.World
+import org.bukkit.scheduler.BukkitRunnable
 
 class RetainedChunkCache(val plugin: Homerun, val resetRules: List<ResetRule>) {
 
@@ -75,11 +76,27 @@ class RetainedChunkCache(val plugin: Homerun, val resetRules: List<ResetRule>) {
         }
     }
 
+    internal class RetainedChunkCacheRefreshTask(val retainedChunkCache: RetainedChunkCache) : BukkitRunnable() {
+        override fun run() {
+            retainedChunkCache.flushCaches(false)
+        }
+    }
+
     private val worldChunks = mutableMapOf<String, MutableMap<ResetRule, Set<Pair<Int, Int>>>>()
     private val chunkAdjacencyCache = mutableMapOf<String, MutableMap<Pair<Int, Int>, ChunkAdjacency>>()
 
     fun getRetainedChunks(worldName: String): Map<ResetRule, Set<Pair<Int, Int>>>? {
         return worldChunks[worldName]?.toMap()
+    }
+
+    fun isChunkRetained(worldName: String, chunk: Pair<Int, Int>): Boolean? {
+        val worldData = worldChunks[worldName] ?: return null
+        for ((_, retainedChunks) in worldData) {
+            if (chunk in retainedChunks) {
+                return true
+            }
+        }
+        return false
     }
 
     /**
@@ -112,11 +129,11 @@ class RetainedChunkCache(val plugin: Homerun, val resetRules: List<ResetRule>) {
         return chunkAdjacency
     }
 
-    fun flushCaches() {
-        cacheRetainedChunks()
+    fun flushCaches(verbose: Boolean = false) {
+        cacheRetainedChunks(verbose)
     }
 
-    private fun cacheRetainedChunks() {
+    private fun cacheRetainedChunks(verbose: Boolean = false) {
         for (resetRule in resetRules) {
             if (
                 !(resetRule.enabled ?: false) ||
@@ -132,21 +149,25 @@ class RetainedChunkCache(val plugin: Homerun, val resetRules: List<ResetRule>) {
 
             if (resetRule.parameters.netherBehavior == ResetParameters.DimensionResetBehavior.NORMAL) {
                 val netherWorld = plugin.server.getWorld("${world.name}_nether") ?: run {
-                    plugin.componentLogger.warn("Nether world for '${world.name}' not found, skipping retained chunk processing for it.")
+                    if (verbose) {
+                        plugin.componentLogger.debug("Nether world for '${world.name}' not found, skipping retained chunk processing for it.")
+                    }
                     null
                 } ?: continue
                 cacheRetainedChunksForWorld(resetRule, netherWorld)
             }
             if (resetRule.parameters.endBehavior == ResetParameters.DimensionResetBehavior.NORMAL) {
                 val endWorld = plugin.server.getWorld("${world.name}_the_end") ?: run {
-                    plugin.componentLogger.warn("End world for '${world.name}' not found, skipping retained chunk processing for it.")
+                    if (verbose) {
+                        plugin.componentLogger.debug("End world for '${world.name}' not found, skipping retained chunk processing for it.")
+                    }
                     null
                 } ?: continue
                 cacheRetainedChunksForWorld(resetRule, endWorld)
             }
         }
         val totalChunks = worldChunks.values.sumOf { it -> it.values.sumOf { it.size } }
-        plugin.componentLogger.info("Cached $totalChunks retained chunks in ${worldChunks.size} worlds for player notifications.")
+        plugin.componentLogger.debug("Cached $totalChunks retained chunks in ${worldChunks.size} worlds for player notifications.")
     }
 
     private fun cacheRetainedChunksForWorld(resetRule: ResetRule, world: World) {
