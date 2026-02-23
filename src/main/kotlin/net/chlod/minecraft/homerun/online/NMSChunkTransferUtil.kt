@@ -384,6 +384,9 @@ class NMSChunkTransferUtil(
         if (dataVersion <= 4440) {
             logger.info("Copying >=1.21.4 Minecraft level.dat tags...")
             copy1_21_5Nbt(sourceData, targetData)
+        } else {
+            logger.info("Copying >=1.21.9 Minecraft level.dat tags...")
+            copy1_21_9Nbt(sourceData, targetData)
         }
 
         targetRootTag.put("Data", targetData)
@@ -403,6 +406,77 @@ class NMSChunkTransferUtil(
             "raining", "rainTime", "thunderTime", "thundering", "clearWeatherTime",
             "BorderSafeZone", "DragonFight"
         )
+
+        for (tag in requiredTags) copyNbtTag(source, target, tag, required = true)
+        for (tag in extraTags) copyNbtTag(source, target, tag)
+    }
+
+    /**
+     * Copy over data from after 1.21.9. Border data is now in its own folder, and spawn is now
+     * in a `spawn` compound tag.
+     */
+    @Suppress("FunctionName")
+    private fun copy1_21_9Nbt(source: CompoundTag, target: CompoundTag) {
+        val requiredTags = listOf(
+            "GameRules", "Difficulty", "hardcore", "GameType"
+        )
+        val extraTags = listOf(
+            "Time", "DayTime",
+            "raining", "rainTime", "thunderTime", "thundering", "clearWeatherTime",
+            "DragonFight"
+        )
+
+        // Copy over the spawn tag. We only want to copy the position, pitch, and yaw.
+        val sourceSpawnCompoundTag = source.getCompound("spawn")
+        var targetSpawnCompoundTag = target.getCompound("spawn")
+        if (sourceSpawnCompoundTag.isEmpty) {
+            logger.severe("Could not find 'spawn' key of source level.dat...")
+            logger.severe("The spawn point might move!")
+        } else if (targetSpawnCompoundTag.isEmpty) {
+            logger.severe("Could not find 'spawn' key of target level.dat...")
+            logger.severe("We're about to rudely set the spawn point.")
+
+            // Copy the spawn tag
+            copyNbtTag(source, target, "spawn", required = true)
+            // Set the proper "dimension".
+            targetSpawnCompoundTag = target.getCompound("spawn")
+            if (targetSpawnCompoundTag.isEmpty) {
+                logger.severe("Failed to copy 'spawn' key of target level.dat...")
+                logger.severe("The spawn point might move!")
+            } else {
+                val targetSpawn = targetSpawnCompoundTag.get()
+                targetSpawn.putString("dimension", "minecraft:${resetInstructions.targetWorld}")
+                target.put("spawn", targetSpawn)
+                // Also set paperSpawnDimension in the main Data field
+                target.putString("paperSpawnDimension", "minecraft:overworld")
+                logger.info("Set spawn point compound tag with old world data.")
+            }
+        } else {
+            val sourceSpawn = sourceSpawnCompoundTag.get()
+            val targetSpawn = targetSpawnCompoundTag.get()
+
+            val spawnPosTag = sourceSpawn.getIntArray("pos")
+            if (spawnPosTag.isEmpty) {
+                logger.severe("Could not find 'spawn.pos' key of level.dat...")
+                logger.severe("The spawn point might move!")
+            } else {
+                targetSpawn.putIntArray("pos", spawnPosTag.get())
+            }
+            val spawnPitchTag = sourceSpawn.getFloat("pitch")
+            if (spawnPitchTag.isEmpty) {
+                logger.severe("Could not find 'spawn.pitch' key of level.dat...")
+            } else {
+                targetSpawn.putFloat("pitch", spawnPitchTag.get())
+            }
+            val spawnYawTag = sourceSpawn.getFloat("yaw")
+            if (spawnYawTag.isEmpty) {
+                logger.severe("Could not find 'spawn.yaw' key of level.dat...")
+            } else {
+                targetSpawn.putFloat("yaw", spawnYawTag.get())
+            }
+            target.put("spawn", targetSpawn)
+            logger.info("Set spawn point compound tag with new world dimension.")
+        }
 
         for (tag in requiredTags) copyNbtTag(source, target, tag, required = true)
         for (tag in extraTags) copyNbtTag(source, target, tag)

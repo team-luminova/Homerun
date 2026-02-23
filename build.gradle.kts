@@ -54,7 +54,7 @@ group = "net.chlod.minecraft"
 version = getVersionFromGit()
 
 val targetJavaVersion = 21
-val minecraftVersion = "1.21.5"
+val minecraftVersion = "1.21.9"
 
 kotlin {
     jvmToolchain(targetJavaVersion)
@@ -92,12 +92,15 @@ tasks {
         minecraftVersion(minecraftVersion)
 
         downloadPlugins {
-            // 1.5.1-k2.3.0
             github(
                 "4drian3d",
                 "MCKotlin",
                 "1.5.1-k${kotlin.coreLibrariesVersion}",
                 "MCKotlinPaper-1.5.1-k${kotlin.coreLibrariesVersion}.jar"
+            )
+            modrinth(
+                "viaversion",
+                "5.7.1"
             )
         }
     }
