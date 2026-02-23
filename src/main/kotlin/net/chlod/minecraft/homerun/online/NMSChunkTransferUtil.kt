@@ -64,6 +64,24 @@ class NMSChunkTransferUtil(
 
     private val logger: Logger
 
+    private class WorldStorageHandleOptional(
+        val chunk: RegionFileStorage,
+        val entity: RegionFileStorage?,
+        val poi: RegionFileStorage?
+    ) : AutoCloseable {
+        override fun close() {
+            chunk.close()
+            entity?.close()
+            poi?.close()
+        }
+
+        fun flush() {
+            chunk.flush()
+            entity?.flush()
+            poi?.flush()
+        }
+    }
+
     init {
         val worldContainer = plugin.server.worldContainer
         var srcDir = File(worldContainer, resetInstructions.sourceWorld)
@@ -86,17 +104,16 @@ class NMSChunkTransferUtil(
         }
 
         if (preLoad) {
-            // This CTU is for pre-load operations. Check if the necessary files exist.
-
-            // Ensure target directories exist
-            for (subdir in listOf("region", "entities", "poi")) {
-                File(srcDir, subdir).also {
-                    require(it.isDirectory) {
-                        "Source $subdir directory missing: ${it.path}"
-                    }
-                }
-                File(dstDir, subdir).mkdirs()
+            // Newer 1.21.9+ may not have entities/poi dirs yet if no chunks ever generated.
+            // Region is always required for chunk imports, though.
+            File(srcDir, "region").also {
+                require(it.isDirectory) { "Source region directory missing: ${it.path}" }
             }
+            File(dstDir, "region").mkdirs()
+
+            // entities/poi are optional; ensure target dirs exist so RegionFileStorage can write.
+            File(dstDir, "entities").mkdirs()
+            File(dstDir, "poi").mkdirs()
         }
 
         sourceWorldDir = srcDir.toPath()
@@ -114,11 +131,33 @@ class NMSChunkTransferUtil(
 
         logger.info("Opening source and target world storages...")
         val dimension = Level.OVERWORLD // dimension is already handled by DIM subfolder resolution
-        val src = surgery.openAll(sourceWorldDir, "source", dimension)
-        val dst = surgery.openAll(targetWorldDir, "target", dimension)
 
-        src.use { srcHandle ->
-            dst.use { dstHandle ->
+        val srcChunk =
+            surgery.open(sourceWorldDir.resolve("region"), "source", NMSChunkSurgeryUtil.StorageType.CHUNK, dimension)
+        val dstChunk =
+            surgery.open(targetWorldDir.resolve("region"), "target", NMSChunkSurgeryUtil.StorageType.CHUNK, dimension)
+
+        val srcEntitiesDir = sourceWorldDir.resolve("entities")
+        val dstEntitiesDir = targetWorldDir.resolve("entities")
+        val srcPoiDir = sourceWorldDir.resolve("poi")
+        val dstPoiDir = targetWorldDir.resolve("poi")
+
+        val srcEntity = if (srcEntitiesDir.toFile().isDirectory && dstEntitiesDir.toFile().isDirectory) {
+            surgery.open(srcEntitiesDir, "source", NMSChunkSurgeryUtil.StorageType.ENTITY, dimension)
+        } else null
+        val dstEntity = if (dstEntitiesDir.toFile().isDirectory) {
+            surgery.open(dstEntitiesDir, "target", NMSChunkSurgeryUtil.StorageType.ENTITY, dimension)
+        } else null
+
+        val srcPoi = if (srcPoiDir.toFile().isDirectory && dstPoiDir.toFile().isDirectory) {
+            surgery.open(srcPoiDir, "source", NMSChunkSurgeryUtil.StorageType.POI, dimension)
+        } else null
+        val dstPoi = if (dstPoiDir.toFile().isDirectory) {
+            surgery.open(dstPoiDir, "target", NMSChunkSurgeryUtil.StorageType.POI, dimension)
+        } else null
+
+        WorldStorageHandleOptional(srcChunk, srcEntity, srcPoi).use { srcHandle ->
+            WorldStorageHandleOptional(dstChunk, dstEntity, dstPoi).use { dstHandle ->
                 importChunks(srcHandle, dstHandle, chunkSet)
                 deleteNonImportedChunks(dstHandle, chunkSet)
                 forceBlendChunks(dstHandle, chunkSet)
@@ -132,14 +171,21 @@ class NMSChunkTransferUtil(
     }
 
     private fun importChunks(
-        src: NMSChunkSurgeryUtil.WorldStorageHandle,
-        dst: NMSChunkSurgeryUtil.WorldStorageHandle,
+        src: WorldStorageHandleOptional,
+        dst: WorldStorageHandleOptional,
         chunks: Set<Pair<Int, Int>>
     ) {
         logger.info("Importing ${chunks.size} chunks (region + entities + POI)...")
         var imported = 0
         for ((x, z) in chunks) {
-            surgery.copyAll(src, dst, x, z)
+            surgery.copy(src.chunk, dst.chunk, x, z)
+            if (src.entity != null && dst.entity != null) {
+                surgery.copy(src.entity, dst.entity, x, z)
+            }
+            if (src.poi != null && dst.poi != null) {
+                surgery.copy(src.poi, dst.poi, x, z)
+            }
+
             imported++
             if (imported % 500 == 0) {
                 logger.info(":: Imported $imported / ${chunks.size} chunks...")
@@ -149,20 +195,22 @@ class NMSChunkTransferUtil(
     }
 
     private fun deleteNonImportedChunks(
-        dst: NMSChunkSurgeryUtil.WorldStorageHandle,
+        dst: WorldStorageHandleOptional,
         importedChunks: Set<Pair<Int, Int>>
     ) {
         logger.info("Deleting all non-imported chunks from target world...")
 
         var deleted = 0
-        for (type in NMSChunkSurgeryUtil.StorageType.entries) {
-            val storage = when (type) {
-                NMSChunkSurgeryUtil.StorageType.CHUNK -> dst.chunk
-                NMSChunkSurgeryUtil.StorageType.ENTITY -> dst.entity
-                NMSChunkSurgeryUtil.StorageType.POI -> dst.poi
-            }
-            val dir = targetWorldDir.resolve(type.dirName)
-            deleted += deleteNonImportedFromDir(storage, dir, importedChunks, type.name)
+
+        // CHUNK is always present
+        deleted += deleteNonImportedFromDir(dst.chunk, targetWorldDir.resolve("region"), importedChunks, "CHUNK")
+
+        // ENTITY/POI are optional
+        dst.entity?.let {
+            deleted += deleteNonImportedFromDir(it, targetWorldDir.resolve("entities"), importedChunks, "ENTITY")
+        }
+        dst.poi?.let {
+            deleted += deleteNonImportedFromDir(it, targetWorldDir.resolve("poi"), importedChunks, "POI")
         }
 
         logger.info("Deleted $deleted non-imported chunk entries across all storage types.")
@@ -239,7 +287,7 @@ class NMSChunkTransferUtil(
     }
 
     private fun forceBlendChunks(
-        dst: NMSChunkSurgeryUtil.WorldStorageHandle,
+        dst: WorldStorageHandleOptional,
         chunks: Set<Pair<Int, Int>>
     ) {
         logger.info("Force-blending ${chunks.size} imported chunks...")
