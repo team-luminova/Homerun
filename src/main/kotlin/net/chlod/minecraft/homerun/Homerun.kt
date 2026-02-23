@@ -10,12 +10,14 @@ import net.chlod.minecraft.homerun.command.ResetCommand
 import net.chlod.minecraft.homerun.command.TpworldCommand
 import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.config.ResetRule
+import net.chlod.minecraft.homerun.data.ExtraData
 import net.chlod.minecraft.homerun.data.HomerunNamespacedKeys
 import net.chlod.minecraft.homerun.data.PlayerLockout
 import net.chlod.minecraft.homerun.data.ResetLock
 import net.chlod.minecraft.homerun.data.world.WorldCopyLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldRenameLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
+import net.chlod.minecraft.homerun.helpers.MinecraftVersion
 import net.chlod.minecraft.homerun.helpers.RetainedChunkCache
 import net.chlod.minecraft.homerun.listeners.*
 import net.chlod.minecraft.homerun.tasks.ResetLoadTask
@@ -28,6 +30,7 @@ import java.util.*
 class Homerun : JavaPlugin() {
 
     val keys = HomerunNamespacedKeys(this)
+    val extraData: ExtraData = ExtraData(this)
 
     val resetRules = mutableListOf<ResetRule>()
     val retainedChunkCache = RetainedChunkCache(this, resetRules)
@@ -36,6 +39,20 @@ class Homerun : JavaPlugin() {
     private var borderCheckTask: Int? = null
 
     override fun onLoad() {
+        // Version check
+        val runtime = MinecraftVersion.detectRuntimeOrNull()
+        val highestSupported = MinecraftVersion.parseOrNull(extraData.minecraftVersionMax)
+
+        if (runtime != null && highestSupported != null && runtime > highestSupported) {
+            val warning =
+                "This server is running Minecraft $runtime, but this build of Homerun was only tested up to $highestSupported."
+            logger.warning("=".repeat(warning.length))
+            logger.warning(warning)
+            logger.warning("Things may break, especially when data moves around.")
+            logger.warning("Please update Homerun if a newer version is available.")
+            logger.warning("=".repeat(warning.length))
+        }
+
         ConfigurationSerialization.registerClass(ResetRule::class.java)
         ConfigurationSerialization.registerClass(WorldResetLoadInstruction::class.java)
         ConfigurationSerialization.registerClass(WorldCopyLoadInstruction::class.java)

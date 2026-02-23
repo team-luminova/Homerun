@@ -54,7 +54,8 @@ group = "net.chlod.minecraft"
 version = getVersionFromGit()
 
 val targetJavaVersion = 21
-val minecraftVersion = "1.21.9"
+val lowestSupportedMinecraftVersion = "1.21.5"
+val highestSupportedMinecraftVersion = "1.21.10"
 
 kotlin {
     jvmToolchain(targetJavaVersion)
@@ -70,14 +71,14 @@ repositories {
 dependencies {
     // PaperMC and Kotlin itself
     @Suppress("VulnerableLibrariesLocal", "RedundantSuppression")
-    compileOnly("io.papermc.paper:paper-api:${minecraftVersion}-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:${lowestSupportedMinecraftVersion}-R0.1-SNAPSHOT")
     compileOnly(kotlin("stdlib"))
 
     // cron stuff. Maybe replace in the future?
     implementation("com.cronutils:cron-utils:9.2.1")
 
     // NMS
-    paperweight.paperDevBundle("${minecraftVersion}-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("${lowestSupportedMinecraftVersion}-R0.1-SNAPSHOT")
 
     // Testing
     testImplementation(kotlin("test"))
@@ -89,7 +90,7 @@ tasks {
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
-        minecraftVersion(minecraftVersion)
+        minecraftVersion(highestSupportedMinecraftVersion)
 
         downloadPlugins {
             github(
@@ -122,9 +123,16 @@ tasks {
     }
 
     processResources {
-        val props = mapOf("version" to version)
+        val props = mapOf(
+            "version" to version,
+            "lowestSupportedMinecraftVersion" to lowestSupportedMinecraftVersion,
+            "highestSupportedMinecraftVersion" to highestSupportedMinecraftVersion
+        )
         inputs.properties(props)
         filesMatching("plugin.yml") {
+            expand(props)
+        }
+        filesMatching("extras.yml") {
             expand(props)
         }
     }

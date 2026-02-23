@@ -4,7 +4,11 @@ main: net.chlod.minecraft.homerun.Homerun
 description: Reset your Minecraft server world periodically. Keep some chunks, or wipe everything completely.
 authors:
     - Chlod
+contributors:
+    - Its_Xepzion
+    - imdd15
+    - Razzmi
 website: https://modrinth.com/plugin/lmnv-homerun
-api-version: '1.21'
+api-version: '${lowestSupportedMinecraftVersion}'
 depend:
     - MCKotlin-Paper
