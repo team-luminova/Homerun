@@ -438,8 +438,7 @@ class NMSChunkTransferUtil(
         } else if (dataVersion >= 4554) {
             logger.info("Copying >=1.21.9 Minecraft level.dat tags...")
             copy1_21_9Nbt(sourceData, targetData)
-        }
-        if (dataVersion >= 4325) {
+        } else if (dataVersion >= 4325) {
             logger.info("Copying >=1.21.5 Minecraft level.dat tags...")
             copy1_21_5Nbt(sourceData, targetData)
         }
