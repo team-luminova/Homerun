@@ -121,7 +121,17 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
             }
         }
 
-        // 5. Create instruction list
+        // 5. Ensure that the chunks also exist in the source world (1.21.9+ will no longer generate spawn chunks).
+        for (instructions in resetInstructionsList) {
+            if (instructions !is WorldResetLoadInstruction) {
+                continue
+            }
+
+            val world = plugin.server.getWorld(instructions.sourceWorld)!!
+            generateWorldChunks(instructions.chunks!!, world)
+        }
+
+        // 6. Create instruction list
         val resetLock = ResetLock.create(
             plugin,
             resetInstructionsList
@@ -129,15 +139,17 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         resetLock.save()
         componentLogger.info("Reset instructions list saved.")
 
-        // 6. Copy datapacks now to ensure they're in place when the world is loaded, otherwise they will be marked
+        // 7. Copy datapacks now to ensure they're in place when the world is loaded, otherwise they will be marked
         // as missing before our plugin load listeners even fire.
         for (instructions in resetInstructionsList) {
-            if (instructions is WorldResetLoadInstruction) {
-                NMSChunkTransferUtil(plugin, instructions, false).copyDatapacks()
+            if (instructions !is WorldResetLoadInstruction) {
+                continue
             }
+            
+            NMSChunkTransferUtil(plugin, instructions, false).copyDatapacks()
         }
 
-        // 7. Modify server properties to set new world as spawn world, and restart if necessary.
+        // 8. Modify server properties to set new world as spawn world, and restart if necessary.
         if (rule.parameters.modifyServerProperties ?: true) {
             modifyServerPropertiesViaReflection(targetWorldName)
         }
