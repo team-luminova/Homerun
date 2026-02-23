@@ -19,6 +19,7 @@ import net.chlod.minecraft.homerun.helpers.RetainedChunkCache
 import net.chlod.minecraft.homerun.listeners.*
 import net.chlod.minecraft.homerun.tasks.ResetLoadTask
 import net.chlod.minecraft.homerun.tasks.ResetPrepareTask
+import net.chlod.minecraft.homerun.tasks.RetainedChunkCacheRefreshTask
 import net.chlod.minecraft.homerun.tasks.WorldPostloadTask
 import org.bukkit.configuration.serialization.ConfigurationSerialization
 import org.bukkit.plugin.java.JavaPlugin
@@ -120,7 +121,7 @@ class Homerun : JavaPlugin() {
 
         // Caching retained chunks for player notifications
         retainedChunkCache.flushCaches(true)
-        RetainedChunkCache.RetainedChunkCacheRefreshTask(retainedChunkCache)
+        RetainedChunkCacheRefreshTask(retainedChunkCache)
             .runTaskTimer(this, 0, 20 * 60 * 5L) // Refresh every 5 minutes
 
         // Unlock player joins
