@@ -4,10 +4,7 @@ import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler
 import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
-import net.chlod.minecraft.homerun.command.LockoutCommand
-import net.chlod.minecraft.homerun.command.ReloadChunkCacheCommand
-import net.chlod.minecraft.homerun.command.ResetCommand
-import net.chlod.minecraft.homerun.command.TpworldCommand
+import net.chlod.minecraft.homerun.command.*
 import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.data.ExtraData
@@ -109,6 +106,10 @@ class Homerun : JavaPlugin() {
                     ReloadChunkCacheCommand.createCommand(this, "reloadchunkcache"),
                     "Reloads the retained chunk cache used for player notifications"
                 )
+                commands.registrar().register(
+                    ReloadConfigCommand.createCommand(this, "reloadconfig"),
+                    "Reloads the configuration for Homerun"
+                )
             })
 
 
@@ -207,7 +208,7 @@ class Homerun : JavaPlugin() {
         }
     }
 
-    private fun loadResetRules() {
+    fun loadResetRules() {
         resetRules.clear()
 
         val resetRulesRaw = config.getList("reset_rules") ?: return
