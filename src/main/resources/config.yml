@@ -65,6 +65,8 @@ reset_rules:
             -   type: chat_message
                 intervals: [ 86400, 43200, 21600, 3600, 1800, 600, 300, 60, 30, 10, 5, 4, 3, 2, 1 ]
         parameters:
+            # It's possible to have multiple reset parameters. All of these will be run in series when a reset occurs.
+            # All of these will run based on the same conditions (as written above).
             -   retained_chunks:
                     # Retain 16 chunks centered on the world spawn point (i.e. 256 blocks across; 8 chunks in each direction).
                     -   from_world_spawn: 16

@@ -30,7 +30,7 @@ for Homerun to work.
 
 Homerun is configured through a `config.yml` file (see the defaults [here](./src/main/resources/config.yml)). It
 currently accepts one top-level key: `reset_rules`, which is a list of reset rules. Each reset rule has certain
-conditions and parameters, and can have a name, be disabled, or have warnings.
+conditions and one or more parameters, and can have a name, be disabled, or have warnings.
 
 #### Reset rules
 
@@ -42,7 +42,7 @@ conditions and parameters, and can have a name, be disabled, or have warnings.
 | `notify_exit`  | `false` | `boolean` (optional)             | If true, players will be notified when they leave a reset-protected area.                                                           |
 | `borders`      | *none*  | list of BorderTypes (optional)   | A list of borders that can appear to the player when they get near a reset-protected area. See [Border types](#border-types) below. | 
 | `conditions`   | *none*  | list of ResetCondition           | A set of conditions to be used for resetting the server. See [Reset conditions](#reset-conditions) below.                           |
-| `parameters`   | *none*  | ResetParameters                  | A set of parameters for the reset. See [Reset parameters](#reset-parameters) below.                                                 |
+| `parameters`   | *none*  | list of ResetParameters          | A list of parameter sets for the reset. See [Reset parameters](#reset-parameters) below.                                            |
 | `warnings`     | *none*  | list of ResetWarnings (optional) | A list of warnings to be issued before the reset occurs. See [Warnings](#warnings) below.                                           |
 
 #### Reset conditions
