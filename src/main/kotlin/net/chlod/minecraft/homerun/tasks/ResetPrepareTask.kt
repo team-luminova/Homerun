@@ -327,6 +327,19 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                 originalSeed
             )
         }
+        if (!targetWorld.persistentDataContainer.has(
+                plugin.keys.spawnModified,
+                PersistentDataType.BOOLEAN
+            )
+        ) {
+            // If this world was already spawn-modified before, the spawn point will be carried over and we don't
+            // need to run an overwrite again.
+            targetWorld.persistentDataContainer.set(
+                plugin.keys.spawnModified,
+                PersistentDataType.BOOLEAN,
+                true
+            )
+        }
 
         val knownEndCrystalLocations = mutableListOf<Triple<Double, Double, Double>>()
         for (crystal in sourceWorld.getEntitiesByClass(EnderCrystal::class.java)) {
