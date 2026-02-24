@@ -1,0 +1,58 @@
+name: 🪲 Bug report
+description: 'For any bugs within Homerun, such as improper world resets, data loss, or crashes.'
+labels: [ bug ]
+type: 'bug'
+body:
+    -   type: checkboxes
+        attributes:
+            label: Please confirm the following.
+            options:
+                -   label: I checked the [existing issues](https://github.com/luminova-osu/Homerun/issues?q=is%3Aissue) for duplicate problems
+                    required: true
+                -   label: I am using a supported version of Minecraft (released in the last 12 months)
+                    required: true
+                -   label: I have ensured that Homerun is up to date
+                    required: true
+    -   type: input
+        id: version
+        attributes:
+            label: What version of Homerun are you using?
+            description: >
+                The version can be found with the plugin's name in the server console when it loads, in the filename for
+                the plugin's .jar file, or by running `/homerun` in-game.
+        validations:
+            required: true
+    -   type: textarea
+        attributes:
+            label: Describe the bug
+            description: A clear and concise description of what the bug is. Include screenshots if applicable.
+        validations:
+            required: true
+    -   type: textarea
+        attributes:
+            label: Steps to reproduce
+            description: >
+                Steps to reproduce the behavior. If you are unsure of what causes this, include as much information on
+                what you were doing when the bug occurred.
+            placeholder: |
+                1. Go to '...'
+                2. Click on '...'
+                3. Scroll down to '...'
+                4. See error
+        validations:
+            required: false
+    -   type: textarea
+        attributes:
+            label: Expected behavior
+            description: A clear and concise description of what you expected to happen.
+        validations:
+            required: false
+    -   type: textarea
+        attributes:
+            label: Additional context
+            description: >
+                Add any other context about the problem here. If you're not using Paper, please indicate what server
+                software you're using. If you're using any biome, world generation, or world management plugins, please
+                include them here.
+        validations:
+            required: false
