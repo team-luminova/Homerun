@@ -4,6 +4,7 @@ import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.data.ResetLock
 import net.chlod.minecraft.homerun.data.world.ResetLoadInstructions
+import net.chlod.minecraft.homerun.data.world.ResetLoadInstructions.ResetLoadInstructionType
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import net.chlod.minecraft.homerun.helpers.EndPillarCleanup
 import net.minecraft.nbt.CompoundTag
@@ -21,10 +22,12 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
     val componentLogger = plugin.componentLogger
 
     /**
-     * Index of instructions by target world name, used as a fallback for legacy locks
-     * that don't carry [WorldResetLoadInstruction.subDimensions] metadata.
+     * Index of all reset instructions by their **source** world name. Used to resolve
+     * a player's `Dimension` tag (which refers to the world they were in before the reset)
+     * to the corresponding reset instruction.
      */
-    val resetInstructionByWorld = resetLock.resetInstructions.associateBy { it.targetWorld }
+    private val resetInstructionBySourceWorld: Map<String, ResetLoadInstructions> =
+        resetLock.resetInstructions.associateBy { it.sourceWorld }
 
     override fun run() {
         for (resetInstructions in resetLock.resetInstructions) {
@@ -74,54 +77,61 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
                 lastKnownNameTag.get()
             else playerFile.nameWithoutExtension
 
-            // Fix the world UUID, or else they'll be teleported to world spawn
             val playerDimensionTag = rootTag.getString("Dimension")
             val playerDimension = if (playerDimensionTag.isPresent)
                 playerDimensionTag.get()
             else "minecraft:overworld"
-            val playerEnvironment = when (playerDimension) {
-                "minecraft:overworld" -> Environment.NORMAL
-                "minecraft:the_nether" -> Environment.NETHER
-                "minecraft:the_end" -> Environment.THE_END
-                else -> {
-                    componentLogger.warn("Player data '$playerName' has unrecognized dimension '$playerDimension'. Forcing reset...")
-                    Environment.NORMAL
-                }
-            }
 
-            // Resolve the sub-dimension instructions via embedded SubDimensionInfo when available,
-            // falling back to the legacy string-concatenation approach for old lock files.
-            val dimResetInstructions = resolveDimensionInstructions(
-                resetInstructions, playerEnvironment, newWorld
+            // Resolve the instruction that governs the world the player was in.
+            // This handles both main-world standard dimensions (minecraft:overworld, minecraft:the_nether,
+            // minecraft:the_end) and non-main worlds (minecraft:<world_name>) as used in Paper 1.21.9+.
+            val dimResetInstructions = resolvePlayerWorldInstructions(
+                resetInstructions, playerDimension
             )
 
-            if (dimResetInstructions != null && dimResetInstructions is WorldResetLoadInstruction) {
-                // The world they're in is being reset too. This means that the world UUID will be changing,
-                // so we need to update it in the player data.
-                val dimUUID = UUID.fromString(dimResetInstructions.targetWorldUUID)
+            if (dimResetInstructions == null) {
+                // Player is in a world not targeted by any reset rule. Ignore them.
+                componentLogger.debug("Player '$playerName' is in unmanaged dimension '$playerDimension', skipping.")
+                NbtIo.writeCompressed(rootTag, Path(playerFile.path))
+                continue
+            }
+
+            if (dimResetInstructions.type == ResetLoadInstructionType.COPY
+                || dimResetInstructions.type == ResetLoadInstructionType.RENAME
+            ) {
+                // World was copied or renamed — all chunks are preserved, player is fine.
+                // Still need to update the Dimension tag to point to the new world name.
+                updateDimensionTag(rootTag, playerDimension, dimResetInstructions.targetWorld)
+                componentLogger.debug("Player '$playerName' is in copied/renamed world, skipping.")
+                NbtIo.writeCompressed(rootTag, Path(playerFile.path))
+                continue
+            }
+
+            // At this point, the player is in a world that was reset (NORMAL type).
+            val dimResetInstruction = dimResetInstructions as WorldResetLoadInstruction
+
+            // Fix the world UUID, or else they'll be teleported to world spawn
+            if (dimResetInstruction.targetWorldUUID != null) {
+                val dimUUID = UUID.fromString(dimResetInstruction.targetWorldUUID)
                 rootTag.putLong("WorldUUIDLeast", dimUUID.leastSignificantBits)
                 rootTag.putLong("WorldUUIDMost", dimUUID.mostSignificantBits)
             }
 
-            // Check if the player is currently outside a retained chunk
+            // Update the Dimension tag to point to the new target world.
+            updateDimensionTag(rootTag, playerDimension, dimResetInstruction.targetWorld)
+
+            // Check if the player is currently outside a retained chunk within this specific dimension
             val playerChunk = getOfflineChunk(rootTag)
             var willReset = false
             if (playerChunk == null) {
-                componentLogger.info("Could not find X position of player '$playerName'. Handling...")
+                componentLogger.info("Could not find position of player '$playerName'. Handling...")
                 willReset = true
-            } else if (dimResetInstructions != null) {
-                if (dimResetInstructions is WorldResetLoadInstruction) {
-                    willReset = !dimResetInstructions.chunks!!.contains(playerChunk)
-                } else {
-                    // Rename or copy. This is automatically a kept chunk.
-                }
-            } else {
-                // This user is in a world that's not being reset. We're skipping them, just in case they're in a world
-                // that's not managed by us.
+            } else if (dimResetInstruction.chunks != null) {
+                willReset = !dimResetInstruction.chunks.contains(playerChunk)
             }
 
             if (willReset) {
-                componentLogger.info("Player data '$playerName' is outside retained chunks, handling...")
+                componentLogger.info("Player data '$playerName' is outside retained chunks in dimension '$playerDimension', handling...")
                 handlePlayerOutsideRetainedChunk(resetInstructions, rootTag)
             }
 
@@ -130,35 +140,90 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
     }
 
     /**
-     * Resolves the [ResetLoadInstructions] for the dimension the player is currently in.
+     * Resolves the [ResetLoadInstructions] governing the world a player was in, based on
+     * their `Dimension` NBT tag.
      *
-     * For overworld players, returns the [resetInstructions] directly. For sub-dimensions
-     * (Nether/End), checks the overworld instruction's [WorldResetLoadInstruction.subDimensions]
-     * metadata first, and falls back to a flat lookup by world name for backward compatibility
-     * with legacy lock files that don't carry sub-dimension metadata.
+     * In Paper 1.21.9+, the `Dimension` tag has the following semantics:
+     * - `minecraft:overworld` — the main server world (defined by `level-name` in server.properties)
+     * - `minecraft:the_nether` — the main server world's Nether dimension
+     * - `minecraft:the_end` — the main server world's End dimension
+     * - `minecraft:<world_name>` — any other Bukkit world, identified by its folder name.
+     *   The name alone does NOT indicate its dimension type (e.g. `minecraft:foo_the_end` may
+     *   or may not be an End world).
+     *
+     * This method maps the dimension string to a **source world name**, then looks it up in the
+     * [resetInstructionBySourceWorld] map. For the three standard dimensions, the source world name
+     * is derived from the current overworld instruction's [WorldResetLoadInstruction.sourceWorld]
+     * and its [WorldResetLoadInstruction.subDimensions] metadata.
+     *
+     * @param overworldInstruction The overworld [WorldResetLoadInstruction] whose player data is being processed.
+     * @param playerDimension The raw `Dimension` NBT tag value (e.g. `minecraft:overworld`).
+     * @return The [ResetLoadInstructions] for the player's world, or `null` if the world is not
+     *         targeted by any reset rule.
      */
-    private fun resolveDimensionInstructions(
-        resetInstructions: WorldResetLoadInstruction,
-        playerEnvironment: Environment,
-        newWorld: World
+    private fun resolvePlayerWorldInstructions(
+        overworldInstruction: WorldResetLoadInstruction,
+        playerDimension: String
     ): ResetLoadInstructions? {
-        if (playerEnvironment == Environment.NORMAL) {
-            return resetInstructions
-        }
+        return when (playerDimension) {
+            // Standard main-world dimensions: map to the overworld instruction or its sub-dimensions.
+            "minecraft:overworld" -> overworldInstruction
 
+            "minecraft:the_nether" -> {
+                resolveSubDimension(overworldInstruction, Environment.NETHER)
+            }
+
+            "minecraft:the_end" -> {
+                resolveSubDimension(overworldInstruction, Environment.THE_END)
+            }
+
+            // Non-main world: the dimension string is "minecraft:<world_name>" where <world_name>
+            // is the Bukkit world folder name. Look up by source world name directly.
+            else -> {
+                val worldName = playerDimension.removePrefix("minecraft:")
+                resetInstructionBySourceWorld[worldName]
+            }
+        }
+    }
+
+    /**
+     * Resolves the [ResetLoadInstructions] for a sub-dimension (Nether/End) of the main world.
+     *
+     * First checks the overworld instruction's structured [WorldResetLoadInstruction.subDimensions]
+     * metadata, then falls back to looking up by conventional source world name for legacy lock files.
+     */
+    private fun resolveSubDimension(
+        overworldInstruction: WorldResetLoadInstruction,
+        environment: Environment
+    ): ResetLoadInstructions? {
         // Try the structured sub-dimension metadata first
-        val subDim = resetInstructions.getSubDimension(playerEnvironment)
+        val subDim = overworldInstruction.getSubDimension(environment)
         if (subDim != null) {
-            return resetInstructionByWorld[subDim.worldName]
+            // subDim.worldName is the *target* world name; look up by source world in the instruction list.
+            // The instruction with that target world will have the source world we need.
+            // Since we index by source world, find the instruction whose target matches subDim.worldName.
+            return resetLock.resetInstructions.firstOrNull { it.targetWorld == subDim.worldName }
         }
 
-        // Fallback: legacy lock files without subDimensions metadata
-        val dimSuffix = when (playerEnvironment) {
+        // Fallback: legacy lock files without subDimensions metadata.
+        // Conventionally, the Nether source world is "<overworld>_nether" and End is "<overworld>_the_end".
+        val dimSuffix = when (environment) {
             Environment.NETHER -> "_nether"
             Environment.THE_END -> "_the_end"
             else -> return null
         }
-        return resetInstructionByWorld[newWorld.name + dimSuffix]
+        return resetInstructionBySourceWorld[overworldInstruction.sourceWorld + dimSuffix]
+    }
+
+    private fun updateDimensionTag(rootTag: CompoundTag, playerDimension: String, targetWorldName: String) {
+        when (playerDimension) {
+            // Main-world dimensions are stable identifiers — they don't change when the
+            // main world is replaced, so we leave them as-is.
+            "minecraft:overworld", "minecraft:the_nether", "minecraft:the_end" -> return
+
+            // Non-main world: update to the new target world name.
+            else -> rootTag.putString("Dimension", "minecraft:$targetWorldName")
+        }
     }
 
     fun getOfflineChunk(rootTag: CompoundTag): Pair<Int, Int>? {
@@ -168,12 +233,8 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
             val posXTag = pos.getDouble(0)
             val posZTag = pos.getDouble(2)
             if (posXTag.isEmpty) {
-                // Uhh... they're... somewhere????????
-                // What?
                 return null
             } else if (posZTag.isEmpty) {
-                // Uhh... they're... somewhere????????
-                // What?
                 return null
             } else {
                 val chunkX = posXTag.get().toInt() shr 4
@@ -181,8 +242,7 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
                 return Pair(chunkX, chunkZ)
             }
         } else {
-            // Uhh... they're... nowhere?
-            // Reset them. Just in case...
+            // No position data — reset them to be safe.
             return null
         }
     }
