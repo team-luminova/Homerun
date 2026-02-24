@@ -34,7 +34,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         fun onLockout(): PlayerLockout {
             val dimLockout = PlayerLockout.of(sourceWorld)
             dimLockout.lock()
-            dimLockout.kickAll()
+            dimLockout.kickAll(plugin)
             return dimLockout
         }
 
@@ -75,7 +75,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         val lockout = PlayerLockout.of(sourceWorld)
         lockouts.add(lockout)
         lockout.lock()
-        lockout.kickAll()
+        lockout.kickAll(plugin)
 
         // 2a. Process dimensions and, if they also need to lockout, lockout.
         val netherResetSubtask = processNether(sourceWorld)
@@ -145,7 +145,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
             if (instructions !is WorldResetLoadInstruction) {
                 continue
             }
-            
+
             NMSChunkTransferUtil(plugin, instructions, false).copyDatapacks()
         }
 

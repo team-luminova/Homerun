@@ -14,7 +14,7 @@ class PlayerLockoutListener(val plugin: Homerun) : Listener {
     fun onJoinEarly(event: PlayerJoinEvent) {
         val lockout = PlayerLockout.of(event.player.world)
         if (lockout.isLocked()) {
-            lockout.handleLockout(event.player)
+            lockout.handleLockout(plugin, event.player)
         }
     }
 
@@ -23,7 +23,7 @@ class PlayerLockoutListener(val plugin: Homerun) : Listener {
         val lockout = PlayerLockout.of(event.to.world)
         if (lockout.isLocked()) {
             event.isCancelled = true
-            lockout.handleSoftLockout(event.player)
+            lockout.handleSoftLockout(plugin, event.player)
         }
     }
 

@@ -5,10 +5,9 @@ import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.config.conditions.ResetCondition
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.minimessage.tag.resolver.Formatter
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.World
-import java.time.ZoneId
-import java.time.format.DateTimeFormatterBuilder
 import kotlin.math.round
 
 class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHAT_MESSAGE) {
@@ -145,75 +144,61 @@ class ChatMessageWarningMethod() : ResetWarningMethod(ResetWarningMethodType.CHA
         val referenceIntervalMillis = lastUpdateConditionMap[conditionPair]?.first ?: timeUntilResetMillis
 
         val nextReset = condition.getNextReset(plugin)!!
-        var text = Component.text("This world will reset in ")
 
         val hoursUntil = (referenceIntervalMillis / 3600000) % 24
         val minutesUntil = (referenceIntervalMillis / 60000) % 60
         val secondsUntil = (referenceIntervalMillis / 1000) % 60
 
+        val durations = mutableListOf<Component>()
+
         if (hoursUntil > 0) {
-            text = text.append(
-                Component
-                    .text(
-                        String.format(
-                            "%d hour" + if (hoursUntil != 1L) "s" else "",
-                            hoursUntil
-                        )
-                    )
-                    .color(getWarningTextColor(referenceIntervalMillis))
-                    .decorate(TextDecoration.BOLD)
+            durations.add(
+                plugin.messages.get(
+                    "warning-chat-hours",
+                    Placeholder.unparsed("num", hoursUntil.toString()),
+                    Formatter.choice("unit", hoursUntil)
+                )
             )
         }
         if (minutesUntil > 0) {
-            if (hoursUntil > 0) {
-                text = text.append(Component.text(", "))
-            }
-            text = text.append(
-                Component
-                    .text(
-                        String.format(
-                            "%d minute" + if (minutesUntil != 1L) "s" else "",
-                            minutesUntil
-                        )
-                    )
-                    .color(getWarningTextColor(referenceIntervalMillis))
-                    .decorate(TextDecoration.BOLD)
+            durations.add(
+                plugin.messages.get(
+                    "warning-chat-minutes",
+                    Placeholder.unparsed("num", minutesUntil.toString()),
+                    Formatter.choice("unit", minutesUntil)
+                )
             )
         }
         if (secondsUntil > 0) {
-            if (hoursUntil > 0 || minutesUntil > 0) {
-                text = text.append(Component.text(", "))
-            }
-            text = text.append(
-                Component
-                    .text(
-                        String.format(
-                            "%d second" + if (secondsUntil != 1L) "s" else "",
-                            secondsUntil
-                        )
-                    )
-                    .color(getWarningTextColor(referenceIntervalMillis))
-                    .decorate(TextDecoration.BOLD)
+            durations.add(
+                plugin.messages.get(
+                    "warning-chat-seconds",
+                    Placeholder.unparsed("num", secondsUntil.toString()),
+                    Formatter.choice("unit", secondsUntil)
+                )
             )
         }
 
-        text = text
-            .append(
-                Component
-                    .text("! (at ")
+        if (durations.isEmpty()) {
+            // Weird?
+            return
+        }
+
+        val text = plugin.messages.get(
+            "warning-chat",
+            Placeholder.component(
+                "duration",
+                durations.reduce { acc, component ->
+                    acc.append(
+                        plugin.messages.get("warning-chat-glue")
+                    ).append(component)
+                }
+            ),
+            Formatter.date(
+                "date",
+                plugin.messages.withTimezone(nextReset)
             )
-            .append(
-                Component
-                    .text(
-                        nextReset.withZoneSameInstant(ZoneId.of("UTC")).format(
-                            DateTimeFormatterBuilder()
-                                .appendPattern("yyyy-MM-dd HH:mm 'UTC'")
-                                .toFormatter()
-                        )
-                    )
-                    .decorate(TextDecoration.BOLD)
-            )
-            .append(Component.text(")"))
+        )
 
         world.forEachAudience { audience -> audience.sendMessage(text) }
     }

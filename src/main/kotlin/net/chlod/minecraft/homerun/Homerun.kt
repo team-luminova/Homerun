@@ -120,6 +120,13 @@ class Homerun : JavaPlugin() {
         }
     }
 
+    fun reload() {
+        reloadConfig()
+        messages.reload()
+        loadResetRules()
+        retainedChunkCache.flushCaches(true)
+    }
+
     fun loadResetRules() {
         resetRules.clear()
 

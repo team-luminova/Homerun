@@ -1,9 +1,6 @@
 package net.chlod.minecraft.homerun.listeners
 
 import net.chlod.minecraft.homerun.Homerun
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Chunk
 import org.bukkit.event.player.PlayerMoveEvent
 
@@ -36,23 +33,11 @@ class PlayerNotifyListener(val plugin: Homerun) : PlayerChunkMovementListener() 
                 if (notifyExit && !inRetainedChunk) {
                     // Send them a message
                     event.player.sendActionBar {
-                        Component.text()
-                            .append(
-                                Component.text(
-                                    "You have entered the reset area.",
-                                    NamedTextColor.RED,
-                                    TextDecoration.BOLD
-                                )
-                            )
-                            .append(
-                                Component.text(" Blocks or items left here will be reset.", NamedTextColor.RED)
-                            )
-                            .build()
+                        plugin.messages.get("border-exit")
                     }
                 } else if (notifyEnter && inRetainedChunk) {
                     event.player.sendActionBar {
-                        Component.text("You have left the reset area.")
-                            .color(NamedTextColor.GREEN)
+                        plugin.messages.get("border-enter")
                     }
                 }
             }
