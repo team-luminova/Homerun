@@ -4,9 +4,8 @@ import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.config.conditions.ResetCondition
 import net.kyori.adventure.bossbar.BossBar
-import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.minimessage.tag.resolver.Formatter
 import org.bukkit.World
 
 class BossBarWarningMethod(
@@ -53,30 +52,24 @@ class BossBarWarningMethod(
             return
         }
 
-        val name = Component.text()
+        val message = plugin.messages.get(
+            "warning-bossbar",
+            Formatter.number("seconds", timeUntilResetMillis / 1000.0)
+        )
             .color(getWarningTextColor(timeUntilResetMillis))
-            .append(
-                Component.text("World reset in ")
-            )
-            .append(
-                Component
-                    .text("%.1f seconds".format(timeUntilResetMillis / 1000.0))
-                    .decorate(TextDecoration.BOLD)
-            )
-            .append(Component.text("."))
 
         val conditionKey = Pair(world, condition)
         var bossBar = bossBars[conditionKey]
         if (bossBar != null) {
             bossBar
-                .name(name)
+                .name(message)
                 .progress(1 - (timeUntilResetMillis / (secondsBefore * 1000f)))
                 .color(getWarningBossBarColor(timeUntilResetMillis))
         } else {
             bossBar = bossBars.getOrPut(conditionKey) {
                 // Create a new BossBar for this condition
                 BossBar.bossBar(
-                    name,
+                    message,
                     1f,
                     getWarningBossBarColor(timeUntilResetMillis),
                     BossBar.Overlay.PROGRESS

@@ -1,6 +1,6 @@
 package net.chlod.minecraft.homerun.data
 
-import net.kyori.adventure.text.Component
+import net.chlod.minecraft.homerun.Homerun
 import org.bukkit.Bukkit
 import org.bukkit.World
 import org.bukkit.entity.Player
@@ -28,32 +28,24 @@ class PlayerLockout : WorldLockout {
         return super.isLocked() || (world != null && globalLockout.isLocked())
     }
 
-    fun kickAll() {
+    fun kickAll(plugin: Homerun) {
         if (world == null) {
             Bukkit.getServer().onlinePlayers.forEach { player ->
-                handleLockout(player)
+                handleLockout(plugin, player)
             }
         } else {
             world.players.forEach { player ->
-                handleLockout(player)
+                handleLockout(plugin, player)
             }
         }
     }
 
-    fun handleLockout(player: Player) {
-        player.kick(
-            Component.text(
-                "Server is resetting the world. Please reconnect shortly."
-            )
-        )
+    fun handleLockout(plugin: Homerun, player: Player) {
+        player.kick(plugin.messages.get("lockout-join"))
     }
 
-    fun handleSoftLockout(player: Player) {
-        player.sendMessage(
-            Component.text(
-                "Server is resetting the destination world. Please try again shortly."
-            )
-        )
+    fun handleSoftLockout(plugin: Homerun, player: Player) {
+        player.sendMessage(plugin.messages.get("lockout-teleport"))
     }
 
 }

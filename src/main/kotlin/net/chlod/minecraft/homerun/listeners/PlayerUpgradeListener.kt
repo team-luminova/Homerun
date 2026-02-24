@@ -54,26 +54,26 @@ class PlayerUpgradeListener(val plugin: Homerun) : Listener {
             // Just teleport them to their respawn location.
             player.teleport(player.world.spawnLocation)
         }
-        player.sendMessage("You were in a reset chunk and have been respawned for safety.")
+        player.sendMessage(plugin.messages.get("reset-spawn"))
     }
 
     private fun handleKill(player: Player) {
         plugin.componentLogger.info("${player.name} was not in a retained chunk during reset. Killing them.")
         player.health = 0.0
-        player.sendMessage("You were in a chunk that was not kept after a reset and have been killed.")
+        player.sendMessage(plugin.messages.get("reset-kill"))
     }
 
     private fun handleTeleportToWorldSpawn(player: Player) {
         plugin.componentLogger.info("${player.name} was not in a retained chunk during reset. Teleporting to world spawn.")
         player.teleport(player.world.spawnLocation)
-        player.sendMessage("You were in a chunk that was not kept after a reset and have been teleported to the world spawn.")
+        player.sendMessage(plugin.messages.get("reset-worldspawn"))
     }
 
     private fun handleTeleportToHighest(player: Player) {
         plugin.componentLogger.info("${player.name} was not in a retained chunk during reset. Teleporting to highest block.")
         val highestLocation = player.world.getHighestBlockAt(player.location).location.add(0.0, 1.0, 0.0)
         player.teleport(highestLocation)
-        player.sendMessage("You were in a chunk that was not kept after a reset and have been teleported to the highest block at your previous location.")
+        player.sendMessage(plugin.messages.get("reset-highest"))
     }
 
     private fun handleTeleportToClosest(player: Player) {
@@ -104,7 +104,7 @@ class PlayerUpgradeListener(val plugin: Homerun) : Listener {
                         ) {
                             val validLocation = block.location.add(0.0, 1.0, 0.0)
                             player.teleport(validLocation)
-                            player.sendMessage("You were in a chunk that was not kept after a reset and have been teleported to the closest valid position.")
+                            player.sendMessage(plugin.messages.get("reset-closest"))
                             return
                         }
                     }

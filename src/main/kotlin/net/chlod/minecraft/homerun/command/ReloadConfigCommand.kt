@@ -15,9 +15,7 @@ class ReloadConfigCommand {
             return Commands.literal(commandName)
                 .requires { it.sender.hasPermission("homerun.commands.reload") }
                 .executes { ctx ->
-                    plugin.reloadConfig()
-                    plugin.loadResetRules()
-                    plugin.retainedChunkCache.flushCaches(true)
+                    plugin.reload()
                     ctx.source.sender.sendMessage("Homerun configuration reloaded successfully.")
 
                     Command.SINGLE_SUCCESS

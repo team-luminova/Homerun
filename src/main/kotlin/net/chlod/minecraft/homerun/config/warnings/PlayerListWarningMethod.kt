@@ -5,10 +5,10 @@ import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.config.conditions.ResetCondition
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.minimessage.tag.resolver.Formatter
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.World
-import java.time.ZoneId
-import java.time.format.DateTimeFormatterBuilder
+import java.time.ZonedDateTime
 
 class PlayerListWarningMethod(
     val position: PlayerListWarningPosition?,
@@ -49,51 +49,14 @@ class PlayerListWarningMethod(
         }
 
         val nextReset = condition.getNextReset(plugin)!!
-        val resetTime = Component.text("World reset at ")
-            .color(NamedTextColor.GRAY)
-            .append(
-                Component
-                    .text(
-                        nextReset.withZoneSameInstant(ZoneId.of("UTC")).format(
-                            DateTimeFormatterBuilder()
-                                .appendPattern("yyyy-MM-dd HH:mm 'UTC'")
-                                .toFormatter()
-                        )
-                    )
-                    .color(NamedTextColor.WHITE)
-            )
-        val countdown = Component.text()
-            .append(
-                Component
-                    .text(
-                        String.format(
-                            "%02d:%02d:%02d",
-                            (timeUntilResetMillis / 3600000) % 24,
-                            (timeUntilResetMillis / 60000) % 60,
-                            (timeUntilResetMillis / 1000) % 60
-                        )
-                    )
-                    .color(getWarningTextColor(timeUntilResetMillis))
-                    .decorate(TextDecoration.BOLD)
-            )
-            .append(
-                Component.text(" remaining")
-                    .color(NamedTextColor.GRAY)
-            )
-            .build()
 
         if (position == PlayerListWarningPosition.BOTH) {
             world.players.forEach { player ->
-                player.sendPlayerListHeader(resetTime)
-                player.sendPlayerListFooter(countdown)
+                player.sendPlayerListHeader(getDateMessage(plugin, nextReset))
+                player.sendPlayerListFooter(getCountdownMessage(plugin, timeUntilResetMillis))
             }
         } else {
-            val combinedText = resetTime
-                .append(
-                    Component.text(", ")
-                        .color(NamedTextColor.GRAY)
-                )
-                .append(countdown)
+            val combinedText = getCombinedMessage(plugin, nextReset, timeUntilResetMillis)
             if (position == PlayerListWarningPosition.HEADER) {
                 world.players.forEach { player ->
                     player.sendPlayerListHeader(combinedText)
@@ -104,6 +67,68 @@ class PlayerListWarningMethod(
                 }
             }
         }
+    }
+
+    fun getCombinedMessage(
+        plugin: Homerun,
+        nextReset: ZonedDateTime,
+        timeUntilResetMillis: Long,
+    ): Component {
+        return plugin.messages.get(
+            "warning-playerlist",
+            Formatter.date(
+                "date",
+                plugin.messages.withTimezone(nextReset)
+            ),
+            Placeholder.component(
+                "duration",
+                Component
+                    .text(
+                        String.format(
+                            "%02d:%02d:%02d",
+                            (timeUntilResetMillis / 3600000) % 24,
+                            (timeUntilResetMillis / 60000) % 60,
+                            (timeUntilResetMillis / 1000) % 60
+                        )
+                    )
+                    .color(getWarningTextColor(timeUntilResetMillis))
+            )
+        )
+    }
+
+    fun getDateMessage(
+        plugin: Homerun,
+        nextReset: ZonedDateTime
+    ): Component {
+        return plugin.messages.get(
+            "warning-playerlist-date",
+            Formatter.date(
+                "date",
+                plugin.messages.withTimezone(nextReset)
+            )
+        )
+    }
+
+    fun getCountdownMessage(
+        plugin: Homerun,
+        timeUntilResetMillis: Long
+    ): Component {
+        return plugin.messages.get(
+            "warning-playerlist-countdown",
+            Placeholder.component(
+                "duration",
+                Component
+                    .text(
+                        String.format(
+                            "%02d:%02d:%02d",
+                            (timeUntilResetMillis / 3600000) % 24,
+                            (timeUntilResetMillis / 60000) % 60,
+                            (timeUntilResetMillis / 1000) % 60
+                        )
+                    )
+                    .color(getWarningTextColor(timeUntilResetMillis))
+            )
+        )
     }
 
     override fun serialize(): Map<String?, Any?> {
