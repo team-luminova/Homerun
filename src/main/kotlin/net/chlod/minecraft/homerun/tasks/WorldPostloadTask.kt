@@ -18,6 +18,7 @@ import kotlin.io.path.Path
 class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitRunnable() {
 
     val componentLogger = plugin.componentLogger
+    val resetInstructionByWorld = resetLock.resetInstructions.associateBy { it.targetWorld }
 
     override fun run() {
         for (resetInstructions in resetLock.resetInstructions) {
@@ -68,36 +69,48 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
             else playerFile.nameWithoutExtension
 
             // Fix the world UUID, or else they'll be teleported to world spawn
-            rootTag.putLong("WorldUUIDLeast", newWorld.uid.leastSignificantBits)
-            rootTag.putLong("WorldUUIDMost", newWorld.uid.mostSignificantBits)
+            val playerDimensionTag = rootTag.getString("Dimension")
+            val playerDimension = if (playerDimensionTag.isPresent)
+                playerDimensionTag.get()
+            else "minecraft:overworld"
+            val playerEnvironment = when (playerDimension) {
+                "minecraft:overworld" -> Environment.NORMAL
+                "minecraft:the_nether" -> Environment.NETHER
+                "minecraft:the_end" -> Environment.THE_END
+                else -> {
+                    componentLogger.warn("Player data '$playerName' has unrecognized dimension '$playerDimension'. Forcing reset...")
+                    Environment.NORMAL
+                }
+            }
+            val newWorldDim = when (playerEnvironment) {
+                Environment.NETHER -> newWorld.name + "_nether"
+                Environment.THE_END -> newWorld.name + "_the_end"
+                else -> newWorld
+            }
+            val dimResetInstructions = resetInstructionByWorld[newWorldDim]
+            if (dimResetInstructions != null && dimResetInstructions is WorldResetLoadInstruction) {
+                // The world they're in is being reset too. This means that the world UUID will be changing,
+                // so we need to update it in the player data.
+                val dimUUID = UUID.fromString(dimResetInstructions.targetWorldUUID)
+                rootTag.putLong("WorldUUIDLeast", dimUUID.leastSignificantBits)
+                rootTag.putLong("WorldUUIDMost", dimUUID.mostSignificantBits)
+            }
 
             // Check if the player is currently outside a retained chunk
-            val posTag = rootTag.getList("Pos")
+            val playerChunk = getOfflineChunk(rootTag)
             var willReset = false
-            if (posTag.isPresent) {
-                val pos = posTag.get()
-                val posXTag = pos.getDouble(0)
-                val posZTag = pos.getDouble(2)
-                if (posXTag.isEmpty) {
-                    // Uhh... they're... somewhere????????
-                    // What?
-                    componentLogger.info("Could not find X position of player '$playerName'. Handling...")
-                    willReset = true
-                } else if (posZTag.isEmpty) {
-                    // Uhh... they're... somewhere????????
-                    // What?
-                    componentLogger.info("Could not find Z position of player '$playerName'. Handling...")
-                    willReset = true
+            if (playerChunk == null) {
+                componentLogger.info("Could not find X position of player '$playerName'. Handling...")
+                willReset = true
+            } else if (dimResetInstructions != null) {
+                if (dimResetInstructions is WorldResetLoadInstruction) {
+                    willReset = !dimResetInstructions.chunks!!.contains(playerChunk)
                 } else {
-                    val chunkX = posXTag.get().toInt() shr 4
-                    val chunkZ = posZTag.get().toInt() shr 4
-                    willReset = !resetInstructions.chunks!!.contains(Pair(chunkX, chunkZ))
+                    // Rename or copy. This is automatically a kept chunk.
                 }
             } else {
-                // Uhh... they're... nowhere?
-                // Reset them. Just in case...
-                componentLogger.info("Could not find position of player '$playerName'. Handling...")
-                willReset = true
+                // This user is in a world that's not being reset. We're skipping them, just in case they're in a world
+                // that's not managed by us.
             }
 
             if (willReset) {
@@ -106,6 +119,32 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
             }
 
             NbtIo.writeCompressed(rootTag, Path(playerFile.path))
+        }
+    }
+
+    fun getOfflineChunk(rootTag: CompoundTag): Pair<Int, Int>? {
+        val posTag = rootTag.getList("Pos")
+        if (posTag.isPresent) {
+            val pos = posTag.get()
+            val posXTag = pos.getDouble(0)
+            val posZTag = pos.getDouble(2)
+            if (posXTag.isEmpty) {
+                // Uhh... they're... somewhere????????
+                // What?
+                return null
+            } else if (posZTag.isEmpty) {
+                // Uhh... they're... somewhere????????
+                // What?
+                return null
+            } else {
+                val chunkX = posXTag.get().toInt() shr 4
+                val chunkZ = posZTag.get().toInt() shr 4
+                return Pair(chunkX, chunkZ)
+            }
+        } else {
+            // Uhh... they're... nowhere?
+            // Reset them. Just in case...
+            return null
         }
     }
 
