@@ -103,7 +103,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         // 4. Gather information about the world to be used for loading, and generate chunks in the import area of the
         // new world to ensure an .mca file is created for the region.
         val resetInstructionsList = mutableListOf<ResetLoadInstructions>()
-        val resetInstructions = gatherWorldInformation(sourceWorld, targetWorldName)
+        val resetInstructions = gatherWorldInformation(sourceWorld, targetWorld)
         resetInstructionsList.add(resetInstructions)
         generateWorldChunks(resetInstructions.chunks!!, targetWorld)
 
@@ -375,9 +375,9 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                 val world = generateWorld(sourceWorldDim, "${targetWorldName}_${dimensionSuffix}")
                 val generateInfo = Pair(
                     world,
-                    gatherWorldInformation(sourceWorldDim, "${targetWorldName}_${dimensionSuffix}")
+                    gatherWorldInformation(sourceWorldDim, world!!)
                 )
-                generateWorldChunks(generateInfo.second.chunks!!, world!!)
+                generateWorldChunks(generateInfo.second.chunks!!, world)
                 return generateInfo
             }
 
@@ -407,7 +407,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         }
     }
 
-    fun gatherWorldInformation(sourceWorld: World, targetWorldName: String): WorldResetLoadInstruction {
+    fun gatherWorldInformation(sourceWorld: World, targetWorld: World): WorldResetLoadInstruction {
         componentLogger.info("Getting list of retained chunks...")
 
         val retainedChunkList = mutableListOf<Pair<Int, Int>>()
@@ -420,7 +420,8 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         return WorldResetLoadInstruction(
             sourceWorld.name,
             sourceWorld.environment.id,
-            targetWorldName,
+            targetWorld.name,
+            targetWorld.uid.toString(),
             retainedChunks,
             rule.parameters.outsidePlayerBehavior
         )
