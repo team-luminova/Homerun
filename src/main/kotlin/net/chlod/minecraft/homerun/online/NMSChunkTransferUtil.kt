@@ -3,12 +3,10 @@ package net.chlod.minecraft.homerun.online
 import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.NbtAccounter
-import net.minecraft.nbt.NbtIo
+import net.minecraft.nbt.Tag
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.chunk.storage.RegionFileStorage
-import org.apache.commons.io.FileUtils
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 import java.nio.file.Path
@@ -318,16 +316,10 @@ class NMSChunkTransferUtil(
         // Wipe light data, which needs to be recalculated. Otherwise, lighting looks weird.
         tag.remove("isLightOn")
         tag.remove("starlight.light_version")
-        val sectionsTag = tag.getList("sections")
-        if (!sectionsTag.isEmpty) {
-            val sections = sectionsTag.get()
+        if (tag.contains("sections", Tag.TAG_LIST.toInt())) {
+            val sections = tag.getList("sections", Tag.TAG_COMPOUND.toInt())
             for (i in 0 until sections.size) {
-                val sectionTag = sections.getCompound(i)
-                if (sectionTag.isEmpty) {
-                    // safe bail
-                    continue
-                }
-                val section = sectionTag.get()
+                val section = sections.getCompound(i)
                 // Wipe a bunch of data that gets invalidated anyway.
                 section.remove("BlockLight")
                 section.remove("SkyLight")
@@ -340,224 +332,5 @@ class NMSChunkTransferUtil(
         tag.remove("Heightmaps")
     }
 
-    /**
-     * Copies player data, stats, advancements, map/scoreboard data, and
-     * game-rules from the source world to the target world.
-     */
-    fun transferData() {
-        copyDataFolders()
-        copyLevelDat()
-    }
-
-    /**
-     * Copies the datapacks folder from the source world to the target world.
-     * Called during the prepare phase so packs are in place before the world
-     * is loaded.
-     */
-    fun copyDatapacks() {
-        val src = sourceWorldDir.resolve("datapacks").toFile()
-        if (src.exists()) {
-            FileUtils.copyDirectory(src, targetWorldDir.resolve("datapacks").toFile())
-        } else {
-            logger.warning("Source datapacks folder does not exist, skipping datapacks transfer.")
-        }
-    }
-
-    private fun copyDataFolders() {
-        for (folder in listOf("playerdata", "stats", "advancements", "data")) {
-            val src = sourceWorldDir.resolve(folder).toFile()
-            if (src.exists()) {
-                FileUtils.copyDirectory(src, targetWorldDir.resolve(folder).toFile())
-            } else {
-                logger.warning("Source $folder folder does not exist, skipping $folder transfer.")
-            }
-        }
-    }
-
-    private fun copyNbtTag(
-        source: CompoundTag,
-        target: CompoundTag,
-        tagName: String,
-        required: Boolean = false
-    ) {
-        if (source.contains(tagName)) {
-            target.put(tagName, source.get(tagName)!!)
-        } else if (required) {
-            logger.severe("Source level.dat $tagName tag could not be found. Some data won't be transferred!")
-        } else {
-            logger.warning("Source level.dat $tagName tag could not be found. Skipping $tagName transfer.")
-        }
-    }
-
-    private fun copyLevelDat() {
-        val sourceRootTag = NbtIo.readCompressed(sourceLevelDat, NbtAccounter.unlimitedHeap())
-        val sourceDataTag = sourceRootTag.getCompound("Data")
-
-        if (sourceDataTag.isEmpty) {
-            logger.severe("Source level.dat Data tag could not be found. Some data won't be transferred!")
-            return
-        }
-        val sourceData = sourceDataTag.get()
-
-        val targetRootTag = NbtIo.readCompressed(targetLevelDat, NbtAccounter.unlimitedHeap())
-        val targetDataTag = targetRootTag.getCompound("Data")
-        if (targetDataTag.isEmpty) {
-            logger.severe("Target level.dat Data tag could not be found. Some data won't be transferred!")
-            return
-        }
-        val targetData = targetDataTag.get()
-
-        val sourceDataVersionTag = sourceData.getInt("DataVersion")
-        if (sourceDataVersionTag.isEmpty) {
-            logger.severe("Target level.dat does not have a valid DataVersion.")
-            logger.severe("Data cannot be copied over. You will have a broken world!")
-            return
-        }
-
-        val targetDataVersionTag = targetData.getInt("DataVersion")
-        if (targetDataVersionTag.isEmpty) {
-            logger.severe("Target level.dat does not have a valid DataVersion.")
-            logger.severe("Data cannot be copied over. You will have a broken world!")
-            return
-        }
-
-        if (sourceDataVersionTag.get() != targetDataVersionTag.get()) {
-            logger.severe("A Minecraft server update occurred when a reset was occurring. This is unsupported.")
-            logger.severe("Homerun can only reset worlds on the same version, not between different ones.")
-            logger.severe("Data will still be copied, but note that the level.dat may not be fully transferred.")
-        }
-
-        val dataVersion = sourceDataVersionTag.get()
-        if (dataVersion >= 4671) {
-            logger.info("Copying >=1.21.11 Minecraft level.dat tags...")
-            if (dataVersion > 4671) {
-                logger.warning("This world is over the maximum supported version for Homerun.")
-                logger.warning("Some info might not be transferred correctly!")
-            }
-            copy1_21_11Nbt(sourceData, targetData)
-        } else if (dataVersion >= 4554) {
-            logger.info("Copying >=1.21.9 Minecraft level.dat tags...")
-            copy1_21_9Nbt(sourceData, targetData)
-        } else if (dataVersion >= 4325) {
-            logger.info("Copying >=1.21.5 Minecraft level.dat tags...")
-            copy1_21_5Nbt(sourceData, targetData)
-        }
-
-        targetRootTag.put("Data", targetData)
-        NbtIo.writeCompressed(targetRootTag, targetLevelDat)
-    }
-
-    @Suppress("FunctionName")
-    private fun copy1_21_5Nbt(source: CompoundTag, target: CompoundTag) {
-        val requiredTags = listOf(
-            "GameRules", "Difficulty", "hardcore", "GameType",
-            "SpawnX", "SpawnY", "SpawnZ", "SpawnAngle"
-        )
-        val extraTags = listOf(
-            "Time", "DayTime",
-            "BorderSizeLerpTime", "BorderCenterX", "BorderCenterZ",
-            "BorderWarningBlocks", "BorderDamagePerBlock",
-            "raining", "rainTime", "thunderTime", "thundering", "clearWeatherTime",
-            "BorderSafeZone", "DragonFight"
-        )
-
-        for (tag in requiredTags) copyNbtTag(source, target, tag, required = true)
-        for (tag in extraTags) copyNbtTag(source, target, tag)
-    }
-
-    /**
-     * Copy over data from 1.21.9 and after. Border data is now in its own folder, and spawn is now
-     * in a `spawn` compound tag.
-     */
-    @Suppress("FunctionName")
-    private fun copy1_21_9Nbt(source: CompoundTag, target: CompoundTag) {
-        val requiredTags = listOf(
-            "GameRules", "Difficulty", "hardcore", "GameType"
-        )
-        val extraTags = listOf(
-            "Time", "DayTime",
-            "raining", "rainTime", "thunderTime", "thundering", "clearWeatherTime",
-            "DragonFight"
-        )
-
-        copySpawnCompoundTag(source, target)
-
-        for (tag in requiredTags) copyNbtTag(source, target, tag, required = true)
-        for (tag in extraTags) copyNbtTag(source, target, tag)
-    }
-
-    /**
-     * Copy over data from 1.21.11 and after.
-     */
-    @Suppress("FunctionName")
-    private fun copy1_21_11Nbt(source: CompoundTag, target: CompoundTag) {
-        val requiredTags = listOf(
-            "game_rules", "Difficulty", "hardcore", "GameType"
-        )
-        val extraTags = listOf(
-            "Time", "DayTime",
-            "raining", "rainTime", "thunderTime", "thundering", "clearWeatherTime",
-            "DragonFight"
-        )
-
-        copySpawnCompoundTag(source, target)
-
-        for (tag in requiredTags) copyNbtTag(source, target, tag, required = true)
-        for (tag in extraTags) copyNbtTag(source, target, tag)
-    }
-
-    private fun copySpawnCompoundTag(source: CompoundTag, target: CompoundTag) {
-        // Copy over the spawn tag. We only want to copy the position, pitch, and yaw.
-        val sourceSpawnCompoundTag = source.getCompound("spawn")
-        var targetSpawnCompoundTag = target.getCompound("spawn")
-        if (sourceSpawnCompoundTag.isEmpty) {
-            logger.severe("Could not find 'spawn' key of source level.dat...")
-            logger.severe("The spawn point might move!")
-        } else if (targetSpawnCompoundTag.isEmpty) {
-            logger.severe("Could not find 'spawn' key of target level.dat...")
-            logger.severe("We're about to rudely set the spawn point.")
-
-            // Copy the spawn tag
-            copyNbtTag(source, target, "spawn", required = true)
-            // Set the proper "dimension".
-            targetSpawnCompoundTag = target.getCompound("spawn")
-            if (targetSpawnCompoundTag.isEmpty) {
-                logger.severe("Failed to copy 'spawn' key of target level.dat...")
-                logger.severe("The spawn point might move!")
-            } else {
-                val targetSpawn = targetSpawnCompoundTag.get()
-                targetSpawn.putString("dimension", "minecraft:${resetInstructions.targetWorld}")
-                target.put("spawn", targetSpawn)
-                // Also set paperSpawnDimension in the main Data field
-                target.putString("paperSpawnDimension", "minecraft:overworld")
-                logger.info("Set spawn point compound tag with old world data.")
-            }
-        } else {
-            val sourceSpawn = sourceSpawnCompoundTag.get()
-            val targetSpawn = targetSpawnCompoundTag.get()
-
-            val spawnPosTag = sourceSpawn.getIntArray("pos")
-            if (spawnPosTag.isEmpty) {
-                logger.severe("Could not find 'spawn.pos' key of level.dat...")
-                logger.severe("The spawn point might move!")
-            } else {
-                targetSpawn.putIntArray("pos", spawnPosTag.get())
-            }
-            val spawnPitchTag = sourceSpawn.getFloat("pitch")
-            if (spawnPitchTag.isEmpty) {
-                logger.severe("Could not find 'spawn.pitch' key of level.dat...")
-            } else {
-                targetSpawn.putFloat("pitch", spawnPitchTag.get())
-            }
-            val spawnYawTag = sourceSpawn.getFloat("yaw")
-            if (spawnYawTag.isEmpty) {
-                logger.severe("Could not find 'spawn.yaw' key of level.dat...")
-            } else {
-                targetSpawn.putFloat("yaw", spawnYawTag.get())
-            }
-            target.put("spawn", targetSpawn)
-            logger.info("Set spawn point compound tag with new world dimension.")
-        }
-    }
 }
 

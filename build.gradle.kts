@@ -54,8 +54,8 @@ group = "net.chlod.minecraft"
 version = getVersionFromGit()
 
 val targetJavaVersion = 21
-val lowestSupportedMinecraftVersion = "1.21.11"
-val highestSupportedMinecraftVersion = "1.21.11"
+val lowestSupportedMinecraftVersion = "1.21.4"
+val highestSupportedMinecraftVersion = "1.21.4"
 
 kotlin {
     jvmToolchain(targetJavaVersion)

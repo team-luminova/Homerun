@@ -4,6 +4,7 @@ import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.data.ResetLock
 import net.chlod.minecraft.homerun.data.world.ResetLoadInstructions
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
+import net.chlod.minecraft.homerun.offline.WorldDataTransferUtil
 import net.chlod.minecraft.homerun.online.NMSChunkTransferUtil
 import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
@@ -25,7 +26,7 @@ class ResetLoadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitRunna
                     componentLogger.info("Finished chunk transplant")
 
                     componentLogger.info("Copying level data, player data, stats, and advancements...")
-                    transferUtil.transferData()
+                    WorldDataTransferUtil(plugin, resetInstructions).transferData()
                     componentLogger.info("Finished level data, copying player data, stats, and advancements")
                 }
 
