@@ -213,12 +213,19 @@ Though Homerun mostly works through configuration files, it also provides some c
 > [against the suggestion](https://docs.papermc.io/paper/dev/internals/) of PaperMC maintainers.
 
 Because programming against Minecraft internals very frequently causes incompatibilities with Homerun's source code, we
-remain committed to supporting only the **latest version of Minecraft** available for general use with Paper. As of
-writing, this is version **1.21**. Changes may be backported on an as-needed basis to older versions.
+remain committed to supporting only **Minecraft versions released in the last 12 months** available for general use with
+Paper. Sometimes, when there are no significant changes to the rest of Minecraft's internal code, a Homerun version may
+support multiple Minecraft versions.
+
+Homerun uses semantic versioning. The format, as usual, is `<MAJOR>.<MINOR>.<PATCH>`. Homerun will always increment
+major versions whenever the list of supported Minecraft versions changes. Always pick the appropriate major version for
+your Minecraft server version.
 
 You can help us out at https://github.com/luminova-osu/Homerun. Pull requests are appreciated, and we'll try to give
 reviews within a reasonable amount of time. To being developing for Homerun, just clone the repository and open it with
 your IDE. Gradle should take care of the rest.
+
+You can find more information on the development of Homerun in the [DEVELOPMENT.md](./DEVELOPMENT.md) file.
 
 ## License
 
