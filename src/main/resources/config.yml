@@ -65,46 +65,45 @@ reset_rules:
             -   type: chat_message
                 intervals: [ 86400, 43200, 21600, 3600, 1800, 600, 300, 60, 30, 10, 5, 4, 3, 2, 1 ]
         parameters:
-            # The name of the world to reset from. By default, this is the default world
-            # (the `level-name` value in the server.properties file). Use this if you want
-            # to reset a world back to a specific set of chunks every time, but don't need
-            # to keep changes to those chunks after resets.
-            #world: world
-            # The pattern to follow for newly-created worlds. Pick a pattern which avoids
-            # collisions, otherwise worlds may overwrite each other.
-            #
-            # Some level of templating is allowed. See documentation for details.
-            target_world_pattern: world_${timestamp}
-            # Whether the default world set in server.properties should be the newly-created
-            # world after a reset.
-            modify_server_properties: true
-            # Whether to automatically restart the server after a reset. This will require a
-            # valid restart script under the server's spigot.yml configuration.
-            restart: true
-            # Behavior for players located outside of retained chunks when a reset occurs.
-            # "kill" will kill them, "spawn" will teleport them to their spawn point, "world_spawn" will teleport
-            # them to the world spawn point, "ignore" will leave them where they are, "highest" will teleport them
-            # to the highest non-air block at their current X/Z coordinates, and "closest"
-            # will teleport them to the closest valid location at their current X/Z coordinates.
-            outside_player_behavior: "spawn"
-            # Behavior for resetting a dimension. This only applies when resetting an
-            # overworld dimension; it will be ignored if the source world is a Nether
-            # or End dimension.
-            # - "normal" will reset the dimension with the same retained chunks as the overworld.
-            # - "wipe" will completely wipe the dimension. It will be regenerated based on the seed of the new world.
-            # - "copy" will copy the dimension from the source world, retaining the old world's seed.
-            # - "rename" will rename the dimension folder from the source world to the new world, retaining all changes.
-            nether_behavior: normal
-            end_behavior: normal
-            # Enable end pillar cleanup due to end pillars being broken and not regenerating properly due to changes in
-            # the world seed (which is used to calculate the radius and height of the pillars). Leave this on unless you
-            # have a specific reason to disable it. Otherwise, respawning the dragon may form floating pillars and
-            # loading in a reset End dimension may spawn stray End Crystals.
-            end_pillar_cleanup: true
-            # The list of chunks to retain. Each entry defines a method for selecting chunks to retain.
-            retained_chunks:
-                # Retain 16 chunks centered on the world spawn point (i.e. 256 blocks across; 8 chunks in each direction).
-                -   from_world_spawn: 16
-                # Retain the entire End center island (the island at 0,0).
-                # This selector only works for the End dimension, and is ignored for other dimensions.
-                -   end_main_island: true
+            -   retained_chunks:
+                    # Retain 16 chunks centered on the world spawn point (i.e. 256 blocks across; 8 chunks in each direction).
+                    -   from_world_spawn: 16
+                    # Retain the entire End center island (the island at 0,0).
+                    # This selector only works for the End dimension, and is ignored for other dimensions.
+                    -   end_main_island: true
+                # The name of the world to reset from. By default, this is the default world
+                # (the `level-name` value in the server.properties file). Use this if you want
+                # to reset a world back to a specific set of chunks every time, but don't need
+                # to keep changes to those chunks after resets.
+                #world: world
+                # The pattern to follow for newly-created worlds. Pick a pattern which avoids
+                # collisions, otherwise worlds may overwrite each other.
+                #
+                # Some level of templating is allowed. See documentation for details.
+                target_world_pattern: world_${timestamp}
+                # Whether the default world set in server.properties should be the newly-created
+                # world after a reset.
+                modify_server_properties: true
+                # Whether to automatically restart the server after a reset. This will require a
+                # valid restart script under the server's spigot.yml configuration.
+                restart: true
+                # Behavior for players located outside of retained chunks when a reset occurs.
+                # "kill" will kill them, "spawn" will teleport them to their spawn point, "world_spawn" will teleport
+                # them to the world spawn point, "ignore" will leave them where they are, "highest" will teleport them
+                # to the highest non-air block at their current X/Z coordinates, and "closest"
+                # will teleport them to the closest valid location at their current X/Z coordinates.
+                outside_player_behavior: "spawn"
+                # Behavior for resetting a dimension. This only applies when resetting an
+                # overworld dimension; it will be ignored if the source world is a Nether
+                # or End dimension.
+                # - "normal" will reset the dimension with the same retained chunks as the overworld.
+                # - "wipe" will completely wipe the dimension. It will be regenerated based on the seed of the new world.
+                # - "copy" will copy the dimension from the source world, retaining the old world's seed.
+                # - "rename" will rename the dimension folder from the source world to the new world, retaining all changes.
+                nether_behavior: normal
+                end_behavior: normal
+                # Enable end pillar cleanup due to end pillars being broken and not regenerating properly due to changes in
+                # the world seed (which is used to calculate the radius and height of the pillars). Leave this on unless you
+                # have a specific reason to disable it. Otherwise, respawning the dragon may form floating pillars and
+                # loading in a reset End dimension may spawn stray End Crystals.
+                end_pillar_cleanup: true

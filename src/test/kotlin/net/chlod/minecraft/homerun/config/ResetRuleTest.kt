@@ -19,7 +19,7 @@ class ResetRuleTest {
         val parameters = createMinimalResetParameters()
         val rule = ResetRule(
             conditions = listOf(condition),
-            parameters = parameters,
+            parametersList = listOf(parameters),
             name = null
         )
 
@@ -45,7 +45,7 @@ class ResetRuleTest {
         val parameters = createMinimalResetParameters()
         val rule = ResetRule(
             conditions = listOf(condition),
-            parameters = parameters,
+            parametersList = listOf(parameters),
             name = "Daily Reset"
         )
 
@@ -72,7 +72,7 @@ class ResetRuleTest {
         val parameters = createMinimalResetParameters()
         val rule = ResetRule(
             conditions = listOf(condition1, condition2),
-            parameters = parameters,
+            parametersList = listOf(parameters),
             name = "Multi-condition Reset"
         )
 
@@ -100,7 +100,7 @@ class ResetRuleTest {
         // Verify the deserialized rule
         assertEquals(1, rule.conditions.size)
         assertTrue(rule.conditions[0] is AlwaysResetCondition)
-        assertNotNull(rule.parameters)
+        assertNotNull(rule.parametersList)
         assertNull(rule.name)
     }
 
@@ -151,7 +151,7 @@ class ResetRuleTest {
         // Create a reset rule
         val originalRule = ResetRule(
             conditions = listOf(AlwaysResetCondition()),
-            parameters = createMinimalResetParameters(),
+            parametersList = listOf(createMinimalResetParameters()),
             name = null
         )
 
@@ -175,7 +175,7 @@ class ResetRuleTest {
                 AlwaysResetCondition(),
                 CronResetCondition("0 0 * * MON")
             ),
-            parameters = createFullResetParameters(),
+            parametersList = listOf(createFullResetParameters()),
             name = "Weekly Monday Reset"
         )
 
@@ -192,14 +192,24 @@ class ResetRuleTest {
         assertTrue(deserialized.conditions[1] is CronResetCondition)
 
         // Verify parameters
-        assertNotNull(deserialized.parameters)
-        assertEquals(originalRule.parameters.world, deserialized.parameters.world)
-        assertEquals(originalRule.parameters.targetWorldPattern, deserialized.parameters.targetWorldPattern)
-        assertEquals(originalRule.parameters.modifyServerProperties, deserialized.parameters.modifyServerProperties)
-        assertEquals(originalRule.parameters.restart, deserialized.parameters.restart)
-        assertEquals(originalRule.parameters.outsidePlayerBehavior, deserialized.parameters.outsidePlayerBehavior)
-        assertEquals(originalRule.parameters.netherBehavior, deserialized.parameters.netherBehavior)
-        assertEquals(originalRule.parameters.endBehavior, deserialized.parameters.endBehavior)
+        assertNotNull(deserialized.parametersList)
+        assertEquals(1, deserialized.parametersList.size)
+        assertEquals(originalRule.parametersList[0].world, deserialized.parametersList[0].world)
+        assertEquals(
+            originalRule.parametersList[0].targetWorldPattern,
+            deserialized.parametersList[0].targetWorldPattern
+        )
+        assertEquals(
+            originalRule.parametersList[0].modifyServerProperties,
+            deserialized.parametersList[0].modifyServerProperties
+        )
+        assertEquals(originalRule.parametersList[0].restart, deserialized.parametersList[0].restart)
+        assertEquals(
+            originalRule.parametersList[0].outsidePlayerBehavior,
+            deserialized.parametersList[0].outsidePlayerBehavior
+        )
+        assertEquals(originalRule.parametersList[0].netherBehavior, deserialized.parametersList[0].netherBehavior)
+        assertEquals(originalRule.parametersList[0].endBehavior, deserialized.parametersList[0].endBehavior)
     }
 
     @Test
@@ -215,7 +225,7 @@ class ResetRuleTest {
     }
 
     @Test
-    fun `test deserialize throws exception when parameters is not a map`() {
+    fun `test deserialize throws exception when parameters is not a map or list`() {
         val serializedMap = mapOf<String, Any>(
             "conditions" to listOf(
                 mapOf("always" to true)
@@ -248,7 +258,7 @@ class ResetRuleTest {
     fun `test serialize with name includes name in output`() {
         val rule = ResetRule(
             conditions = listOf(AlwaysResetCondition()),
-            parameters = createMinimalResetParameters(),
+            parametersList = listOf(createMinimalResetParameters()),
             name = "Test Rule"
         )
 
@@ -261,7 +271,7 @@ class ResetRuleTest {
     fun `test serialize without name excludes name from output`() {
         val rule = ResetRule(
             conditions = listOf(AlwaysResetCondition()),
-            parameters = createMinimalResetParameters(),
+            parametersList = listOf(createMinimalResetParameters()),
             name = null
         )
 

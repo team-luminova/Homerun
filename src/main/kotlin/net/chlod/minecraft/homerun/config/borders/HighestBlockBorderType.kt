@@ -66,7 +66,7 @@ class HighestBlockBorderType(
         from: Location,
         to: Location
     ) {
-        val borderDistanceRadius = (distanceChunks ?: 2)
+        val borderDistanceRadius = distanceChunks
 
         val playerChunkX = event.player.location.chunk.x
         val playerChunkZ = event.player.location.chunk.z
