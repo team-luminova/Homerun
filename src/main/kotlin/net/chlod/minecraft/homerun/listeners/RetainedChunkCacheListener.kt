@@ -4,12 +4,19 @@ import net.chlod.minecraft.homerun.Homerun
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.world.SpawnChangeEvent
 import org.bukkit.event.world.WorldLoadEvent
 
 class RetainedChunkCacheListener(val plugin: Homerun) : Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     fun onWorldLoad(event: WorldLoadEvent) {
+        plugin.retainedChunkCache.flushCaches()
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL)
+    fun onSpawnChange(event: SpawnChangeEvent) {
+        // Clear cache.
         plugin.retainedChunkCache.flushCaches()
     }
 
