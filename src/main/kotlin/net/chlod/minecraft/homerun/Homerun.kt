@@ -73,7 +73,7 @@ class Homerun : JavaPlugin() {
         saveDefaultConfig()
 
         // Registering event listeners
-        server.pluginManager.registerEvents(EndPillarCleanupListener(this), this)
+        server.pluginManager.registerEvents(EndSpikeCleanupListener(this), this)
         server.pluginManager.registerEvents(PlayerUpgradeListener(this), this)
         server.pluginManager.registerEvents(PlayerLockoutListener(this), this)
         server.pluginManager.registerEvents(PlayerNotifyListener(this), this)
