@@ -1,6 +1,7 @@
 package net.chlod.minecraft.homerun.tasks
 
 import net.chlod.minecraft.homerun.Homerun
+import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.config.ResetParameters.DimensionResetBehavior
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.config.util.TargetWorldPatternSubstitutor
@@ -30,7 +31,11 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
     val componentLogger = plugin.componentLogger
     val server = plugin.server
 
-    inner class DimensionResetSubtask(val sourceWorld: World, val sourceBehavior: DimensionResetBehavior?) {
+    inner class DimensionResetSubtask(
+        val parameters: ResetParameters,
+        val sourceWorld: World,
+        val sourceBehavior: DimensionResetBehavior?
+    ) {
         fun onLockout(): PlayerLockout {
             val dimLockout = PlayerLockout.of(sourceWorld)
             dimLockout.lock()
@@ -41,6 +46,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         fun onGenerate(targetWorldName: String): Pair<World?, ResetLoadInstructions>? {
             sourceWorld.save(true)
             val dimResetInstructions = checkGenerateDimension(
+                parameters,
                 sourceWorld,
                 targetWorldName,
                 sourceBehavior,
@@ -62,89 +68,104 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
             return
         }
 
-        // 1. Load old world
-        val sourceWorld = server.getWorld(rule.parameters.world ?: server.worlds[0].name)
-        if (sourceWorld == null) {
-            componentLogger.error("Could not reset world: world '${rule.parameters.world}' not loaded")
+        val lockouts = mutableListOf<PlayerLockout>()
+        val resetInstructionsList = mutableListOf<ResetLoadInstructions>()
+
+        // Track the last target world name for server.properties modification
+        var lastTargetWorldName: String? = null
+
+        // Process each parameter set in series. Each one targets a (potentially different) world.
+        for (parameters in rule.parametersList) {
+            // 1. Load old world
+            var sourceWorld = server.getWorld(parameters.world ?: server.worlds[0].name)
+            if (sourceWorld == null) {
+                componentLogger.error("World '${parameters.world}' not loaded. It will be generated. This might not be what you want! Skipping this reset rule...")
+                sourceWorld = server.createWorld(WorldCreator(parameters.world ?: server.worlds[0].name))!!
+            }
+
+            // 2. Kick out all players and prevent new joins or teleports until we're done
+            val lockout = PlayerLockout.of(sourceWorld)
+            lockouts.add(lockout)
+            lockout.lock()
+            lockout.kickAll(plugin)
+
+            // 2a. Process dimensions and, if they also need to lockout, lockout.
+            val netherResetSubtask = processNether(sourceWorld, parameters)
+            val endResetSubtask = processEnd(sourceWorld, parameters)
+            if (netherResetSubtask != null) {
+                lockouts.add(netherResetSubtask.onLockout())
+            }
+            if (endResetSubtask != null) {
+                lockouts.add(endResetSubtask.onLockout())
+            }
+
+            // 3. Generate new world with substituted name, and save old world to ensure all data is written to disk.
+            val worldPatternSubstitutor = TargetWorldPatternSubstitutor(plugin, rule)
+            val targetWorldName = worldPatternSubstitutor.substitute(
+                sourceWorld, parameters.targetWorldPattern ?: $$"$${sourceWorld.name}_${timestamp}"
+            )
+            val targetWorld = generateWorld(sourceWorld, targetWorldName) ?: continue
+            sourceWorld.save(true)
+            setMetadata(sourceWorld, targetWorld)
+            if (parameters.modifyServerProperties == true) {
+                lastTargetWorldName = targetWorldName
+            }
+
+            // 4. Gather information about the world to be used for loading, and generate chunks in the import area of the
+            // new world to ensure an .mca file is created for the region.
+            val subDimensions = mutableListOf<WorldResetLoadInstruction.SubDimensionInfo>()
+
+            // 4a. Process dimensions first so we can embed SubDimensionInfo into the overworld instruction.
+            if (netherResetSubtask != null) {
+                val netherResult = netherResetSubtask.onGenerate(targetWorldName)
+                if (netherResult != null) {
+                    val (_, netherInstructions) = netherResult
+                    resetInstructionsList.add(netherInstructions)
+                    subDimensions.add(
+                        WorldResetLoadInstruction.SubDimensionInfo(
+                            worldName = netherInstructions.targetWorld,
+                            worldUUID = if (netherInstructions is WorldResetLoadInstruction)
+                                netherInstructions.targetWorldUUID else null,
+                            environment = Environment.NETHER,
+                            resetType = netherInstructions.type
+                        )
+                    )
+                }
+            }
+            if (endResetSubtask != null) {
+                val endResult = endResetSubtask.onGenerate(targetWorldName)
+                if (endResult != null) {
+                    val (_, endInstructions) = endResult
+                    resetInstructionsList.add(endInstructions)
+                    subDimensions.add(
+                        WorldResetLoadInstruction.SubDimensionInfo(
+                            worldName = endInstructions.targetWorld,
+                            worldUUID = if (endInstructions is WorldResetLoadInstruction)
+                                endInstructions.targetWorldUUID else null,
+                            environment = Environment.THE_END,
+                            resetType = endInstructions.type
+                        )
+                    )
+                }
+            }
+
+            val resetInstructions = gatherWorldInformation(
+                parameters, sourceWorld, targetWorld,
+                subDimensions = subDimensions.ifEmpty { null }
+            )
+            resetInstructionsList.add(resetInstructions)
+            generateWorldChunks(resetInstructions.chunks!!, targetWorld)
+        }
+
+        if (resetInstructionsList.isEmpty()) {
+            componentLogger.error("No worlds were successfully processed for reset.")
             cancel()
             return
-        }
-
-        // 2. Kick out all players and prevent new joins or teleports until we're done
-        val lockouts = mutableListOf<PlayerLockout>()
-        val lockout = PlayerLockout.of(sourceWorld)
-        lockouts.add(lockout)
-        lockout.lock()
-        lockout.kickAll(plugin)
-
-        // 2a. Process dimensions and, if they also need to lockout, lockout.
-        val netherResetSubtask = processNether(sourceWorld)
-        val endResetSubtask = processEnd(sourceWorld)
-        if (netherResetSubtask != null) {
-            lockouts.add(netherResetSubtask.onLockout())
-        }
-        if (endResetSubtask != null) {
-            lockouts.add(endResetSubtask.onLockout())
         }
 
         // 2b. We can consider this task as "past the point of no return"; let's cancel it to prevent it from running
         // on next tick.
         cancel()
-
-        // 3. Generate new world with substituted name, and save old world to ensure all data is written to disk.
-        val worldPatternSubstitutor = TargetWorldPatternSubstitutor(plugin, rule)
-        val targetWorldName = worldPatternSubstitutor.substitute(
-            sourceWorld, rule.parameters.targetWorldPattern ?: $$"$${sourceWorld.name}_${timestamp}"
-        )
-        val targetWorld = generateWorld(sourceWorld, targetWorldName) ?: return
-        sourceWorld.save(true)
-        setMetadata(sourceWorld, targetWorld)
-
-        // 4. Gather information about the world to be used for loading, and generate chunks in the import area of the
-        // new world to ensure an .mca file is created for the region.
-        val resetInstructionsList = mutableListOf<ResetLoadInstructions>()
-        val subDimensions = mutableListOf<WorldResetLoadInstruction.SubDimensionInfo>()
-
-        // 4a. Process dimensions first so we can embed SubDimensionInfo into the overworld instruction.
-        if (netherResetSubtask != null) {
-            val netherResult = netherResetSubtask.onGenerate(targetWorldName)
-            if (netherResult != null) {
-                val (_, netherInstructions) = netherResult
-                resetInstructionsList.add(netherInstructions)
-                subDimensions.add(
-                    WorldResetLoadInstruction.SubDimensionInfo(
-                        worldName = netherInstructions.targetWorld,
-                        worldUUID = if (netherInstructions is WorldResetLoadInstruction)
-                            netherInstructions.targetWorldUUID else null,
-                        environment = Environment.NETHER,
-                        resetType = netherInstructions.type
-                    )
-                )
-            }
-        }
-        if (endResetSubtask != null) {
-            val endResult = endResetSubtask.onGenerate(targetWorldName)
-            if (endResult != null) {
-                val (_, endInstructions) = endResult
-                resetInstructionsList.add(endInstructions)
-                subDimensions.add(
-                    WorldResetLoadInstruction.SubDimensionInfo(
-                        worldName = endInstructions.targetWorld,
-                        worldUUID = if (endInstructions is WorldResetLoadInstruction)
-                            endInstructions.targetWorldUUID else null,
-                        environment = Environment.THE_END,
-                        resetType = endInstructions.type
-                    )
-                )
-            }
-        }
-
-        val resetInstructions = gatherWorldInformation(
-            sourceWorld, targetWorld,
-            subDimensions = subDimensions.ifEmpty { null }
-        )
-        resetInstructionsList.add(0, resetInstructions)
-        generateWorldChunks(resetInstructions.chunks!!, targetWorld)
 
         // 5. Ensure that the chunks also exist in the source world (1.21.9+ will no longer generate spawn chunks).
         for (instructions in resetInstructionsList) {
@@ -175,16 +196,22 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         }
 
         // 8. Modify server properties to set new world as spawn world, and restart if necessary.
-        if (rule.parameters.modifyServerProperties ?: true) {
-            modifyServerPropertiesViaReflection(targetWorldName)
+        val needsRestart = rule.parametersList.any { it.restart == true || it.modifyServerProperties == true }
+        val willRestart = rule.parametersList.any { it.restart ?: it.modifyServerProperties ?: false }
+
+        val newMainWorlds = rule.parametersList.filter { it.modifyServerProperties ?: false }
+        if (newMainWorlds.size > 1) {
+            componentLogger.warn("Multiple reset rules are set to modify server properties.")
+            componentLogger.warn("Only the last one will take effect. Consider disabling `modify_server_properties` for all but one rule to avoid confusion.")
         }
-        if (rule.parameters.restart ?: (rule.parameters.modifyServerProperties ?: false)) {
+
+        if (lastTargetWorldName != null) {
+            modifyServerPropertiesViaReflection(lastTargetWorldName)
+        }
+        if (willRestart) {
             componentLogger.info("Restarting server...")
             server.restart()
-        } else if (
-            rule.parameters.modifyServerProperties == true
-            && rule.parameters.restart == false
-        ) {
+        } else if (needsRestart) {
             componentLogger.warn("Restart not requested, but server.properties was modified. This is dangerous!")
             componentLogger.warn("You should remove the \"restart\" parameter for this reset rule, or set it to true.")
         }
@@ -194,13 +221,13 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         lockouts.forEach { it.unlock() }
     }
 
-    fun processNether(sourceWorld: World): DimensionResetSubtask? {
-        if (sourceWorld.environment != Environment.NORMAL && rule.parameters.netherBehavior != DimensionResetBehavior.WIPE) {
+    fun processNether(sourceWorld: World, parameters: ResetParameters): DimensionResetSubtask? {
+        if (sourceWorld.environment != Environment.NORMAL && parameters.netherBehavior != DimensionResetBehavior.WIPE) {
             componentLogger.warn("Tried to reset Nether for world of ${sourceWorld.environment.name} dimension. Skipping...")
             return null
         } else {
             when (val sourceWorldNether = server.getWorld("${sourceWorld.name}_nether")) {
-                null if rule.parameters.netherBehavior != DimensionResetBehavior.WIPE -> {
+                null if parameters.netherBehavior != DimensionResetBehavior.WIPE -> {
                     componentLogger.warn("Source world Nether dimension not found, skipping Nether generation...")
                     return null
                 }
@@ -210,18 +237,18 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                     return null
                 }
 
-                else -> return DimensionResetSubtask(sourceWorldNether, rule.parameters.netherBehavior)
+                else -> return DimensionResetSubtask(parameters, sourceWorldNether, parameters.netherBehavior)
             }
         }
     }
 
-    fun processEnd(sourceWorld: World): DimensionResetSubtask? {
-        if (sourceWorld.environment != Environment.NORMAL && rule.parameters.endBehavior != DimensionResetBehavior.WIPE) {
+    fun processEnd(sourceWorld: World, parameters: ResetParameters): DimensionResetSubtask? {
+        if (sourceWorld.environment != Environment.NORMAL && parameters.endBehavior != DimensionResetBehavior.WIPE) {
             componentLogger.warn("Tried to reset End for world of ${sourceWorld.environment.name} dimension. Skipping...")
             return null
         } else {
             when (val sourceWorldEnd = server.getWorld("${sourceWorld.name}_the_end")) {
-                null if rule.parameters.endBehavior != DimensionResetBehavior.WIPE -> {
+                null if parameters.endBehavior != DimensionResetBehavior.WIPE -> {
                     componentLogger.warn("Source world End dimension not found, skipping End generation...")
                     return null
                 }
@@ -231,7 +258,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                     return null
                 }
 
-                else -> return DimensionResetSubtask(sourceWorldEnd, rule.parameters.endBehavior)
+                else -> return DimensionResetSubtask(parameters, sourceWorldEnd, parameters.endBehavior)
             }
         }
     }
@@ -390,6 +417,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
     }
 
     fun checkGenerateDimension(
+        parameters: ResetParameters,
         sourceWorldDim: World,
         targetWorldName: String,
         behavior: DimensionResetBehavior?
@@ -400,7 +428,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                 val world = generateWorld(sourceWorldDim, "${targetWorldName}_${dimensionSuffix}")
                 val generateInfo = Pair(
                     world,
-                    gatherWorldInformation(sourceWorldDim, world!!)
+                    gatherWorldInformation(parameters, sourceWorldDim, world!!)
                 )
                 generateWorldChunks(generateInfo.second.chunks!!, world)
                 return generateInfo
@@ -433,6 +461,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
     }
 
     fun gatherWorldInformation(
+        parameters: ResetParameters,
         sourceWorld: World,
         targetWorld: World,
         subDimensions: List<WorldResetLoadInstruction.SubDimensionInfo>? = null
@@ -440,7 +469,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
         componentLogger.info("Getting list of retained chunks...")
 
         val retainedChunkList = mutableListOf<Pair<Int, Int>>()
-        for (selector in rule.parameters.retainedChunks) {
+        for (selector in parameters.retainedChunks) {
             componentLogger.info("* ${selector.getHumanReadableDescription()}")
             retainedChunkList.addAll(selector.getRetainedChunks(plugin, sourceWorld))
         }
@@ -452,7 +481,7 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
             targetWorld.name,
             targetWorld.uid.toString(),
             retainedChunks,
-            rule.parameters.outsidePlayerBehavior,
+            parameters.outsidePlayerBehavior,
             subDimensions
         )
     }

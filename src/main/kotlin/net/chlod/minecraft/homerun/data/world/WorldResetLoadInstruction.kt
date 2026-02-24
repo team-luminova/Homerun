@@ -81,7 +81,14 @@ class WorldResetLoadInstruction(
             val subDimensions = subDimensionsRaw?.map {
                 when (it) {
                     is SubDimensionInfo -> it
-                    is Map<*, *> -> SubDimensionInfo.deserialize(it as Map<String, Any>)
+                    is Map<*, *> -> {
+                        if (!it.keys.all { key -> key is String }) {
+                            throw IllegalArgumentException("Sub-dimension data contains non-string keys: $it")
+                        }
+                        @Suppress("UNCHECKED_CAST")
+                        SubDimensionInfo.deserialize(it as Map<String, Any>)
+                    }
+
                     else -> throw IllegalArgumentException("Invalid sub-dimension data: $it")
                 }
             }

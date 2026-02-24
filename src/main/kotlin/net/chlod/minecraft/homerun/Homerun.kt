@@ -14,6 +14,8 @@ import net.chlod.minecraft.homerun.helpers.MinecraftVersion
 import net.chlod.minecraft.homerun.helpers.RetainedChunkCache
 import net.chlod.minecraft.homerun.listeners.*
 import net.chlod.minecraft.homerun.tasks.*
+import org.bukkit.Bukkit
+import org.bukkit.WorldCreator
 import org.bukkit.configuration.serialization.ConfigurationSerialization
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitTask
@@ -70,6 +72,24 @@ class Homerun : JavaPlugin() {
     }
 
     override fun onEnable() {
+        // Load in target worlds, so that we can perform postload tasks on them.
+        if (Bukkit.isTickingWorlds()) {
+            componentLogger.error("Server is already ticking worlds, bad things are about to happen!")
+        }
+        componentLogger.info("Loading target worlds for any applied reset locks...")
+        val wasUnloaded = mutableListOf<String>()
+        appliedResetLocks.forEach { lock ->
+            lock.resetInstructions.forEach {
+                if (it is WorldResetLoadInstruction) {
+                    if (server.getWorld(it.targetWorld) == null) {
+                        componentLogger.info("Loading target world ${it.targetWorld}...")
+                        server.createWorld(WorldCreator(it.targetWorld))
+                        wasUnloaded.add(it.targetWorld)
+                    }
+                }
+            }
+        }
+
         // Saving default configuration
         saveDefaultConfig()
 
@@ -97,6 +117,12 @@ class Homerun : JavaPlugin() {
         // Process any applied reset locks
         for (appliedResetLock in appliedResetLocks) {
             WorldPostloadTask(this, appliedResetLock).run()
+        }
+
+        // Re-unload those worlds.
+        wasUnloaded.forEach {
+            componentLogger.info("Unloading world $it...")
+            server.unloadWorld(it, false)
         }
 
         // Caching retained chunks for player notifications

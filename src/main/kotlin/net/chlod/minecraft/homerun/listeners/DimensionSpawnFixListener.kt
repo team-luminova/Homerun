@@ -54,13 +54,15 @@ class DimensionSpawnFixListener(val plugin: Homerun) : Listener {
 
     private fun getManagedWorld(world: World): String? {
         for (resetRule in plugin.resetRules) {
-            val worldName = resetRule.parameters.world ?: plugin.server.worlds[0].name
-            if (
-                worldName == world.name ||
-                (world.environment == World.Environment.NETHER && world.name == worldName + "_nether") ||
-                (world.environment == World.Environment.THE_END && world.name == worldName + "_the_end")
-            ) {
-                return worldName
+            for (parameters in resetRule.parametersList) {
+                val worldName = parameters.world ?: plugin.server.worlds[0].name
+                if (
+                    worldName == world.name ||
+                    (world.environment == World.Environment.NETHER && world.name == worldName + "_nether") ||
+                    (world.environment == World.Environment.THE_END && world.name == worldName + "_the_end")
+                ) {
+                    return worldName
+                }
             }
         }
         return null

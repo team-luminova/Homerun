@@ -29,7 +29,7 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
     override fun run() {
         for (resetInstructions in resetLock.resetInstructions) {
             if (resetInstructions !is WorldResetLoadInstruction) {
-                return
+                continue
             }
 
             componentLogger.info("Running postload for world reset from ${resetInstructions.sourceWorld} to ${resetInstructions.targetWorld}...")

@@ -21,46 +21,49 @@ class ConditionCheckTask(val plugin: Homerun) : BukkitRunnable() {
                     break
                 } else {
                     val timeUntilResetMillis = condition.getTimeUntilNextReset(plugin) ?: continue
-                    val world = if (resetRule.parameters.world == null)
-                        plugin.server.worlds.firstOrNull() ?: continue
-                    else
-                        (plugin.server.getWorld(resetRule.parameters.world) ?: continue)
 
-                    resetRule.warnings?.forEach {
-                        it.displayWarningMessage(
-                            plugin,
-                            world,
-                            resetRule,
-                            condition,
-                            timeUntilResetMillis
-                        )
-                    }
+                    for (parameters in resetRule.parametersList) {
+                        val world = if (parameters.world == null)
+                            plugin.server.worlds.firstOrNull() ?: continue
+                        else
+                            (plugin.server.getWorld(parameters.world) ?: continue)
 
-                    if (resetRule.parameters.netherBehavior == ResetParameters.DimensionResetBehavior.NORMAL) {
-                        val netherWorld = plugin.server.getWorld("${world.name}_nether")
-                        if (netherWorld != null) {
-                            resetRule.warnings?.forEach {
-                                it.displayWarningMessage(
-                                    plugin,
-                                    netherWorld,
-                                    resetRule,
-                                    condition,
-                                    timeUntilResetMillis
-                                )
+                        resetRule.warnings?.forEach {
+                            it.displayWarningMessage(
+                                plugin,
+                                world,
+                                resetRule,
+                                condition,
+                                timeUntilResetMillis
+                            )
+                        }
+
+                        if (parameters.netherBehavior == ResetParameters.DimensionResetBehavior.NORMAL) {
+                            val netherWorld = plugin.server.getWorld("${world.name}_nether")
+                            if (netherWorld != null) {
+                                resetRule.warnings?.forEach {
+                                    it.displayWarningMessage(
+                                        plugin,
+                                        netherWorld,
+                                        resetRule,
+                                        condition,
+                                        timeUntilResetMillis
+                                    )
+                                }
                             }
                         }
-                    }
-                    if (resetRule.parameters.endBehavior == ResetParameters.DimensionResetBehavior.NORMAL) {
-                        val endWorld = plugin.server.getWorld("${world.name}_the_end")
-                        if (endWorld != null) {
-                            resetRule.warnings?.forEach {
-                                it.displayWarningMessage(
-                                    plugin,
-                                    endWorld,
-                                    resetRule,
-                                    condition,
-                                    timeUntilResetMillis
-                                )
+                        if (parameters.endBehavior == ResetParameters.DimensionResetBehavior.NORMAL) {
+                            val endWorld = plugin.server.getWorld("${world.name}_the_end")
+                            if (endWorld != null) {
+                                resetRule.warnings?.forEach {
+                                    it.displayWarningMessage(
+                                        plugin,
+                                        endWorld,
+                                        resetRule,
+                                        condition,
+                                        timeUntilResetMillis
+                                    )
+                                }
                             }
                         }
                     }

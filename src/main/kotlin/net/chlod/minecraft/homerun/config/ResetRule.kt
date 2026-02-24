@@ -14,7 +14,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable
 
 class ResetRule(
     val conditions: List<ResetCondition>,
-    val parameters: ResetParameters,
+    val parametersList: List<ResetParameters>,
     val name: String?,
     val enabled: Boolean? = false,
     val notifyEnter: Boolean? = false,
@@ -73,14 +73,36 @@ class ResetRule(
             }
 
             val parameters = args["parameters"]
-            if (parameters !is Map<*, *>) {
-                throw IllegalArgumentException("Parameters is not a map")
+            val resetParametersList: List<ResetParameters> = when (parameters) {
+                is List<*> -> {
+                    // New format: list of parameter maps
+                    parameters.map { entry ->
+                        if (entry !is Map<*, *>) {
+                            throw IllegalArgumentException("Parameters list entry is not a map")
+                        }
+                        if (entry.keys.any { it !is String }) {
+                            throw IllegalArgumentException("Parameters map contains non-string keys")
+                        }
+                        @Suppress("UNCHECKED_CAST")
+                        ResetParameters.deserialize(entry as Map<String, Any>)
+                    }
+                }
+
+                is Map<*, *> -> {
+                    // Legacy format: single parameter map
+                    if (parameters.keys.any { it !is String }) {
+                        throw IllegalArgumentException("Parameters map contains non-string keys")
+                    }
+                    @Suppress("UNCHECKED_CAST")
+                    listOf(ResetParameters.deserialize(parameters as Map<String, Any>))
+                }
+
+                else -> throw IllegalArgumentException("Parameters is not a map or list")
             }
-            if (parameters.keys.any { it !is String }) {
-                throw IllegalArgumentException("Parameters map contains non-string keys")
+
+            if (resetParametersList.isEmpty()) {
+                throw IllegalArgumentException("At least one parameter set must be specified")
             }
-            @Suppress("UNCHECKED_CAST")
-            val resetParameters = ResetParameters.deserialize(parameters as Map<String, Any>)
 
             val notifyEnter = (args["notify_enter"] ?: args["notify"]) as? Boolean
             val notifyExit = (args["notify_exit"] ?: args["notify"]) as? Boolean
@@ -133,7 +155,7 @@ class ResetRule(
 
             return ResetRule(
                 deserializedConditions,
-                resetParameters,
+                resetParametersList,
                 name,
                 enabled,
                 notifyEnter,
@@ -171,7 +193,7 @@ class ResetRule(
             if (warnings != null) {
                 put("warnings", warnings.map { it.serialize() })
             }
-            put("parameters", parameters.serialize())
+            put("parameters", parametersList.map { it.serialize() })
         }
     }
 
