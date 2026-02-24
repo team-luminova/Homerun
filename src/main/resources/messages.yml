@@ -1,0 +1,86 @@
+# ===============================================
+#      __________
+#     < homerun! >
+#      ----------
+#             \   ^__^
+#              \  (oo)\_______
+#                 \_/\        )\
+#                     ||----\ | \
+#                     ||     ||      umazing!
+#
+# ===============================================
+# This file is part of Homerun's configuration. Here lies where you can customize all the messages that players will see
+# when interacting with Homerun. For more configuration options, see `config.yml`.
+#
+# IMPORTANT NOTE: For this file to work, you need to rename it to `messages.yml`. Note that `messages.example.yml` WILL
+# BE REPLACED AFTER EVERY UPDATE.
+#
+# All missing messages from this file will default to the built-in English messages, so feel free to comment out or
+# erase any messages you don't need to change.
+#
+# You can customize these messages to fit the theme of your server, or translate them into a different language. These
+# messages are in MiniMessage format. You can choose to color text, or do other formatting with the features here:
+#
+#     https://docs.papermc.io/adventure/minimessage/format/
+#
+# You can also choose to use messages that take up multiple lines. To do this, use the pipe character (|) and then indent the lines below it. For example:
+#
+#     multi-line-message: |
+#       This is a message
+#       that takes up multiple lines.
+#
+# The message will preserve the line breaks and any formatting you include.
+
+# The timezone to use for all date formatting in messages. This should be a valid timezone ID from the IANA Time Zone
+# Database, e.g. "America/New_York" or "Europe/London". See https://w.wiki/4Jx for a full list. By default, this is UTC.
+timezone: "UTC"
+
+# Appears when a player tries to join a world that is currently being reset.
+lockout-join: "Server is resetting the world. Please reconnect shortly."
+# Appears when a player tries to teleport into a world that is currently being reset, e.g. with a Nether/End Portal.
+lockout-teleport: "Server is resetting the destination world. Please try again shortly."
+
+# Shown to players who are in chunks that are not being retained when a reset occurs, if the outside_player_behavior is set to "spawn".
+reset-spawn: "You were in a reset chunk and have been respawned for safety."
+# Shown to players who are in chunks that are not being retained when a reset occurs, if the outside_player_behavior is set to "kill".
+reset-kill: "You were in a chunk that was not kept after a reset and have been killed."
+# Shown to players who are in chunks that are not being retained when a reset occurs, if the outside_player_behavior is set to "world_spawn".
+reset-worldspawn: "You were in a chunk that was not kept after a reset and have been teleported to the world spawn."
+# Shown to players who are in chunks that are not being retained when a reset occurs, if the outside_player_behavior is set to "highest".
+reset-highest: "You were in a chunk that was not kept after a reset and have been teleported to the highest block at your previous location."
+# Shown to players who are in chunks that are not being retained when a reset occurs, if the outside_player_behavior is set to "closest".
+reset-closest: "You were in a chunk that was not kept after a reset and have been teleported to the closest valid position."
+
+# Warning message shown below the boss bar when a reset is imminent.
+# <seconds> will be replaced with the number of seconds until the reset, formatted to 1 decimal place. More decimal
+# places won't look good; it'll just switch between two numbers.
+# The entire message is automatically colored depending on how close the reset is.
+warning-bossbar: "World reset in <bold><seconds:'#.0'></bold> seconds!"
+
+# This message is only used if your player list warning is not set to "both".
+# <date> will be replaced with the date and time of the reset, formatted according to the provided pattern.
+# <duration> will be replaced with the time remaining until the reset in hours:minutes:seconds, e.g. "00:67:52".
+# The duration is automatically colored depending on how close the reset is.
+warning-playerlist: "<gray>World reset at <white><date:'yyyy-MM-dd HH:mm z'><gray>, <bold><duration></bold> <gray>remaining"
+# <date> will be replaced with the date and time of the reset, formatted according to the provided pattern.
+warning-playerlist-date: "<gray>World reset at <white><date:'yyyy-MM-dd HH:mm z'>"
+# <duration> will be replaced with the time remaining until the reset in hours:minutes:seconds, e.g. "00:67:52".
+# The duration is automatically colored depending on how close the reset is.
+warning-playerlist-countdown: "<bold><duration></bold> <gray>remaining"
+
+# This message is sent as a chat message at the specified intervals before the reset.
+# <date> will be replaced with the date and time of the reset, formatted according to the provided pattern.
+# <duration> is a combination of the units below. It will be formatted to include a precise combination of hours,
+# minutes, and seconds, e.g. "1 hour 17 minutes 52 seconds", "3 minutes 4 seconds", or "45 seconds", depending on the
+# time remaining until the reset. The units will be separated by the "warning-chat-glue" message below.
+# The duration is automatically colored depending on how close the reset is.
+warning-chat: "This world will reset in <bold><duration></bold>! (at <bold><date:'yyyy-MM-dd HH:mm z'></bold>)"
+warning-chat-glue: ", "
+warning-chat-hours: "<num> <unit:'1#hour|1<hours'>"
+warning-chat-minutes: "<num> <unit:'1#minute|1<minutes'>"
+warning-chat-seconds: "<num> <unit:'1#seconds|1<seconds'>"
+
+# Message shown above the hotbar when the user leaves a retained chunk.
+border-exit: "<red><bold>You have left the safe zone.</bold> Blocks or items left here will be reset."
+# Message shown above the hotbar when the user enters a retained chunk.
+border-enter: "<green>You have entered the safe zone."

@@ -6,10 +6,7 @@ import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEven
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.chlod.minecraft.homerun.command.HomerunCommand
 import net.chlod.minecraft.homerun.config.ResetRule
-import net.chlod.minecraft.homerun.data.ExtraData
-import net.chlod.minecraft.homerun.data.HomerunNamespacedKeys
-import net.chlod.minecraft.homerun.data.PlayerLockout
-import net.chlod.minecraft.homerun.data.ResetLock
+import net.chlod.minecraft.homerun.data.*
 import net.chlod.minecraft.homerun.data.world.WorldCopyLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldRenameLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
@@ -25,7 +22,8 @@ import java.util.*
 class Homerun : JavaPlugin() {
 
     val keys = HomerunNamespacedKeys(this)
-    val extraData: ExtraData = ExtraData(this)
+    val messages = Messages(this)
+    val extraData = ExtraData(this)
 
     val resetRules = mutableListOf<ResetRule>()
     val retainedChunkCache = RetainedChunkCache(this, resetRules)
