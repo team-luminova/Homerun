@@ -6,6 +6,7 @@ class WorldResetLoadInstruction(
     sourceWorld: String,
     sourceWorldEnvironmentId: Int,
     targetWorld: String,
+    val targetWorldUUID: String? = null,
     val chunks: List<Pair<Int, Int>>? = null,
     val outsidePlayerBehavior: ResetParameters.OutsidePlayerBehavior? = null
 ) : ResetLoadInstructions(ResetLoadInstructionType.RESET, sourceWorld, sourceWorldEnvironmentId, targetWorld) {
@@ -16,6 +17,7 @@ class WorldResetLoadInstruction(
             val sourceWorld = args["sourceWorld"] as String
             val sourceWorldEnvironmentId = args["sourceWorldEnvironmentId"] as Int
             val targetWorld = args["targetWorld"] as String
+            val targetWorldUUID = args["targetWorldUUID"] as? String
             val chunksRaw = args["chunks"] as List<*>
             val chunks = chunksRaw.map {
                 val pair = it as List<*>
@@ -26,6 +28,7 @@ class WorldResetLoadInstruction(
                 sourceWorld,
                 sourceWorldEnvironmentId,
                 targetWorld,
+                targetWorldUUID,
                 chunks,
                 when (val behavior = args["outsidePlayerBehavior"]) {
                     is String -> ResetParameters.OutsidePlayerBehavior.valueOf(behavior)
@@ -37,6 +40,7 @@ class WorldResetLoadInstruction(
 
     override fun serialize(): Map<String?, Any?> {
         return super.serialize() + mapOf(
+            "targetWorldUUID" to targetWorldUUID,
             "chunks" to chunks!!.map { listOf(it.first, it.second) },
             "outsidePlayerBehavior" to outsidePlayerBehavior?.name
         )

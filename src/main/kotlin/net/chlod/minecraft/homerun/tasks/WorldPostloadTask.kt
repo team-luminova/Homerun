@@ -13,11 +13,13 @@ import org.bukkit.World
 import org.bukkit.World.Environment
 import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
+import java.util.*
 import kotlin.io.path.Path
 
 class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitRunnable() {
 
     val componentLogger = plugin.componentLogger
+    val resetInstructionByWorld = resetLock.resetInstructions.associateBy { it.targetWorld }
 
     override fun run() {
         for (resetInstructions in resetLock.resetInstructions) {
@@ -64,8 +66,31 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
             else playerFile.nameWithoutExtension
 
             // Fix the world UUID, or else they'll be teleported to world spawn
-            rootTag.putLong("WorldUUIDLeast", newWorld.uid.leastSignificantBits)
-            rootTag.putLong("WorldUUIDMost", newWorld.uid.mostSignificantBits)
+            val playerDimension = if (rootTag.contains("Dimension"))
+                rootTag.getString("Dimension")
+            else "minecraft:overworld"
+            val playerEnvironment = when (playerDimension) {
+                "minecraft:overworld" -> Environment.NORMAL
+                "minecraft:the_nether" -> Environment.NETHER
+                "minecraft:the_end" -> Environment.THE_END
+                else -> {
+                    componentLogger.warn("Player data '$playerName' has unrecognized dimension '$playerDimension'. Forcing reset...")
+                    Environment.NORMAL
+                }
+            }
+            val newWorldDim = when (playerEnvironment) {
+                Environment.NETHER -> newWorld.name + "_nether"
+                Environment.THE_END -> newWorld.name + "_the_end"
+                else -> newWorld
+            }
+            val dimResetInstructions = resetInstructionByWorld[newWorldDim]
+            if (dimResetInstructions != null && dimResetInstructions is WorldResetLoadInstruction) {
+                // The world they're in is being reset too. This means that the world UUID will be changing,
+                // so we need to update it in the player data.
+                val dimUUID = UUID.fromString(dimResetInstructions.targetWorldUUID)
+                rootTag.putLong("WorldUUIDLeast", dimUUID.leastSignificantBits)
+                rootTag.putLong("WorldUUIDMost", dimUUID.mostSignificantBits)
+            }
 
             // Check if the player is currently outside a retained chunk
             val posTag = rootTag.getList("Pos", Tag.TAG_DOUBLE.toInt())
@@ -74,9 +99,18 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
             val chunkX = posX.toInt() shr 4
             val chunkZ = posZ.toInt() shr 4
 
-            if (!resetInstructions.chunks!!.contains(Pair(chunkX, chunkZ))) {
-                componentLogger.info("Player data '$playerName' is outside retained chunks, handling...")
-                handlePlayerOutsideRetainedChunk(resetInstructions, rootTag)
+            if (dimResetInstructions != null) {
+                if (dimResetInstructions is WorldResetLoadInstruction) {
+                    if (!dimResetInstructions.chunks!!.contains(Pair(chunkX, chunkZ))) {
+                        componentLogger.info("Player data '$playerName' is outside retained chunks, handling...")
+                        handlePlayerOutsideRetainedChunk(resetInstructions, rootTag)
+                    }
+                } else {
+                    // Rename or copy. This is automatically a kept chunk.
+                }
+            } else {
+                // This user is in a world that's not being reset. We're skipping them, just in case they're in a world
+                // that's not managed by us.
             }
 
             NbtIo.writeCompressed(rootTag, Path(playerFile.path))
