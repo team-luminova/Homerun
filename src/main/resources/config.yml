@@ -53,6 +53,7 @@ reset_rules:
                 pattern: random
         conditions:
             # Run a reset every day at midnight on the server's local time.
+            # This is ALWAYS based on the server's local time, regardless of the timezone setting in messages.yml.
             -   cron: "0 0 * * *" # Every day at midnight
         warnings:
             # Show a boss bar 60 seconds before the reset
@@ -81,8 +82,8 @@ reset_rules:
             # valid restart script under the server's spigot.yml configuration.
             restart: true
             # Behavior for players located outside of retained chunks when a reset occurs.
-            # "kill" will kill them, "spawn" will teleport them to the world spawn,
-            # "ignore" will leave them where they are, "highest" will teleport them
+            # "kill" will kill them, "spawn" will teleport them to their spawn point, "world_spawn" will teleport
+            # them to the world spawn point, "ignore" will leave them where they are, "highest" will teleport them
             # to the highest non-air block at their current X/Z coordinates, and "closest"
             # will teleport them to the closest valid location at their current X/Z coordinates.
             outside_player_behavior: "spawn"
