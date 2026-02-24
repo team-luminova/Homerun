@@ -101,6 +101,15 @@ open class EndPillarCleanup {
                 }
             }
         }
+        // Find any end crystal that may still be alive in this area that isn't our current crystal.
+        val nearbyCrystals =
+            world.getNearbyEntities(endCrystal.location, spikeRadius.toDouble(), 320.0 / 2, spikeRadius.toDouble())
+                .filterIsInstance<EnderCrystal>()
+                .filter { it != endCrystal && it.isShowingBottom }
+        for (crystal in nearbyCrystals) {
+            plugin.logger.info("Detected old end crystal at ${crystal.location} during new crystal cleanup. Removing it.")
+            crystal.remove()
+        }
     }
 
 }

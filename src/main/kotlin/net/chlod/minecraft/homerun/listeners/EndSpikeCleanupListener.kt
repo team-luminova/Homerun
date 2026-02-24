@@ -27,8 +27,7 @@ class EndSpikeCleanupListener(plugin: Homerun) : EndPillarCleanup(plugin), Liste
                     stackFrame.className === "net.minecraft.world.level.levelgen.feature.SpikeFeature" &&
                     stackFrame.methodName === "placeSpike"
                 ) {
-                    plugin.logger.info("Detected end crystal spawn at ${event.location} by SpikeFeature.")
-                    plugin.logger.info("Fixing spike...")
+                    plugin.logger.info("Detected end crystal spawn at ${event.location} by SpikeFeature. Fixing...")
                     cleanupNewEndCrystal(event.location.world, event.entity)
                 }
             }
