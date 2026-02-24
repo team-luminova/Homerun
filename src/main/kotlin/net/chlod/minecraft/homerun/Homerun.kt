@@ -48,6 +48,7 @@ class Homerun : JavaPlugin() {
 
         ConfigurationSerialization.registerClass(ResetRule::class.java)
         ConfigurationSerialization.registerClass(WorldResetLoadInstruction::class.java)
+        ConfigurationSerialization.registerClass(WorldResetLoadInstruction.SubDimensionInfo::class.java)
         ConfigurationSerialization.registerClass(WorldCopyLoadInstruction::class.java)
         ConfigurationSerialization.registerClass(WorldRenameLoadInstruction::class.java)
 

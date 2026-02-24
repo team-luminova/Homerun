@@ -3,6 +3,7 @@ package net.chlod.minecraft.homerun.tasks
 import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.config.ResetParameters
 import net.chlod.minecraft.homerun.data.ResetLock
+import net.chlod.minecraft.homerun.data.world.ResetLoadInstructions
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
 import net.chlod.minecraft.homerun.helpers.EndPillarCleanup
 import net.minecraft.nbt.CompoundTag
@@ -18,6 +19,11 @@ import kotlin.io.path.Path
 class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitRunnable() {
 
     val componentLogger = plugin.componentLogger
+
+    /**
+     * Index of instructions by target world name, used as a fallback for legacy locks
+     * that don't carry [WorldResetLoadInstruction.subDimensions] metadata.
+     */
     val resetInstructionByWorld = resetLock.resetInstructions.associateBy { it.targetWorld }
 
     override fun run() {
@@ -82,12 +88,13 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
                     Environment.NORMAL
                 }
             }
-            val newWorldDim = when (playerEnvironment) {
-                Environment.NETHER -> newWorld.name + "_nether"
-                Environment.THE_END -> newWorld.name + "_the_end"
-                else -> newWorld
-            }
-            val dimResetInstructions = resetInstructionByWorld[newWorldDim]
+
+            // Resolve the sub-dimension instructions via embedded SubDimensionInfo when available,
+            // falling back to the legacy string-concatenation approach for old lock files.
+            val dimResetInstructions = resolveDimensionInstructions(
+                resetInstructions, playerEnvironment, newWorld
+            )
+
             if (dimResetInstructions != null && dimResetInstructions is WorldResetLoadInstruction) {
                 // The world they're in is being reset too. This means that the world UUID will be changing,
                 // so we need to update it in the player data.
@@ -120,6 +127,38 @@ class WorldPostloadTask(val plugin: Homerun, val resetLock: ResetLock) : BukkitR
 
             NbtIo.writeCompressed(rootTag, Path(playerFile.path))
         }
+    }
+
+    /**
+     * Resolves the [ResetLoadInstructions] for the dimension the player is currently in.
+     *
+     * For overworld players, returns the [resetInstructions] directly. For sub-dimensions
+     * (Nether/End), checks the overworld instruction's [WorldResetLoadInstruction.subDimensions]
+     * metadata first, and falls back to a flat lookup by world name for backward compatibility
+     * with legacy lock files that don't carry sub-dimension metadata.
+     */
+    private fun resolveDimensionInstructions(
+        resetInstructions: WorldResetLoadInstruction,
+        playerEnvironment: Environment,
+        newWorld: World
+    ): ResetLoadInstructions? {
+        if (playerEnvironment == Environment.NORMAL) {
+            return resetInstructions
+        }
+
+        // Try the structured sub-dimension metadata first
+        val subDim = resetInstructions.getSubDimension(playerEnvironment)
+        if (subDim != null) {
+            return resetInstructionByWorld[subDim.worldName]
+        }
+
+        // Fallback: legacy lock files without subDimensions metadata
+        val dimSuffix = when (playerEnvironment) {
+            Environment.NETHER -> "_nether"
+            Environment.THE_END -> "_the_end"
+            else -> return null
+        }
+        return resetInstructionByWorld[newWorld.name + dimSuffix]
     }
 
     fun getOfflineChunk(rootTag: CompoundTag): Pair<Int, Int>? {
