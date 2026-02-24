@@ -4,7 +4,7 @@ import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler
 import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
-import net.chlod.minecraft.homerun.command.*
+import net.chlod.minecraft.homerun.command.HomerunCommand
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.data.ExtraData
 import net.chlod.minecraft.homerun.data.HomerunNamespacedKeys
@@ -89,24 +89,8 @@ class Homerun : JavaPlugin() {
             LifecycleEvents.COMMANDS,
             LifecycleEventHandler { commands: ReloadableRegistrarEvent<Commands> ->
                 commands.registrar().register(
-                    TpworldCommand.createCommand("tpworld"),
-                    "Teleports the player to a world"
-                )
-                commands.registrar().register(
-                    ResetCommand.createCommand(this, "reset"),
-                    "Forces a reset with the specified rule"
-                )
-                commands.registrar().register(
-                    LockoutCommand.createCommand("lockout"),
-                    "Handle world lockouts created by Homerun"
-                )
-                commands.registrar().register(
-                    ReloadChunkCacheCommand.createCommand(this, "reloadchunkcache"),
-                    "Reloads the retained chunk cache used for player notifications"
-                )
-                commands.registrar().register(
-                    ReloadConfigCommand.createCommand(this, "reloadconfig"),
-                    "Reloads the configuration for Homerun"
+                    HomerunCommand.createCommand(this, "homerun"),
+                    "Manage Homerun configuration, worlds, and more."
                 )
             })
 
