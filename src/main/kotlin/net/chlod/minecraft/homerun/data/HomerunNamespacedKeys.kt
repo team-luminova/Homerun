@@ -39,7 +39,7 @@ class HomerunNamespacedKeys(val plugin: Homerun) {
      * After the reset, if there are any naturally-generated crystals not in this array, they will
      * be removed.
      *
-     * @see net.chlod.minecraft.homerun.listeners.EndPillarCleanupListener
+     * @see net.chlod.minecraft.homerun.listeners.EndSpikeCleanupListener
      */
     val endCrystals = NamespacedKey(plugin, "end_crystals")
 

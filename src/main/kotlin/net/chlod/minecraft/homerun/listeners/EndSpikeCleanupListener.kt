@@ -9,7 +9,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntitySpawnEvent
 
-class EndPillarCleanupListener(plugin: Homerun) : EndPillarCleanup(plugin), Listener {
+class EndSpikeCleanupListener(plugin: Homerun) : EndPillarCleanup(plugin), Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onEntitySpawn(event: EntitySpawnEvent) {
