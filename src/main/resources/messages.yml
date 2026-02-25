@@ -13,7 +13,8 @@
 # when interacting with Homerun. For more configuration options, see `config.yml`.
 #
 # IMPORTANT NOTE: For this file to work, you need to rename it to `messages.yml`. Note that `messages.example.yml` WILL
-# BE REPLACED AFTER EVERY UPDATE.
+# BE REPLACED AFTER EVERY UPDATE. After changing any of these messages, you can use `/homerun reload` to reload all
+# messages without needing to restart.
 #
 # All missing messages from this file will default to the built-in English messages, so feel free to comment out or
 # erase any messages you don't need to change.
@@ -23,13 +24,15 @@
 #
 #     https://docs.papermc.io/adventure/minimessage/format/
 #
-# You can also choose to use messages that take up multiple lines. To do this, use the pipe character (|) and then indent the lines below it. For example:
+# You can also choose to use messages that take up multiple lines. To do this, use the pipe character (|) and then
+# indent the lines below it. For example:
 #
 #     multi-line-message: |
 #       This is a message
 #       that takes up multiple lines.
 #
-# The message will preserve the line breaks and any formatting you include.
+# The message will preserve the line breaks and any formatting you include. This is probably most useful for things like
+# the server's "kick" message.
 
 # The timezone to use for all date formatting in messages. This should be a valid timezone ID from the IANA Time Zone
 # Database, e.g. "America/New_York" or "Europe/London". See https://w.wiki/4Jx for a full list. By default, this is UTC.
