@@ -37,9 +37,9 @@ reset_rules:
             # border. By default, a redstone block is used for the border, but this can be customized with "block".
             # The block will show up on the highest non-fluid block. If you want a different heightmap, you can set
             # "heightmap" with any of the available heightmaps: https://minecraft.wiki/w/Heightmap
-            -   type: highest_block
-                distance_chunks: 3
-                heightmap: ocean_floor
+            #-   type: highest_block
+            #    distance_chunks: 3
+            #    heightmap: ocean_floor
             # Show particles above the start of unretained chunks when the player is 7 blocks away from a retained
             # chunk border. The particles look like redstone dust by default, but this can be customized with "color".
             -   type: particles
