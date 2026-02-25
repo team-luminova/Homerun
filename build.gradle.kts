@@ -7,42 +7,27 @@ plugins {
 
 fun getVersionFromGit(): String {
     return try {
-        val tag = providers.exec {
-            commandLine("git", "describe", "--tags", "--match", "v*", "--abbrev=0")
-        }.standardOutput.asText.get().trim()
+        fun normalizeTag(tag: String) = if (tag.startsWith("v")) tag.substring(1) else tag
 
-        val commitTags = providers.exec {
-            commandLine("git", "tag", "--points-at", "HEAD")
-        }.standardOutput.asText.get().trim().lines().first().trim()
-
-        if (commitTags.isNotEmpty()) {
-            // Current commit has a tag
-            // Check if we have local changes
-            val status = providers.exec {
-                commandLine("git", "status", "--porcelain")
+        val headTag = runCatching {
+            providers.exec {
+                commandLine("git", "describe", "--tags", "--match", "v*", "--exact-match")
             }.standardOutput.asText.get().trim()
-            return if (status.isEmpty()) {
-                // No local changes, use the tag as version
-                if (commitTags.startsWith("v"))
-                    commitTags.substring(1)
-                else commitTags
-            } else {
-                // Local changes present, append -SNAPSHOT
-                val baseTag = if (commitTags.startsWith("v"))
-                    commitTags.substring(1)
-                else
-                    commitTags
+        }.getOrDefault("")
 
-                "$baseTag-SNAPSHOT"
-            }
+        val isDirty = providers.exec {
+            commandLine("git", "status", "--porcelain")
+        }.standardOutput.asText.get().trim().isNotEmpty()
+
+        if (headTag.isNotEmpty()) {
+            val baseTag = normalizeTag(headTag)
+            if (isDirty) "$baseTag-SNAPSHOT" else baseTag
         } else {
-            // No tag on current commit, use the latest tag with -SNAPSHOT
-            val baseTag = if (tag.startsWith("v"))
-                tag.substring(1)
-            else
-                tag
+            val latestTag = providers.exec {
+                commandLine("git", "describe", "--tags", "--match", "v*", "--abbrev=0")
+            }.standardOutput.asText.get().trim()
 
-            "$baseTag-SNAPSHOT"
+            if (latestTag.isNotEmpty()) "${normalizeTag(latestTag)}-SNAPSHOT" else "0.0.0-SNAPSHOT"
         }
     } catch (_: Exception) {
         // Fallback to default version if no tag is found
