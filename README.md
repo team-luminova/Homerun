@@ -183,10 +183,10 @@ Warnings provide a way to notify players of an upcoming reset. The following war
       countdown: 60 # Show the boss bar for 60 seconds before the reset
   ```
 * `type: player_list` – Displays a message in the player list header and footer with a custom message and countdown.
-  ```yaml
+  ```yaml`
   warnings:
-    - type: player_list
-      position: header # Can be 'header' or 'footer'
+  - type: player_list
+    position: header # Can be 'header' or 'footer'
   ```
 * `type: chat_message` – Sends a chat message to all players at specified intervals (in seconds before reset).
   ```yaml
@@ -200,11 +200,12 @@ Warnings provide a way to notify players of an upcoming reset. The following war
 
 Though Homerun mostly works through configuration files, it also provides some commands for server operators:
 
-* `/reset <rule>` – Immediately reset the world using the specified rule
-* `/tpworld <world>` – Teleport to the specified world, keeping position and rotation of the player
-* `/reloadcachedchunks` – Reload the chunk cache, which powers reset borders and entry/exit notifications.
-* `/lockout <enable/disable> <world>` – Enable or disable lockouts for a world. Lockouts prevent a player from joining
-  or teleporting into a world that is currently being reset.
+* `/homerun reset <rule>` – Immediately reset the world using the specified rule
+* `/homerun tpworld <world>` – Teleport to the specified world, keeping position and rotation of the player
+* `/homerun reload` – Reload the configuration. This immediately re-processes all reset rules.
+* `/homerun reloadcachedchunks` – Reload the chunk cache, which powers reset borders and entry/exit notifications
+* `/homerun lockout <enable/disable> <world>` – Enable or disable lockouts for a world. Lockouts prevent a player from
+  joining or teleporting into a world that is currently being reset.
 
 ### Development
 
