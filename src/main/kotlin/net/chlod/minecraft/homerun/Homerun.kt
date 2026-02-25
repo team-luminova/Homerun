@@ -23,13 +23,20 @@ import java.util.*
 
 class Homerun : JavaPlugin() {
 
+    // Constants
     val keys = HomerunNamespacedKeys(this)
     val messages = Messages(this)
     val extraData = ExtraData(this)
+    val mainCommand = HomerunCommand(this)
 
+    // Refreshable state
     val resetRules = mutableListOf<ResetRule>()
     val retainedChunkCache = RetainedChunkCache(this, resetRules)
+
+    // One-time use state
     private var appliedResetLocks = mutableListOf<ResetLock>()
+
+    // Timers
     private var conditionCheckTask: BukkitTask? = null
     private var borderCheckTask: BukkitTask? = null
 
@@ -103,16 +110,16 @@ class Homerun : JavaPlugin() {
         server.pluginManager.registerEvents(DimensionSpawnFixListener(this), this)
 
         // Registering commands
-        @Suppress("UnstableApiUsage")
         this.lifecycleManager.registerEventHandler(
             LifecycleEvents.COMMANDS,
             LifecycleEventHandler { commands: ReloadableRegistrarEvent<Commands> ->
-                commands.registrar().register(
-                    HomerunCommand.createCommand(this, "homerun"),
-                    "Manage Homerun configuration, worlds, and more."
+                val registrar = commands.registrar()
+                @Suppress("UnstableApiUsage")
+                registrar.register(
+                    mainCommand.createCommand(registrar.dispatcher),
+                    mainCommand.description
                 )
             })
-
 
         // Process any applied reset locks
         for (appliedResetLock in appliedResetLocks) {
