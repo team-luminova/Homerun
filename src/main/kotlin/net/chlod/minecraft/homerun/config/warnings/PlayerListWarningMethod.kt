@@ -3,6 +3,7 @@ package net.chlod.minecraft.homerun.config.warnings
 import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.config.conditions.ResetCondition
+import net.chlod.minecraft.homerun.helpers.DurationHandler
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Formatter
@@ -83,14 +84,7 @@ class PlayerListWarningMethod(
             Placeholder.component(
                 "duration",
                 Component
-                    .text(
-                        String.format(
-                            "%02d:%02d:%02d",
-                            (timeUntilResetMillis / 3600000) % 24,
-                            (timeUntilResetMillis / 60000) % 60,
-                            (timeUntilResetMillis / 1000) % 60
-                        )
-                    )
+                    .text(DurationHandler(plugin).asCountdown(timeUntilResetMillis))
                     .color(getWarningTextColor(timeUntilResetMillis))
             )
         )
@@ -118,14 +112,7 @@ class PlayerListWarningMethod(
             Placeholder.component(
                 "duration",
                 Component
-                    .text(
-                        String.format(
-                            "%02d:%02d:%02d",
-                            (timeUntilResetMillis / 3600000) % 24,
-                            (timeUntilResetMillis / 60000) % 60,
-                            (timeUntilResetMillis / 1000) % 60
-                        )
-                    )
+                    .text(DurationHandler(plugin).asCountdown(timeUntilResetMillis))
                     .color(getWarningTextColor(timeUntilResetMillis))
             )
         )
