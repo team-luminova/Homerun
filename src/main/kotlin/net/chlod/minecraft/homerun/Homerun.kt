@@ -10,6 +10,7 @@ import net.chlod.minecraft.homerun.data.*
 import net.chlod.minecraft.homerun.data.world.WorldCopyLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldRenameLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
+import net.chlod.minecraft.homerun.extern.HomerunPlaceholderExpansion
 import net.chlod.minecraft.homerun.helpers.MinecraftVersion
 import net.chlod.minecraft.homerun.helpers.RetainedChunkCache
 import net.chlod.minecraft.homerun.listeners.*
@@ -144,6 +145,14 @@ class Homerun : JavaPlugin() {
         // Start processing new reset rules
         conditionCheckTask = ConditionCheckTask(this).runTaskTimer(this, 0, 1L)
         borderCheckTask = BorderCheckTask(this).runTaskTimer(this, 0, 4L)
+
+        // PlaceholderAPI expansion registration
+        if (server.pluginManager.isPluginEnabled("PlaceholderAPI")) {
+            logger.info("PlaceholderAPI detected, registering Homerun placeholders...")
+            HomerunPlaceholderExpansion(this).register()
+        } else {
+            logger.info("PlaceholderAPI not detected.")
+        }
     }
 
     override fun onDisable() {
