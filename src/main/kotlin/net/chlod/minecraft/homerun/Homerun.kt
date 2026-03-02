@@ -32,6 +32,7 @@ class Homerun : JavaPlugin() {
     // Refreshable state
     val resetRules = mutableListOf<ResetRule>()
     val retainedChunkCache = RetainedChunkCache(this, resetRules)
+    val timeUntilNextResetCache = mutableMapOf<ResetRule, Long>()
 
     // One-time use state
     private var appliedResetLocks = mutableListOf<ResetLock>()
