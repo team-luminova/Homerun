@@ -217,7 +217,15 @@ class ResetParameters(
          * Renames the source world's Nether folder to match the target world's Nether folder. This avoids
          * the storage and time cost of copying, but will require manual intervention to undo a reset.
          */
-        RENAME
+        RENAME;
+
+        /**
+         * Whether this reset behavior is destructive. Destructive behaviors are those that will permanently destroy
+         * some chunks of the source world. This includes NORMAL, where many chunks are wiped, and WIPE.
+         */
+        fun isDestructive(): Boolean {
+            return this == NORMAL || this == WIPE
+        }
     }
 
 }
