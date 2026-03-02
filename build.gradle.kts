@@ -42,6 +42,8 @@ val targetJavaVersion = 21
 val lowestSupportedMinecraftVersion = "1.21.5"
 val highestSupportedMinecraftVersion = "1.21.10"
 
+val placeholderApiVersion = "2.12.2"
+
 kotlin {
     jvmToolchain(targetJavaVersion)
 }
@@ -50,6 +52,9 @@ repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/") {
         name = "papermc-repo"
+    }
+    maven("https://repo.extendedclip.com/releases/") {
+        name = "placeholderapi-repo"
     }
 }
 
@@ -61,6 +66,9 @@ dependencies {
 
     // cron stuff. Maybe replace in the future?
     implementation("com.cronutils:cron-utils:9.2.1")
+
+    // PlaceholderAPI integration
+    compileOnly("me.clip:placeholderapi:${placeholderApiVersion}")
 
     // net.minecraft.server
     paperweight.paperDevBundle("${lowestSupportedMinecraftVersion}-R0.1-SNAPSHOT")
@@ -83,6 +91,12 @@ tasks {
                 "MCKotlin",
                 "1.5.1-k${kotlin.coreLibrariesVersion}",
                 "MCKotlinPaper-1.5.1-k${kotlin.coreLibrariesVersion}.jar"
+            )
+            github(
+                "PlaceholderAPI",
+                "PlaceholderAPI",
+                placeholderApiVersion,
+                "PlaceholderAPI-${placeholderApiVersion}.jar"
             )
             // To make development easier.
             modrinth(

@@ -12,3 +12,5 @@ website: https://modrinth.com/plugin/lmnv-homerun
 api-version: '${lowestSupportedMinecraftVersion}'
 depend:
     - MCKotlin-Paper
+softdepend:
+    - PlaceholderAPI
