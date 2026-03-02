@@ -1,5 +1,6 @@
 package net.chlod.minecraft.homerun.config
 
+import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.config.borders.HighestBlockBorderType
 import net.chlod.minecraft.homerun.config.borders.ParticleBorderType
 import net.chlod.minecraft.homerun.config.borders.ResetBorder
@@ -195,6 +196,30 @@ class ResetRule(
             }
             put("parameters", parametersList.map { it.serialize() })
         }
+    }
+
+    fun affectsWorld(plugin: Homerun, worldName: String): Boolean {
+        for (parameters in parametersList) {
+            val targetWorldName = parameters.world ?: plugin.server.worlds.firstOrNull()?.name ?: return false
+            if (worldName == targetWorldName) {
+                return true
+            }
+            if (
+                worldName.endsWith("_nether") &&
+                parameters.netherBehavior.isDestructive() &&
+                worldName == targetWorldName + "_nether"
+            ) {
+                return true
+            }
+            if (
+                worldName.endsWith("_the_end") &&
+                parameters.endBehavior.isDestructive() &&
+                worldName == targetWorldName + "_the_end"
+            ) {
+                return true
+            }
+        }
+        return false
     }
 
 }
