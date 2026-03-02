@@ -27,6 +27,8 @@ class Homerun : JavaPlugin() {
 
     val resetRules = mutableListOf<ResetRule>()
     val retainedChunkCache = RetainedChunkCache(this, resetRules)
+    val timeUntilNextResetCache = mutableMapOf<ResetRule, Long>()
+    
     private var appliedResetLocks = mutableListOf<ResetLock>()
     private var conditionCheckTask: BukkitTask? = null
     private var borderCheckTask: BukkitTask? = null
