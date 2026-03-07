@@ -48,7 +48,7 @@ occasionally be backported to older versions, but this is not guaranteed and wil
 
 There are no commitments on how early support for a new Minecraft version will be added. If a new Minecraft version is
 released and a new Homerun version isn't available within a month after the respective PaperMC version goes live, feel
-free to file a [version request](https://github.com/luminova-osu/Homerun/issues).
+free to file a [version request](https://github.com/team-luminova/Homerun/issues).
 
 Minecraft versions older than the last 12 months will not get official support. If you need a feature only available in
 newer Minecraft versions but are stuck on an older version, you can try backporting the code yourself. If you want to
