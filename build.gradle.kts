@@ -42,6 +42,36 @@ val targetJavaVersion = 21
 val lowestSupportedMinecraftVersion = "1.21.11"
 val highestSupportedMinecraftVersion = "1.21.11"
 
+val minecraftVersionRange = if (lowestSupportedMinecraftVersion == highestSupportedMinecraftVersion) {
+    lowestSupportedMinecraftVersion
+} else {
+    val lowBase = lowestSupportedMinecraftVersion.substringBeforeLast('.')
+    val highBase = highestSupportedMinecraftVersion.substringBeforeLast('.')
+    if (lowBase == highBase) {
+        val highPatch = highestSupportedMinecraftVersion.substringAfterLast('.')
+        "${lowestSupportedMinecraftVersion}-${highPatch}"
+    } else {
+        "${lowestSupportedMinecraftVersion}-${highestSupportedMinecraftVersion}"
+    }
+}
+
+// TODO: This will need to change for 26.1.
+val minecraftGameVersions = if (lowestSupportedMinecraftVersion == highestSupportedMinecraftVersion) {
+    lowestSupportedMinecraftVersion
+} else {
+    // Iterate over each minor version and generate a list of all versions in the range.
+    val versions = mutableListOf<String>()
+    var currentVersion = lowestSupportedMinecraftVersion
+    while (currentVersion != highestSupportedMinecraftVersion) {
+        versions.add(currentVersion)
+        val parts = currentVersion.split('.').map { it.toInt() }.toMutableList()
+        parts[2]++ // Increment patch version
+        currentVersion = parts[0].toString() + "." + parts[1].toString() + "." + parts[2].toString()
+    }
+    versions.add(highestSupportedMinecraftVersion) // Add the highest version at the end
+    versions.joinToString(",")
+}
+
 val placeholderApiVersion = "2.12.2"
 
 kotlin {
@@ -134,6 +164,15 @@ tasks {
         }
         filesMatching("extras.yml") {
             expand(props)
+        }
+    }
+
+    register("printMinecraftVersions") {
+        doLast {
+            println("LOWEST=$lowestSupportedMinecraftVersion")
+            println("HIGHEST=$highestSupportedMinecraftVersion")
+            println("RANGE=$minecraftVersionRange")
+            println("GAME_VERSIONS=$minecraftGameVersions")
         }
     }
 }
