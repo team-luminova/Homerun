@@ -90,7 +90,7 @@ class HomerunCommand(val plugin: Homerun) : IHomerunCommand {
                             .text("Homerun")
                             .color(TextColor.color(0x038cfc))
                             .clickEvent(
-                                ClickEvent.openUrl("https://github.com/luminova-osu/Homerun")
+                                ClickEvent.openUrl("https://github.com/team-luminova/Homerun")
                             )
                     )
                     .append(
