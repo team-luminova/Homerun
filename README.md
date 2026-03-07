@@ -183,7 +183,7 @@ Warnings provide a way to notify players of an upcoming reset. The following war
       countdown: 60 # Show the boss bar for 60 seconds before the reset
   ```
 * `type: player_list` – Displays a message in the player list header and footer with a custom message and countdown.
-  ```yaml`
+  ```yaml
   warnings:
   - type: player_list
     position: header # Can be 'header' or 'footer'
