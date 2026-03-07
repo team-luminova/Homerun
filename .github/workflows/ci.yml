@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
     push:
@@ -9,7 +9,6 @@ permissions:
     issues: read
     checks: write
     pull-requests: write
-
 
 jobs:
     test:
@@ -28,12 +27,9 @@ jobs:
                     distribution: 'temurin'
 
             -   name: Setup Gradle
-                uses: gradle/actions/setup-gradle@v3
+                uses: gradle/actions/setup-gradle@v5
                 with:
                     gradle-version: wrapper
-
-            -   name: Grant execute permission for gradlew
-                run: chmod +x gradlew
 
             -   name: Run tests
                 run: ./gradlew test --no-daemon --stacktrace
@@ -56,6 +52,12 @@ jobs:
         runs-on: ubuntu-latest
         needs: test
 
+        outputs:
+            PLUGIN_VERSION: ${{ steps.get_version.outputs.VERSION }}
+            MC_LOWEST: ${{ steps.minecraft_versions.outputs.LOWEST }}
+            MC_HIGHEST: ${{ steps.minecraft_versions.outputs.HIGHEST }}
+            MC_RANGE: ${{ steps.minecraft_versions.outputs.RANGE }}
+            MC_VERSIONS: ${{ steps.minecraft_versions.outputs.GAME_VERSIONS }}
         steps:
             -   name: Checkout code
                 uses: actions/checkout@v4
@@ -69,23 +71,24 @@ jobs:
                     distribution: 'temurin'
 
             -   name: Setup Gradle
-                uses: gradle/actions/setup-gradle@v3
+                uses: gradle/actions/setup-gradle@v5
                 with:
                     gradle-version: wrapper
 
-            -   name: Grant execute permission for gradlew
-                run: chmod +x gradlew
-
             -   name: Build plugin JAR
                 run: ./gradlew shadowJar --no-daemon --stacktrace
+
+            -   name: Print state
+                run: |
+                    git status --porcelain
 
             -   name: Rename plugin JAR
                 id: rename
                 run: |
                     cd build/libs/
-                    PLUGIN_JAR=$(ls homerun-*-SNAPSHOT-all.jar)
-                    VERSION=$(echo $PLUGIN_JAR | sed -E 's/homerun-(.*)-all\.jar/\1/')
-                    NEW_JAR="homerun-v${VERSION}.jar"
+                    PLUGIN_JAR=$(ls Homerun-*-all.jar)
+                    VERSION=$(echo $PLUGIN_JAR | sed -E 's/Homerun-(.*)-all\.jar/\1/')
+                    NEW_JAR="Homerun-v${VERSION}.jar"
                     mv "$PLUGIN_JAR" "$NEW_JAR"
                     # Export the new JAR name for later steps
                     echo "PLUGIN_JAR=$NEW_JAR" >> $GITHUB_OUTPUT
@@ -96,34 +99,100 @@ jobs:
                     name: plugin-jar
                     path: build/libs/${{ steps.rename.outputs.PLUGIN_JAR }}
                     retention-days: 30
+
+            -   name: Get version number
+                id: get_version
+                env:
+                    PLUGIN_VERSION: ${{ github.ref_name }}
+                run: |
+                    VERSION=${PLUGIN_VERSION#v}
+                    echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+            -   name: Get Minecraft version range
+                id: minecraft_versions
+                run: |
+                    ./gradlew -q printMinecraftVersions > minecraft_versions.txt
+                    cat minecraft_versions.txt
+                    while IFS='=' read -r key value; do
+                        if [[ "$key" == "GAME_VERSIONS" ]]; then
+                            # Convert comma-separated versions into a newline-separated list for GitHub Actions output
+                            echo "GAME_VERSIONS<<EOF" >> $GITHUB_OUTPUT
+                            echo "$value" | tr ',' '\n' >> $GITHUB_OUTPUT
+                            echo "EOF" >> $GITHUB_OUTPUT
+                        else
+                            echo "$key=$value" >> $GITHUB_OUTPUT
+                        fi                    
+                    done < minecraft_versions.txt
     release:
         runs-on: ubuntu-latest
         needs: build
         if: startsWith(github.ref, 'refs/tags/v')
 
         steps:
-            -   name: Checkout code
-                uses: actions/checkout@v4
-                with:
-                    fetch-depth: 0  # Fetch all history including tags
-
             -   name: Download plugin JAR
                 uses: actions/download-artifact@v4
                 with:
                     name: plugin-jar
-
-            -   name: Extract version from tag
-                id: get_version
-                run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
             -   name: Create release
                 uses: softprops/action-gh-release@v2
                 env:
                     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 with:
-                    tag_name: ${{ steps.get_version.outputs.VERSION }}
-                    release_name: ${{ steps.get_version.outputs.VERSION }}
+                    tag_name: ${{ github.ref_name }}
+                    name: v${{ needs.build.outputs.PLUGIN_VERSION }}-${{ needs.build.outputs.MC_LOWEST }}
                     draft: true
                     prerelease: false
-                    files: homerun-v*.jar
-                    generate_release_notes: false
+                    files: Homerun-v*.jar
+                    body: |
+                        This version supports Minecraft ${{ needs.build.outputs.MC_LOWEST == needs.build.outputs.MC_HIGHEST && needs.build.outputs.MC_LOWEST || format('{0} to {1}', needs.build.outputs.MC_LOWEST, needs.build.outputs.MC_HIGHEST) }} only.
+                        
+                        **Full Changelog:** https://github.com/team-luminova/Homerun/compare/main...${{ github.ref_name }}
+    deploy_modrinth:
+        runs-on: ubuntu-latest
+        needs:
+            - build
+            - release
+        if: startsWith(github.ref, 'refs/tags/v')
+        environment: modrinth
+        env:
+            # https://modrinth.com/plugin/lmnv-homerun
+            MODRINTH_PROJECT_ID: "hpBTteAa"
+
+        steps:
+            -   name: Download plugin JAR
+                uses: actions/download-artifact@v4
+                with:
+                    name: plugin-jar
+
+            -   name: Get release info
+                id: release_data
+                uses: KevinRohn/github-full-release-data@v2
+                with:
+                    repository: ${{ github.repository }}
+                    token: ${{ secrets.GITHUB_TOKEN }}
+                    version: ${{ github.ref_name }}
+                    body-markdown-file-path: RELEASE_NOTES.md
+
+            -   name: Verify release info
+                id: release_body
+                run: |
+                    if [ -z "$(cat RELEASE_NOTES.md)" ]; then
+                        echo "Error: Missing release data"
+                        exit 1
+                    fi
+                    echo "RELEASE_BODY=$(cat RELEASE_NOTES.md)" >> $GITHUB_OUTPUT
+
+            -   name: Publish Modrinth version
+                uses: cloudnode-pro/modrinth-publish@v2
+                with:
+                    token: ${{ secrets.MODRINTH_DEPLOY_TOKEN }}
+                    project: ${{ env.MODRINTH_PROJECT_ID }}
+                    version: "${{ needs.build.outputs.PLUGIN_VERSION }}-${{ needs.build.outputs.MC_LOWEST }}"
+                    channel: ${{ startsWith(github.ref_name, 'v0.') && 'alpha' || '' }}
+                    name: "Paper for ${{ needs.build.outputs.MC_RANGE }} - v${{ needs.build.outputs.PLUGIN_VERSION }}"
+                    changelog: ${{ steps.release_body.outputs.RELEASE_BODY }}
+                    loaders: paper
+                    game-versions: ${{ needs.build.outputs.MC_VERSIONS }}
+                    files: Homerun-${{ github.ref_name }}.jar
+                    status: draft
