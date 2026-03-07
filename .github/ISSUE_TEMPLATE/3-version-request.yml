@@ -7,11 +7,11 @@ body:
         attributes:
             label: Please confirm the following.
             options:
-                -   label: I checked the [existing issues](https://github.com/luminova-osu/Homerun/issues?q=is%3Aissue) for duplicate version requests
+                -   label: I checked the [existing issues](https://github.com/team-luminova/Homerun/issues?q=is%3Aissue) for duplicate version requests
                     required: true
                 -   label: The version I am requesting was released in the past 12 months and is not currently supported
                     required: false
-                -   label: I have read and understood the [version support policy](https://github.com/luminova-osu/Homerun/blob/main/DEVELOPMENT.md#supported-versions)
+                -   label: I have read and understood the [version support policy](https://github.com/team-luminova/Homerun/blob/main/DEVELOPMENT.md#supported-versions)
                     required: true
     -   type: input
         attributes:

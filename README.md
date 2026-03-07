@@ -221,7 +221,7 @@ Homerun uses semantic versioning. The format, as usual, is `<MAJOR>.<MINOR>.<PAT
 major versions whenever the list of supported Minecraft versions changes. Always pick the appropriate major version for
 your Minecraft server version.
 
-You can help us out at https://github.com/luminova-osu/Homerun. Pull requests are appreciated, and we'll try to give
+You can help us out at https://github.com/team-luminova/Homerun. Pull requests are appreciated, and we'll try to give
 reviews within a reasonable amount of time. To being developing for Homerun, just clone the repository and open it with
 your IDE. Gradle should take care of the rest.
 
