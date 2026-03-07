@@ -16,12 +16,12 @@ jobs:
 
         steps:
             -   name: Checkout code
-                uses: actions/checkout@v4
+                uses: actions/checkout@v6
                 with:
                     fetch-depth: 0  # Fetch all history including tags
 
             -   name: Set up JDK 21
-                uses: actions/setup-java@v4
+                uses: actions/setup-java@v5
                 with:
                     java-version: '21'
                     distribution: 'temurin'
@@ -36,7 +36,7 @@ jobs:
 
             -   name: Upload test reports
                 if: always()
-                uses: actions/upload-artifact@v4
+                uses: actions/upload-artifact@v7
                 with:
                     name: test-reports
                     path: build/reports/tests/test/
@@ -60,12 +60,12 @@ jobs:
             MC_VERSIONS: ${{ steps.minecraft_versions.outputs.GAME_VERSIONS }}
         steps:
             -   name: Checkout code
-                uses: actions/checkout@v4
+                uses: actions/checkout@v6
                 with:
                     fetch-depth: 0  # Fetch all history including tags
 
             -   name: Set up JDK 21
-                uses: actions/setup-java@v4
+                uses: actions/setup-java@v5
                 with:
                     java-version: '21'
                     distribution: 'temurin'
@@ -94,7 +94,7 @@ jobs:
                     echo "PLUGIN_JAR=$NEW_JAR" >> $GITHUB_OUTPUT
 
             -   name: Upload plugin JAR
-                uses: actions/upload-artifact@v4
+                uses: actions/upload-artifact@v7
                 with:
                     name: plugin-jar
                     path: build/libs/${{ steps.rename.outputs.PLUGIN_JAR }}
@@ -130,7 +130,7 @@ jobs:
 
         steps:
             -   name: Download plugin JAR
-                uses: actions/download-artifact@v4
+                uses: actions/download-artifact@v8
                 with:
                     name: plugin-jar
 
@@ -161,7 +161,7 @@ jobs:
 
         steps:
             -   name: Download plugin JAR
-                uses: actions/download-artifact@v4
+                uses: actions/download-artifact@v8
                 with:
                     name: plugin-jar
 
