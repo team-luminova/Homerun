@@ -11,7 +11,7 @@ import net.chlod.minecraft.homerun.data.world.ResetLoadInstructions
 import net.chlod.minecraft.homerun.data.world.WorldCopyLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldRenameLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
-import net.chlod.minecraft.homerun.online.NMSChunkTransferUtil
+import net.chlod.minecraft.homerun.world.NMSChunkTransferUtil
 import net.minecraft.server.dedicated.DedicatedServer
 import net.minecraft.server.dedicated.DedicatedServerProperties
 import net.minecraft.server.dedicated.DedicatedServerSettings

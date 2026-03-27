@@ -4,7 +4,7 @@ import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.data.ResetLock
 import net.chlod.minecraft.homerun.data.world.ResetLoadInstructions
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
-import net.chlod.minecraft.homerun.online.NMSChunkTransferUtil
+import net.chlod.minecraft.homerun.world.NMSChunkTransferUtil
 import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
 
