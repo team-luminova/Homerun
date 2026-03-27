@@ -1,4 +1,4 @@
-package net.chlod.minecraft.homerun.online
+package net.chlod.minecraft.homerun.world
 
 import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.data.world.WorldResetLoadInstruction
@@ -39,9 +39,9 @@ import java.util.logging.Logger
  * breaks loose. We don't want that, of course.
  */
 class NMSChunkTransferUtil(
-    private val plugin: Homerun,
+    plugin: Homerun,
     private val resetInstructions: WorldResetLoadInstruction,
-    private val preLoad: Boolean,
+    preLoad: Boolean,
 ) {
 
     companion object {

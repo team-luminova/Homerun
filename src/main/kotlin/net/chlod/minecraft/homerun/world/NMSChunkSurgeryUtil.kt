@@ -1,4 +1,4 @@
-package net.chlod.minecraft.homerun.online
+package net.chlod.minecraft.homerun.world
 
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.IntArrayTag
