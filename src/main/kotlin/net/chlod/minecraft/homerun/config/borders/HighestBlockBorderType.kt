@@ -45,7 +45,8 @@ class HighestBlockBorderType(
 
             return HighestBlockBorderType(
                 distanceChunks,
-                block
+                block,
+                heightmap
             )
         }
     }
