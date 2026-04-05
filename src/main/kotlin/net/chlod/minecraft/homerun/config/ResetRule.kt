@@ -1,6 +1,7 @@
 package net.chlod.minecraft.homerun.config
 
 import net.chlod.minecraft.homerun.Homerun
+import net.chlod.minecraft.homerun.config.borders.ConsumableBorderType
 import net.chlod.minecraft.homerun.config.borders.HighestBlockBorderType
 import net.chlod.minecraft.homerun.config.borders.ParticleBorderType
 import net.chlod.minecraft.homerun.config.borders.ResetBorder
@@ -110,6 +111,7 @@ class ResetRule(
 
             val bordersRaw = args["borders"] as? List<*>
             val borders: MutableList<ResetBorder> = ArrayList()
+            var consumableBorderExists = false
             bordersRaw?.forEachIndexed { i, border ->
                 try {
                     @Suppress("UNCHECKED_CAST")
@@ -121,6 +123,14 @@ class ResetRule(
 
                             ResetBorder.BorderType.PARTICLES ->
                                 ParticleBorderType.deserialize(border)
+
+                            ResetBorder.BorderType.CONSUMABLE -> {
+                                if (consumableBorderExists) {
+                                    throw IllegalArgumentException("Multiple consumable borders are not allowed")
+                                }
+                                consumableBorderExists = true
+                                ConsumableBorderType.deserialize(border)
+                            }
                         }
                     )
                 } catch (e: Exception) {

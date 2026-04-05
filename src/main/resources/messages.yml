@@ -87,3 +87,9 @@ warning-chat-seconds: "<num> <unit:'1#seconds|1<seconds'>"
 border-exit: "<red><bold>You have left the safe zone.</bold> Blocks or items left here will be reset."
 # Message shown above the hotbar when the user enters a retained chunk.
 border-enter: "<green>You have entered the safe zone."
+# Message shown on the boss bar for consumable borders with a "boss bar" warning type.
+# This is only shown when the player is outside the safe zone, and will disappear when they enter it.
+border-consumable-warning-bar: "<aqua>You are outside the safe zone."
+# Message shown on the boss bar for consumable borders with a "boss bar" warning type.
+# This is only shown when the player is inside the safe zone and regeneration is enabled.
+border-consumable-warning-bar-regen: "<aqua>You are inside the safe zone."

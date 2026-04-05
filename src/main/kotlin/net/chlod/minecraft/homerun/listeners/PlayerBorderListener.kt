@@ -5,6 +5,7 @@ import org.bukkit.Location
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import java.util.*
 
@@ -14,14 +15,32 @@ class PlayerBorderListener(val plugin: Homerun) : Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
     fun onPlayerMove(event: PlayerMoveEvent) {
-        val worldData = plugin.retainedChunkCache.getRetainedChunks(event.player.location.world.name) ?: return
+        onBorderUpdate(event)
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    fun onPlayerJoin(event: PlayerJoinEvent) {
+        // Use a fake player move event.
+        @Suppress("UnstableApiUsage")
+        onBorderUpdate(
+            PlayerMoveEvent(
+                event.player,
+                event.player.location.clone(),
+                event.player.location.clone()
+            )
+        )
+    }
+
+    fun onBorderUpdate(event: PlayerMoveEvent) {
+        val player = event.player
+        val worldData = plugin.retainedChunkCache.getRetainedChunks(player.location.world.name) ?: return
         if (worldData.isEmpty()) {
             // No retained chunks in this world. Skip.
             return
         }
 
-        val lastLocation = playerLastLocation[event.player.uniqueId]
-        val currentLocation = event.player.location
+        val lastLocation = playerLastLocation[player.uniqueId]
+        val currentLocation = player.location
         if (
             lastLocation?.blockX == currentLocation.blockX &&
             lastLocation.blockY == currentLocation.blockY &&
@@ -30,7 +49,7 @@ class PlayerBorderListener(val plugin: Homerun) : Listener {
             // Player is still in the same block, so we don't need to update borders.
             return
         }
-        playerLastLocation[event.player.uniqueId] = event.player.location
+        playerLastLocation[player.uniqueId] = player.location
 
         for (resetRule in plugin.resetRules) {
             resetRule.borders?.forEach { border ->
