@@ -6,6 +6,7 @@ import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEven
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.chlod.minecraft.homerun.command.HomerunCommand
 import net.chlod.minecraft.homerun.config.ResetRule
+import net.chlod.minecraft.homerun.config.borders.ConsumableBorderType
 import net.chlod.minecraft.homerun.data.*
 import net.chlod.minecraft.homerun.data.world.WorldCopyLoadInstruction
 import net.chlod.minecraft.homerun.data.world.WorldRenameLoadInstruction
@@ -175,6 +176,7 @@ class Homerun : JavaPlugin() {
         resetRules.clear()
 
         val resetRulesRaw = config.getList("reset_rules") ?: return
+        var hasConsumableBorder = false
         resetRulesRaw.forEachIndexed { index, maybeRule ->
             @Suppress("UNCHECKED_CAST")
             val rule = maybeRule as? ResetRule
@@ -193,6 +195,14 @@ class Homerun : JavaPlugin() {
 
             if (rule != null) {
                 resetRules.add(rule)
+
+                if (rule.borders?.any { it is ConsumableBorderType } ?: false) {
+                    if (hasConsumableBorder) {
+                        throw IllegalArgumentException("Multiple consumable borders are not allowed")
+                    } else {
+                        hasConsumableBorder = true
+                    }
+                }
             }
         }
     }

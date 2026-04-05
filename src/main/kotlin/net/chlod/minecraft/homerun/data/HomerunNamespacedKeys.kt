@@ -32,6 +32,11 @@ class HomerunNamespacedKeys(val plugin: Homerun) {
      */
     val resetOriginalSeed = NamespacedKey(plugin, "reset_original_seed")
 
+    /**
+     * Time at which this world got reset, in milliseconds.
+     */
+    val resetTimestamp = NamespacedKey(plugin, "reset_timestamp")
+
     // Repair work
 
     /**
@@ -49,6 +54,13 @@ class HomerunNamespacedKeys(val plugin: Homerun) {
      * Key for the reset behavior for a player (respawned, killed, etc.).
      */
     val playerResetDisposition = NamespacedKey(plugin, "player_reset_disposition")
+
+    /**
+     * Key for the current status of borders on the player. Used mostly by consumable borders.
+     * This is used to keep track of things like time spent within a border, when the time will
+     * reset, etc.
+     */
+    val playerBorderStatuses = NamespacedKey(plugin, "player_border_statuses")
 
     // World metadata
 

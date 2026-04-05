@@ -392,6 +392,11 @@ class ResetPrepareTask(val plugin: Homerun, val rule: ResetRule) : BukkitRunnabl
                 true
             )
         }
+        targetWorld.persistentDataContainer.set(
+            plugin.keys.resetTimestamp,
+            PersistentDataType.LONG,
+            System.currentTimeMillis()
+        )
 
         val knownEndCrystalLocations = mutableListOf<Triple<Double, Double, Double>>()
         for (crystal in sourceWorld.getEntitiesByClass(EnderCrystal::class.java)) {

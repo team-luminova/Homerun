@@ -178,7 +178,8 @@ abstract class ResetBorder(val type: BorderType) : ConfigurationSerializable {
 
     enum class BorderType {
         HIGHEST_BLOCK,
-        PARTICLES
+        PARTICLES,
+        CONSUMABLE
     }
 
     override fun serialize(): Map<String?, Any?> {
