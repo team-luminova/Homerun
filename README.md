@@ -28,11 +28,17 @@ for Homerun to work.
 
 ### Configuration
 
-Homerun is configured through a `config.yml` file (see the defaults [here](./src/main/resources/config.yml)). It
-currently accepts one top-level key: `reset_rules`, which is a list of reset rules. Each reset rule has certain
-conditions and one or more parameters, and can have a name, be disabled, or have warnings.
+Homerun is configured through a `config.yml` file (see the defaults [here](./src/main/resources/config.yml)). It accepts
+the following top-level keys:
+
+| Key           | Default | Type               | Description                                                                                                                                                                                   |
+|---------------|---------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `reset_rules` | *none*  | list of ResetRules | A list of reset rules. See [Reset rules](#reset-rules) below.                                                                                                                                 |
+| `tick_period` | `1`     | `long` (optional)  | The tick period for checking reset conditions and borders. Default is 1 tick (i.e. every tick). Setting this to a higher value can reduce CPU usage at the cost of less precise reset timing. |
 
 #### Reset rules
+
+Each reset rule has certain conditions and one or more parameters, and can have a name, be disabled, or have warnings.
 
 | Key            | Default | Type                             | Description                                                                                                                         |
 |----------------|---------|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|

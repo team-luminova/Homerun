@@ -43,6 +43,10 @@ class Homerun : JavaPlugin() {
     private var conditionCheckTask: BukkitTask? = null
     private var borderCheckTask: BukkitTask? = null
 
+    // Config variables
+    var tickPeriod: Long = 1L
+        private set
+
     override fun onLoad() {
         // Version check
         val runtime = MinecraftVersion.detectRuntimeOrNull()
@@ -64,6 +68,7 @@ class Homerun : JavaPlugin() {
         ConfigurationSerialization.registerClass(WorldCopyLoadInstruction::class.java)
         ConfigurationSerialization.registerClass(WorldRenameLoadInstruction::class.java)
 
+        initFromConfig()
         loadResetRules()
 
         // Load in the configuration
@@ -144,8 +149,7 @@ class Homerun : JavaPlugin() {
         PlayerLockout.global.unlock()
 
         // Start processing new reset rules
-        conditionCheckTask = ConditionCheckTask(this).runTaskTimer(this, 0, 1L)
-        borderCheckTask = BorderCheckTask(this).runTaskTimer(this, 0, 4L)
+        startTimers()
 
         // PlaceholderAPI expansion registration
         if (server.pluginManager.isPluginEnabled("PlaceholderAPI")) {
@@ -167,9 +171,29 @@ class Homerun : JavaPlugin() {
 
     fun reload() {
         reloadConfig()
+        initFromConfig()
+        startTimers()
         messages.reload()
         loadResetRules()
         retainedChunkCache.flushCaches(true)
+    }
+
+    fun initFromConfig() {
+        tickPeriod = config.getLong("tick_period")
+    }
+
+    /**
+     * Starts (or restarts) timers.
+     */
+    fun startTimers(period: Long = tickPeriod) {
+        if (conditionCheckTask != null && !conditionCheckTask!!.isCancelled) {
+            conditionCheckTask!!.cancel()
+        }
+        conditionCheckTask = ConditionCheckTask(this).runTaskTimer(this, 0, period)
+        if (borderCheckTask != null && !borderCheckTask!!.isCancelled) {
+            borderCheckTask!!.cancel()
+        }
+        borderCheckTask = BorderCheckTask(this).runTaskTimer(this, 0, period)
     }
 
     fun loadResetRules() {

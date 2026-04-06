@@ -109,3 +109,9 @@ reset_rules:
                 # have a specific reason to disable it. Otherwise, respawning the dragon may form floating pillars and
                 # loading in a reset End dimension may spawn stray End Crystals.
                 end_pillar_cleanup: true
+
+# This controls every how many ticks Homerun will perform repeated tasks (border crossings, reset conditions, etc.)
+# Setting this to a lower value makes borders more responsive, but may cause more server lag depending on how expensive
+# your reset conditions are and may cause non-tick perfect accuracy for reset conditions. If you're using Homerun in
+# conjunction with other intensive plugins, you may want to set this to a higher value to reduce server load.
+tick_period: 1
