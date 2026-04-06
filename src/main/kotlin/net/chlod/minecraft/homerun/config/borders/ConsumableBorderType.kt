@@ -37,13 +37,16 @@ class ConsumableBorderType(
         fun deserialize(args: Map<String, Any>): ConsumableBorderType {
             val tickPeriod = (args["period"] as Int?)?.toLong()
 
+            // TODO: Make warnings configurable
             val warningType = when (val warningTypeRaw = args["warning_type"]) {
                 is String -> ConsumableBorderWarningType.valueOf(warningTypeRaw.uppercase())
                 else -> null
             }
             val showAfter = args["show_after"] as? Int
             val duration = args["duration"] as? Int
+
             val regeneration = args["regeneration"] as? Int
+            // TODO: Make reset triggers configurable
             val resetWhen = when (val resetWhenRaw = args["reset_when"] ?: listOf<ConsumableBorderResetType>()) {
                 is List<*> -> {
                     if (!resetWhenRaw.all { it is String }) {
@@ -66,6 +69,7 @@ class ConsumableBorderType(
 
                 else -> throw IllegalArgumentException("'reset_when' must be a list/array")
             }
+            // TODO: Make effects configurable
             val effects = when (val effectsRaw = args["effects"] ?: listOf<ConsumableBorderEffect>()) {
                 is List<*> -> {
                     if (!effectsRaw.all { it is String }) {

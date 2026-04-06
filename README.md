@@ -130,10 +130,10 @@ Chunk selectors define which chunks should be kept during a reset. The following
 
 #### Border types
 
-Border types appear as visual indicators in the world that tell a player where the reset-unprotected areas are. These
-usually show up on the first block that is reset-unprotected (i.e. it shows up on the edges of chunks that will be
-reset.)
-The following border types are available:
+Borders control what players experience when reaching reset-unprotected areas. They can either show up as mere visual
+indicators, or be a consumable resource that players can use up before bad things happen. These borders usually take
+effect on the first block that is reset-unprotected (i.e. it shows up on the edges of chunks that will be
+reset.) The following border types are available:
 
 * `type: highest_block` – Displays a border block on top of the highest block at the border chunk. Note that this
   currently does not work well underground. The block is client-side only, so it will not actually be placed or cause
@@ -175,6 +175,32 @@ The following border types are available:
       # - `dot` spawns particles at the center of the block at the border, creating a dotted line effect.
       # - `vertical` spawns particles in a vertical line at the border, creating the illusion of jail bars.
       pattern: random
+  ```
+* `type: consumable` – A consumable border type that gives a player a certain amount of time before feeling effects.
+  ```yaml
+  borders:
+    - type: consumable
+      # Can be either `boss_bar` or `action_bar`.
+      warning_type: boss_bar
+      # Show the boss bar or action bar 3 seconds after the player crosses the border. This prevents the warning from
+      # covering up the exit notification when `notify_exit` is enabled. When using a boss bar, this does nothing.
+      show_after: 3
+      # The amount of time given to the player. This is in ticks. Note that this is affected by the global `tick_period`,
+      # so if you set `tick_period` to 20, this will be in seconds instead of ticks.
+      duration: 72000 # 1 hour
+      # How many ticks should the player regenerate per tick while inside the border. Also affected by `tick_period`.
+      # Setting this to 0 disables regeneration.
+      regeneration: 2
+      # Defines when the player's consumable time should be reset. You can set this to `[]` to disable resets.
+      reset_when:
+        # When the world resets
+        - on_reset
+        # When the player enters a reset-protected area
+        - on_enter
+      # The effects to apply to the player when they run out of time.
+      effects:
+        # Apply a freezing effect, similar to the one from powdered snow. This is unaffected by armor.
+        - freezing
   ```
 
 #### Reset warnings
