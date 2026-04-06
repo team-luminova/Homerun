@@ -17,13 +17,14 @@ import org.bukkit.event.player.PlayerMoveEvent
 import kotlin.math.ceil
 
 class ConsumableBorderType(
+    tickPeriod: Long?,
     val warningType: ConsumableBorderWarningType,
     val showAfter: Int,
     val duration: Int,
     val regeneration: Int,
     val resetWhen: List<ConsumableBorderResetType>,
     val effects: List<ConsumableBorderEffect>
-) : ResetBorder(BorderType.CONSUMABLE) {
+) : ResetBorder(BorderType.CONSUMABLE, tickPeriod) {
 
     enum class ConsumableBorderWarningType {
         BOSS_BAR,
@@ -34,6 +35,8 @@ class ConsumableBorderType(
         @Suppress("unused")
         @JvmStatic
         fun deserialize(args: Map<String, Any>): ConsumableBorderType {
+            val tickPeriod = (args["period"] as Int?)?.toLong()
+
             val warningType = when (val warningTypeRaw = args["warning_type"]) {
                 is String -> ConsumableBorderWarningType.valueOf(warningTypeRaw.uppercase())
                 else -> null
@@ -84,6 +87,7 @@ class ConsumableBorderType(
             }
 
             return ConsumableBorderType(
+                tickPeriod,
                 warningType ?: ConsumableBorderWarningType.ACTION_BAR,
                 showAfter ?: 0,
                 duration ?: -1,
@@ -183,9 +187,9 @@ class ConsumableBorderType(
             borderStatus.save()
 
             effects.forEach {
-                it.onTick(plugin, resetRule, player, borderStatus)
+                it.onTick(plugin, resetRule, this, player, borderStatus)
                 if (areEffectsActive) {
-                    it.onEmptyTick(plugin, resetRule, player, borderStatus)
+                    it.onEmptyTick(plugin, resetRule, this, player, borderStatus)
                 }
             }
 

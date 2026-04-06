@@ -9,9 +9,18 @@ import org.bukkit.World
 import org.bukkit.configuration.serialization.ConfigurationSerializable
 import org.bukkit.event.player.PlayerMoveEvent
 
-abstract class ResetBorder(val type: BorderType) : ConfigurationSerializable {
+abstract class ResetBorder(
+    val type: BorderType,
+    /**
+     * User-set tick frequency. If you want a non-nullable value based on the default tick
+     * frequency, use [tickPeriod] instead.
+     */
+    val period: Long? = null
+) : ConfigurationSerializable {
 
     companion object {
+        const val DEFAULT_TICK_PERIOD = 1L
+
         @JvmStatic
         fun deserializeType(args: Map<String, Any>): BorderType {
             val typeString = args["type"] as String
@@ -176,6 +185,9 @@ abstract class ResetBorder(val type: BorderType) : ConfigurationSerializable {
         }
     }
 
+    val tickPeriod
+        get() = period ?: DEFAULT_TICK_PERIOD
+
     enum class BorderType {
         HIGHEST_BLOCK,
         PARTICLES,
@@ -184,8 +196,9 @@ abstract class ResetBorder(val type: BorderType) : ConfigurationSerializable {
 
     override fun serialize(): Map<String?, Any?> {
         return mapOf(
-            "type" to type.name.lowercase()
-        )
+            "type" to type.name.lowercase(),
+            "period" to period,
+        ).filter { it.value != null }
     }
 
     /**
@@ -200,7 +213,7 @@ abstract class ResetBorder(val type: BorderType) : ConfigurationSerializable {
     )
 
     /**
-     * This check is run on every few ticks (instead of on every tick). If you don't need to do anything, leave this
+     * This check is run on every [tickPeriod] ticks. If you don't need to do anything, leave this
      * empty to help with performance.
      */
     open fun onTick(plugin: Homerun, resetRule: ResetRule) {

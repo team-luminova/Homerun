@@ -18,6 +18,7 @@ import kotlin.math.ceil
 import kotlin.math.floor
 
 class ParticleBorderType(
+    tickPeriod: Long?,
     val particle: Particle,
     val particleData: Any? = null,
     val rawParticleData: Any? = null,
@@ -25,7 +26,7 @@ class ParticleBorderType(
     val height: Int? = null,
     val pattern: String? = null,
     val count: Int? = null,
-) : ResetBorder(BorderType.PARTICLES) {
+) : ResetBorder(BorderType.PARTICLES, tickPeriod) {
 
     enum class Pattern {
         DOT,
@@ -40,6 +41,8 @@ class ParticleBorderType(
         @Suppress("unused")
         @JvmStatic
         fun deserialize(args: Map<String, Any>): ParticleBorderType {
+            val tickPeriod = (args["period"] as Int?)?.toLong()
+
             val particle = args["particle"] as? String
                 ?: throw IllegalArgumentException("'particle' is required for 'particles' border type")
             val particleEnum = try {
@@ -76,6 +79,7 @@ class ParticleBorderType(
             }
 
             return ParticleBorderType(
+                tickPeriod,
                 particleEnum,
                 particleData,
                 rawParticleData,
