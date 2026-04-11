@@ -180,9 +180,9 @@ class ConsumableBorderType(
                 }
             } else {
                 borderStatus.regeneratingTime = (borderStatus.regeneratingTime + regeneration)
-                    .coerceAtMost(duration.toLong())
+                    .coerceAtMost(duration.toDouble())
             }
-            val areEffectsActive = !borderStatus.currentlyInsideBorder && borderStatus.remainingTime == 0L
+            val areEffectsActive = !borderStatus.currentlyInsideBorder && borderStatus.remainingTime == 0.0
             if (areEffectsActive) {
                 borderStatus.ticksSinceEmpty += 1
             } else {
@@ -213,14 +213,15 @@ class ConsumableBorderType(
     }
 
     fun showBossBar(plugin: Homerun, player: Player, status: ConsumableBorderStatus) {
-        if (status.currentlyInsideBorder && (regeneration <= 0 || status.regeneratingTime == duration.toLong())) {
+        if (status.currentlyInsideBorder && (regeneration <= 0 || status.regeneratingTime == duration.toDouble())) {
             if (bossBarCache[player] != null) {
                 player.hideBossBar(bossBarCache[player]!!)
                 bossBarCache.remove(player)
             }
             return
         }
-        val percentage = status.remainingTime.coerceAtMost(duration.toLong()).toFloat() / duration.toFloat()
+        val doubleDuration = duration.toDouble()
+        val percentage = (status.remainingTime.coerceAtMost(doubleDuration) / doubleDuration).toFloat()
         val bossBar = bossBarCache[player] ?: BossBar.bossBar(
             plugin.messages.get("border-consumable-warning-bar"),
             percentage,
@@ -239,12 +240,13 @@ class ConsumableBorderType(
     }
 
     fun showActionbar(player: Player, status: ConsumableBorderStatus) {
-        if (status.currentlyInsideBorder && (regeneration <= 0 || status.regeneratingTime == duration.toLong())) {
+        if (status.currentlyInsideBorder && (regeneration <= 0 || status.regeneratingTime == duration.toDouble())) {
             return
         }
-        val percentage = status.remainingTime.coerceAtMost(duration.toLong()).toDouble() / duration.toDouble()
+        val doubleDuration = duration.toDouble()
+        val percentage = status.remainingTime.coerceAtMost(doubleDuration) / doubleDuration
         val filled = ceil(percentage * 20).toInt()
-        val unfilled = 20 - filled;
+        val unfilled = 20 - filled
         player.sendActionBar(
             Component.text(
                 "\u2B1B".repeat(filled)
