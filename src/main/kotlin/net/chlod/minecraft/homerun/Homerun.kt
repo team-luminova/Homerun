@@ -116,6 +116,7 @@ class Homerun : JavaPlugin() {
         server.pluginManager.registerEvents(PlayerBorderListener(this), this)
         server.pluginManager.registerEvents(RetainedChunkCacheListener(this), this)
         server.pluginManager.registerEvents(DimensionSpawnFixListener(this), this)
+        server.pluginManager.registerEvents(ConsumableBorderConsumeListener(this), this)
 
         // Registering commands
         this.lifecycleManager.registerEventHandler(

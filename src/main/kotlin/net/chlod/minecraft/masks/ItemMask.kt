@@ -6,6 +6,7 @@ import io.papermc.paper.registry.RegistryKey
 import net.chlod.minecraft.masks.item.ArmorTrimComponentMask
 import net.chlod.minecraft.masks.item.ComponentMask
 import net.kyori.adventure.key.Key
+import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 
 /**
@@ -76,12 +77,20 @@ class ItemMask(
 
     override fun test(testItem: ItemStack): Boolean {
         val materialKey = testItem.type.key.toString()
+        val itemHasNamespace = item.contains(':')
         if (item.endsWith("*")) {
             // Prefix check
-            if (!materialKey.startsWith(item.dropLast(1))) {
-                return false
+            if (itemHasNamespace) {
+                if (!materialKey.startsWith(item.dropLast(1))) {
+                    return false
+                }
+            } else {
+                // Add "minecraft:" prefix
+                if (!materialKey.startsWith("minecraft:" + item.dropLast(1))) {
+                    return false
+                }
             }
-        } else if (materialKey != item) {
+        } else if (materialKey != Material.matchMaterial(item)?.key.toString()) {
             // Exact check
             return false
         }
