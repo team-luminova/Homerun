@@ -5,6 +5,7 @@ import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.config.borders.consumable.ConsumableBorderStatus
 import net.chlod.minecraft.homerun.config.borders.consumable.effect.ConsumableBorderEffect
 import net.chlod.minecraft.homerun.config.borders.consumable.effect.ConsumableBorderFreezeEffect
+import net.chlod.minecraft.homerun.config.borders.consumable.extra.ConsumableBorderEvent
 import net.chlod.minecraft.homerun.config.borders.consumable.modifier.ConsumableBorderModifier
 import net.chlod.minecraft.homerun.config.borders.consumable.reset.ConsumableBorderOnEntryResetType
 import net.chlod.minecraft.homerun.config.borders.consumable.reset.ConsumableBorderOnResetResetType
@@ -25,6 +26,7 @@ class ConsumableBorderType(
     val regeneration: Int,
     val resetWhen: List<ConsumableBorderResetType>,
     val effects: List<ConsumableBorderEffect>,
+    val events: List<ConsumableBorderEvent>,
     val multipliers: List<ConsumableBorderModifier>,
     val subtractions: List<ConsumableBorderModifier>
 ) : ResetBorder(BorderType.CONSUMABLE, tickPeriod) {
@@ -93,6 +95,19 @@ class ConsumableBorderType(
                 else -> throw IllegalArgumentException("'effects' must be a list/array")
             }
 
+            val events = when (val eventsRaw = args["events"] ?: listOf<ConsumableBorderEvent>()) {
+                is List<*> -> {
+                    if (!eventsRaw.all { it is Map<*, *> }) {
+                        throw IllegalArgumentException("Elements of 'events' must be maps")
+                    } else {
+                        @Suppress("UNCHECKED_CAST")
+                        eventsRaw.map { ConsumableBorderEvent.deserialize(it as Map<String, Any>) }
+                    }
+                }
+
+                else -> throw IllegalArgumentException("'events' must be a list")
+            }
+
             val multipliers = when (val multipliersRaw = args["multipliers"] ?: listOf<ConsumableBorderModifier>()) {
                 is List<*> -> {
                     if (!multipliersRaw.all { it is Map<*, *> }) {
@@ -126,6 +141,7 @@ class ConsumableBorderType(
                 regeneration ?: 0,
                 resetWhen,
                 effects,
+                events,
                 multipliers,
                 subtractions
             )
@@ -190,6 +206,28 @@ class ConsumableBorderType(
             borderStatus.lastEntryTime = System.currentTimeMillis()
         }
         trackedPlayers[event.player] = borderStatus
+    }
+
+    fun applyEvent(
+        plugin: Homerun,
+        player: Player,
+        event: ConsumableBorderEvent
+    ) {
+        val borderStatus = trackedPlayers[player]
+
+        if (borderStatus == null) {
+            plugin.logger.warning("Tried to add extra time to untracked player ${player.name}!")
+            return
+        }
+
+        when (event.operation) {
+            ConsumableBorderEvent.Operation.ADD ->
+                borderStatus.extraTime += event.amount
+
+            ConsumableBorderEvent.Operation.MULTIPLY ->
+                borderStatus.extraTime *= event.amount
+        }
+        borderStatus.save()
     }
 
     fun calculateSubtractions(
