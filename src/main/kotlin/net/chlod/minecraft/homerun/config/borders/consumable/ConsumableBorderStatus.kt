@@ -29,6 +29,7 @@ class ConsumableBorderStatus(
 
     private val keyRegeneratingTime = NamespacedKey(plugin, "remaining_time")
     private val keyExtraTime = NamespacedKey(plugin, "extra_time")
+    private val keyTicksSinceEmpty = NamespacedKey(plugin, "ticks_since_empty")
     private val keyCurrentlyInsideBorder = NamespacedKey(plugin, "currently_inside_border")
     private val keyLastExitTime = NamespacedKey(plugin, "last_exit_time")
     private val keyLastEntryTime = NamespacedKey(plugin, "last_entry_time")
@@ -50,6 +51,7 @@ class ConsumableBorderStatus(
         if (helper != null) {
             regeneratingTime = helper.get(keyRegeneratingTime, PersistentDataType.DOUBLE) ?: border.duration.toDouble()
             extraTime = helper.get(keyExtraTime, PersistentDataType.DOUBLE) ?: 0.0
+            ticksSinceEmpty = helper.get(keyLastExitTime, PersistentDataType.LONG) ?: 0L
             currentlyInsideBorder = helper.get(keyCurrentlyInsideBorder, PersistentDataType.BYTE)?.toInt() == 1
             lastExitTime = helper.get(keyLastExitTime, PersistentDataType.LONG) ?: 0L
             lastEntryTime = helper.get(keyLastEntryTime, PersistentDataType.LONG) ?: 0L
@@ -92,6 +94,11 @@ class ConsumableBorderStatus(
             keyExtraTime,
             PersistentDataType.DOUBLE,
             extraTime
+        )
+        pdc.set(
+            keyTicksSinceEmpty,
+            PersistentDataType.LONG,
+            ticksSinceEmpty
         )
         pdc.set(
             keyCurrentlyInsideBorder,
