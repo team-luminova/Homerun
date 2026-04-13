@@ -5,6 +5,7 @@ import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.config.borders.consumable.ConsumableBorderStatus
 import net.chlod.minecraft.homerun.config.borders.consumable.effect.ConsumableBorderEffect
 import net.chlod.minecraft.homerun.config.borders.consumable.effect.ConsumableBorderFreezeEffect
+import net.chlod.minecraft.homerun.config.borders.consumable.modifier.ConsumableBorderModifier
 import net.chlod.minecraft.homerun.config.borders.consumable.reset.ConsumableBorderOnEntryResetType
 import net.chlod.minecraft.homerun.config.borders.consumable.reset.ConsumableBorderOnResetResetType
 import net.chlod.minecraft.homerun.config.borders.consumable.reset.ConsumableBorderResetType
@@ -23,7 +24,9 @@ class ConsumableBorderType(
     val duration: Int,
     val regeneration: Int,
     val resetWhen: List<ConsumableBorderResetType>,
-    val effects: List<ConsumableBorderEffect>
+    val effects: List<ConsumableBorderEffect>,
+    val multipliers: List<ConsumableBorderModifier>,
+    val subtractions: List<ConsumableBorderModifier>
 ) : ResetBorder(BorderType.CONSUMABLE, tickPeriod) {
 
     enum class ConsumableBorderWarningType {
@@ -90,6 +93,31 @@ class ConsumableBorderType(
                 else -> throw IllegalArgumentException("'effects' must be a list/array")
             }
 
+            val multipliers = when (val multipliersRaw = args["multipliers"] ?: listOf<ConsumableBorderModifier>()) {
+                is List<*> -> {
+                    if (!multipliersRaw.all { it is Map<*, *> }) {
+                        throw IllegalArgumentException("Elements of 'multipliers' must be maps")
+                    } else {
+                        @Suppress("UNCHECKED_CAST")
+                        multipliersRaw.map { ConsumableBorderModifier.deserialize(it as Map<String, Any>) }
+                    }
+                }
+
+                else -> throw IllegalArgumentException("'multipliers' must be a list")
+            }
+            val subtractions = when (val subtractionsRaw = args["subtractions"] ?: listOf<ConsumableBorderModifier>()) {
+                is List<*> -> {
+                    if (!subtractionsRaw.all { it is Map<*, *> }) {
+                        throw IllegalArgumentException("Elements of 'subtractions' must be maps")
+                    } else {
+                        @Suppress("UNCHECKED_CAST")
+                        subtractionsRaw.map { ConsumableBorderModifier.deserialize(it as Map<String, Any>) }
+                    }
+                }
+
+                else -> throw IllegalArgumentException("'subtractions' must be a list")
+            }
+
             return ConsumableBorderType(
                 tickPeriod,
                 warningType ?: ConsumableBorderWarningType.ACTION_BAR,
@@ -97,7 +125,9 @@ class ConsumableBorderType(
                 duration ?: -1,
                 regeneration ?: 0,
                 resetWhen,
-                effects
+                effects,
+                multipliers,
+                subtractions
             )
         }
     }
@@ -162,6 +192,24 @@ class ConsumableBorderType(
         trackedPlayers[event.player] = borderStatus
     }
 
+    fun calculateSubtractions(
+        plugin: Homerun,
+        resetRule: ResetRule,
+        border: ConsumableBorderType,
+        player: Player
+    ): Double {
+        // Multiplication before subtraction. This allows a much larger amount to be subtracted from.
+        return 1.0 * (
+                this.multipliers
+                    .map { if (it.test(plugin, resetRule, border, player)) it.amount else 1.0 }
+                    .reduceOrNull { a, b -> a * b } ?: 1.0
+                ) - (
+                this.subtractions
+                    .map { if (it.test(plugin, resetRule, border, player)) it.amount else 0.0 }
+                    .reduceOrNull { a, b -> a + b } ?: 0.0
+                )
+    }
+
     override fun onTick(plugin: Homerun, resetRule: ResetRule) {
         // n.b. a negative remaining time should imply an infinite amount.
         for (entry in trackedPlayers.entries) {
@@ -174,9 +222,16 @@ class ConsumableBorderType(
                 return
             }
             // Deduct time first
+            var deducted = false
             if (!borderStatus.currentlyInsideBorder) {
                 if (borderStatus.remainingTime > 0L) {
-                    borderStatus.subtract(1)
+                    val delta = calculateSubtractions(
+                        plugin, resetRule, this, player
+                    )
+                    if (delta > 0) {
+                        deducted = true
+                    }
+                    borderStatus.subtract(delta)
                 }
             } else {
                 borderStatus.regeneratingTime = (borderStatus.regeneratingTime + regeneration)
@@ -199,7 +254,7 @@ class ConsumableBorderType(
 
             if (
                 borderStatus.currentlyInsideBorder ||
-                System.currentTimeMillis() - borderStatus.lastExitTime > (showAfter * 1000)
+                (deducted && System.currentTimeMillis() - borderStatus.lastExitTime > (showAfter * 1000))
             ) {
                 when (warningType) {
                     ConsumableBorderWarningType.BOSS_BAR ->
