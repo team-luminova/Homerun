@@ -7,6 +7,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import java.util.*
 
 class PlayerBorderListener(val plugin: Homerun) : Listener {
@@ -29,6 +30,11 @@ class PlayerBorderListener(val plugin: Homerun) : Listener {
                 event.player.location.clone()
             )
         )
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    fun onPlayerQuit(event: PlayerQuitEvent) {
+        playerLastLocation.remove(event.player.uniqueId)
     }
 
     fun onBorderUpdate(event: PlayerMoveEvent) {
@@ -55,7 +61,7 @@ class PlayerBorderListener(val plugin: Homerun) : Listener {
             if (!(resetRule.enabled ?: true)) {
                 continue
             }
-            
+
             resetRule.borders?.forEach { border ->
                 border.doBorderUpdate(
                     plugin,

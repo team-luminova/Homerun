@@ -30,6 +30,11 @@ class PlayerBorderStatusHelper(val plugin: Homerun) {
             PersistentDataType.TAG_CONTAINER
         ) ?: player.persistentDataContainer.adapterContext.newPersistentDataContainer()
         statuses.set(statusKey, PersistentDataType.TAG_CONTAINER, serialized)
+        player.persistentDataContainer.set(
+            plugin.keys.playerBorderStatuses,
+            PersistentDataType.TAG_CONTAINER,
+            statuses
+        )
     }
 
     fun deleteStatus(player: Player, id: String): Boolean {
@@ -41,6 +46,11 @@ class PlayerBorderStatusHelper(val plugin: Homerun) {
             return false
         }
         statuses.remove(NamespacedKey(plugin, id))
+        player.persistentDataContainer.set(
+            plugin.keys.playerBorderStatuses,
+            PersistentDataType.TAG_CONTAINER,
+            statuses
+        )
         return true
     }
 
