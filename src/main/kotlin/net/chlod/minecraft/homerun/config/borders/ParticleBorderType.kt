@@ -248,6 +248,7 @@ class ParticleBorderType(
         return super.serialize() + mapOf(
             "particle" to particle.name.lowercase(),
             "data" to rawParticleData,
+            "count" to count,
             "distance_blocks" to distanceBlocks,
             "height" to height,
             "pattern" to pattern
