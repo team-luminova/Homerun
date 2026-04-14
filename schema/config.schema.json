@@ -7,6 +7,8 @@
     "definitions": {
         "ResetRule": {
             "$id": "./ResetRule",
+            "title": "Reset rule",
+            "description": "Defines when a reset should occur, how players are warned, and what reset parameters are used.",
             "type": "object",
             "properties": {
                 "name": {
@@ -46,7 +48,8 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/ResetParameters"
-                    }
+                    },
+                    "minItems": 1
                 },
                 "warnings": {
                     "description": "A list of warnings to be issued to players before the reset occurs.",
@@ -57,11 +60,14 @@
                 }
             },
             "required": [
+                "parameters"
             ],
             "additionalProperties": false
         },
         "ResetBorder": {
             "$id": "./ResetBorder",
+            "title": "Reset border",
+            "description": "Defines a border visualization or mechanic that applies near reset-protected areas.",
             "type": "object",
             "anyOf": [
                 {
@@ -81,6 +87,7 @@
         },
         "HighestBlockBorderType": {
             "$id": "./HighestBlockBorderType",
+            "title": "Highest block border",
             "description": "A border that shows on the highest block of the chunk, based on the provided heightmap.",
             "type": "object",
             "patternProperties": {
@@ -118,6 +125,7 @@
         },
         "ColorParsable": {
             "$id": "./ColorParsable",
+            "title": "Color value",
             "description": "A parsable color. May be a color name, hexadecimal value (in `#ffffff` format), or a Minecraft chat color ID (an integer from 0 to 15).",
             "anyOf": [
                 {
@@ -132,6 +140,7 @@
         },
         "ParticleBorderType": {
             "$id": "./ParticleBorderType",
+            "title": "Particle border",
             "description": "A border that shows up as particles in front of the player.",
             "type": "object",
             "patternProperties": {
@@ -437,6 +446,7 @@
         },
         "ConsumableBorderType": {
             "$id": "./ConsumableBorderType",
+            "title": "Consumable border",
             "description": "A time-based consumable border that gives a player a certain amount of time before feeling certain effects, such as freezing. This works similar to oxygen/breathing, but is displayed differently.",
             "type": "object",
             "patternProperties": {
@@ -515,6 +525,8 @@
         },
         "ConsumableBorderEvent": {
             "$id": "./ConsumableBorderEvent",
+            "title": "Consumable border event",
+            "description": "Defines a trigger-driven operation that adjusts a player's consumable time banks.",
             "type": "object",
             "additionalProperties": false,
             "properties": {
@@ -547,6 +559,8 @@
         },
         "ConsumableBorderModifier": {
             "$id": "./ConsumableBorderModifier",
+            "title": "Consumable border modifier",
+            "description": "Defines a conditional amount used to modify per-tick consumable decay.",
             "type": "object",
             "additionalProperties": false,
             "properties": {
@@ -565,6 +579,8 @@
         },
         "ConsumableBorderModifierCondition": {
             "$id": "./ConsumableBorderModifierCondition",
+            "title": "Consumable border modifier condition",
+            "description": "Defines a condition type that must match for a consumable modifier to apply.",
             "type": "object",
             "additionalProperties": false,
             "anyOf": [
@@ -578,6 +594,7 @@
         },
         "ConsumableBorderWornModifierCondition": {
             "$id": "ConsumableBorderWornModifierCondition",
+            "title": "Worn item modifier condition",
             "description": "A modifier condition where a matching item must be worn by the player for the condition to be satisfied",
             "patternProperties": {
                 "^type$": {
@@ -612,6 +629,8 @@
         },
         "ConsumableBorderEventTrigger": {
             "$id": "./ConsumableBorderEventTrigger",
+            "title": "Consumable border event trigger",
+            "description": "Defines an event trigger that can fire a consumable border event.",
             "type": "object",
             "additionalProperties": false,
             "anyOf": [
@@ -632,6 +651,8 @@
         },
         "ItemMask": {
             "$id": "./ItemMask",
+            "title": "Item mask",
+            "description": "Matches items by material and optional component constraints.",
             "type": "object",
             "additionalProperties": false,
             "properties": {
@@ -651,6 +672,8 @@
         },
         "ComponentMask": {
             "$id": "./ComponentMask",
+            "title": "Component mask",
+            "description": "Matches specific item component payloads used as part of an item mask.",
             "type": "object",
             "additionalProperties": false,
             "anyOf": [
@@ -676,6 +699,8 @@
         },
         "ResetCondition": {
             "$id": "./ResetCondition",
+            "title": "Reset condition",
+            "description": "Defines a condition that determines when a reset rule is considered ready to run.",
             "type": "object",
             "additionalProperties": false,
             "anyOf": [
@@ -689,6 +714,7 @@
         },
         "AlwaysResetCondition": {
             "$id": "./AlwaysResetCondition",
+            "title": "Always reset condition",
             "description": "A reset condition that is always true. You can use this to reset a world upon server startup. Note that you cannot reset an actively loaded world, as it will be in use.",
             "properties": {
                 "always": {
@@ -701,6 +727,7 @@
         },
         "CronResetCondition": {
             "$id": "./CronResetCondition",
+            "title": "Cron reset condition",
             "description": "Reset the world on a cron schedule (see [crontab.guru](https://crontab.guru/) for help with cron syntax). The cron expression is based on the server's local time and timezone.",
             "properties": {
                 "cron": {
@@ -714,6 +741,8 @@
         },
         "ResetParameters": {
             "$id": "./ResetParameters",
+            "title": "Reset parameters",
+            "description": "Configures world reset behavior, retained chunks, and post-reset handling options.",
             "type": "object",
             "default": {
                 "retained_chunks": [],
@@ -781,6 +810,7 @@
         },
         "DimensionResetBehavior": {
             "$id": "./DimensionResetBehavior",
+            "title": "Dimension reset behavior",
             "description": "Available behaviors include:\n* `normal` (reset the Nether like any other world)\n* `wipe` (recreates the Nether based on the new world's seed)\n* `copy` (copies the Nether from the previous world without resetting it)\n* `rename` (renames the previous Nether to match the new world's name)",
             "enum": [
                 "normal",
@@ -790,6 +820,8 @@
         },
         "ChunkSelector": {
             "$id": "./ChunkSelector",
+            "title": "Chunk selector",
+            "description": "Defines one strategy for selecting chunks to retain during a reset.",
             "type": "object",
             "anyOf": [
                 {
@@ -809,6 +841,8 @@
         },
         "FromPointSpawnSelectorBox": {
             "$id": "./FromPointSpawnSelectorBox",
+            "title": "Point-centered selector box",
+            "description": "Defines a chunk bounding box size centered around a source point.",
             "anyOf": [
                 {
                     "description": "A square bounding box of diameter *n*, centered at this point.",
@@ -855,6 +889,8 @@
         },
         "Environment": {
             "$id": "./Environment",
+            "title": "Environment",
+            "description": "Specifies which Minecraft dimension a selector applies to.",
             "enum": [
                 "normal",
                 "nether",
@@ -863,6 +899,7 @@
         },
         "FromWorldSpawnSelector": {
             "$id": "./FromWorldSpawnSelector",
+            "title": "From world spawn selector",
             "description": "Select a bounding box of chunks, centered around the world spawn point.",
             "properties": {
                 "from_world_spawn": {
@@ -878,6 +915,7 @@
         },
         "FromWorldOriginSelector": {
             "$id": "./FromWorldOriginSelector",
+            "title": "From world origin selector",
             "description": "Select a bounding box of chunks, centered around the world origin (0, 0).",
             "properties": {
                 "from_world_origin": {
@@ -893,6 +931,7 @@
         },
         "SpecificChunkSelector": {
             "$id": "./SpecificChunkSelector",
+            "title": "Specific chunk selector",
             "description": "Select a specific chunk, addressed by its X and Z chunk coordinate.",
             "anyOf": [
                 {
@@ -921,6 +960,7 @@
         },
         "EndMainIslandSelector": {
             "$id": "./EndMainIslandSelector",
+            "title": "End main island selector",
             "description": "Select the main island of The End. Only useful when The End is set to reset as well.",
             "properties": {
                 "end_main_island": {
@@ -930,6 +970,8 @@
         },
         "ResetWarningMethod": {
             "$id": "./ResetWarningMethod",
+            "title": "Reset warning method",
+            "description": "Defines one warning delivery method used before a reset occurs.",
             "type": "object",
             "anyOf": [
                 {
@@ -946,6 +988,7 @@
         },
         "BossBarWarningMethod": {
             "$id": "./BossBarWarningMethod",
+            "title": "Boss bar warning method",
             "description": "Displays a boss bar to all players with a custom message and countdown.",
             "patternProperties": {
                 "^type$": {
@@ -966,6 +1009,7 @@
         },
         "ChatMessageWarningMethod": {
             "$id": "./ChatMessageWarningMethod",
+            "title": "Chat message warning method",
             "description": "Sends a chat message to all players at specified intervals (in seconds before reset).",
             "patternProperties": {
                 "^type$": {
@@ -989,6 +1033,7 @@
         },
         "PlayerListWarningMethod": {
             "$id": "./PlayerListWarningMethod",
+            "title": "Player list warning method",
             "description": "Sends a chat message to all players at specified intervals (in seconds before reset).",
             "patternProperties": {
                 "^type$": {
