@@ -169,7 +169,10 @@ class ConsumableBorderType(
                     is ConsumableBorderFreezeEffect -> ConsumableBorderFreezeEffect.TYPE
                     else -> throw IllegalArgumentException("Unknown effect type: ${it::class}")
                 }
-            }
+            },
+            "events" to events.map { it.serialize() },
+            "multipliers" to multipliers.map { it.serialize() },
+            "subtractions" to subtractions.map { it.serialize() }
         )
     }
 
