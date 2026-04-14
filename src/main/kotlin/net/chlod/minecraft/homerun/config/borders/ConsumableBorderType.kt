@@ -388,6 +388,12 @@ class ConsumableBorderType(
         )
     }
 
+    fun flushAllStatuses() {
+        for (status in trackedPlayers.values) {
+            status.save()
+        }
+    }
+
     fun disposeAllBossBars() {
         val bossBars = HashMap(bossBarCache)
         bossBarCache.clear()
