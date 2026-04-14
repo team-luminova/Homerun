@@ -1,0 +1,1037 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://homerun.lmnv.net/schema/config.json",
+    "title": "Homerun configuration schema",
+    "description": "Schema for the Homerun configuration file. This file (which is a YAML file; not normally in JSON) is used to configure Homerun's behavior when running.",
+    "type": "object",
+    "definitions": {
+        "ResetRule": {
+            "$id": "./ResetRule",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "An optional name for the reset rule. This allows the reset rule to be triggered anytime it is requested by the user.",
+                    "type": "string"
+                },
+                "enabled": {
+                    "description": "If true, this rule will be enabled. This can be used to easily disable rules.",
+                    "type": "boolean"
+                },
+                "notify_enter": {
+                    "description": "If true, players will be notified when they enter a reset-protected area.",
+                    "type": "boolean",
+                    "deprecated": true
+                },
+                "notify_exit": {
+                    "description": "If true, players will be notified when they leave a reset-protected area.",
+                    "type": "boolean",
+                    "deprecated": true
+                },
+                "borders": {
+                    "description": "A list of borders that can appear to the player when they get near a reset-protected area.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ResetBorder"
+                    }
+                },
+                "conditions": {
+                    "description": "A set of conditions to be used for resetting the server.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ResetCondition"
+                    }
+                },
+                "parameters": {
+                    "description": "A list of parameter sets for the reset.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ResetParameters"
+                    }
+                },
+                "warnings": {
+                    "description": "A list of warnings to be issued to players before the reset occurs.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ResetWarningMethod"
+                    }
+                }
+            },
+            "required": [
+            ],
+            "additionalProperties": false
+        },
+        "ResetBorder": {
+            "$id": "./ResetBorder",
+            "type": "object",
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/HighestBlockBorderType"
+                },
+                {
+                    "$ref": "#/definitions/ParticleBorderType"
+                },
+                {
+                    "$ref": "#/definitions/ConsumableBorderType"
+                }
+            ],
+            "additionalProperties": false,
+            "required": [
+                "type"
+            ]
+        },
+        "HighestBlockBorderType": {
+            "$id": "./HighestBlockBorderType",
+            "description": "A border that shows on the highest block of the chunk, based on the provided heightmap.",
+            "type": "object",
+            "patternProperties": {
+                "^type$": {
+                    "enum": [
+                        "highest_block"
+                    ]
+                }
+            },
+            "properties": {
+                "distance_chunks": {
+                    "description": "How many chunks away from the border must the player be for this border to show up.",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "block": {
+                    "description": "The type of block to show to the player.",
+                    "type": "string"
+                },
+                "heightmap": {
+                    "description": "The [heightmap](https://minecraft.wiki/w/Heightmap) to use to determine the highest block in the chunk.",
+                    "enum": [
+                        "motion_blocking",
+                        "motion_blocking_no_leaves",
+                        "ocean_floor",
+                        "ocean_floor_wg",
+                        "world_surface",
+                        "world_surface_wg"
+                    ]
+                }
+            },
+            "required": [
+                "distance_chunks"
+            ]
+        },
+        "ColorParsable": {
+            "$id": "./ColorParsable",
+            "description": "A parsable color. May be a color name, hexadecimal value (in `#ffffff` format), or a Minecraft chat color ID (an integer from 0 to 15).",
+            "anyOf": [
+                {
+                    "description": "A color name or color hexadecimal (must start with \"#\")",
+                    "type": "string"
+                },
+                {
+                    "description": "A color by Minecraft color ID (0 to 15)",
+                    "type": "integer"
+                }
+            ]
+        },
+        "ParticleBorderType": {
+            "$id": "./ParticleBorderType",
+            "description": "A border that shows up as particles in front of the player.",
+            "type": "object",
+            "patternProperties": {
+                "^type$": {
+                    "enum": [
+                        "particles"
+                    ]
+                },
+                "^pattern$": {
+                    "description": "The pattern that particles spawn with. Dot patterns spawn the particle dead center of the block its on. Vertical patterns spawn a prison bar-like pattern. Random patterns spawn the particles randomly within its block.",
+                    "enum": [
+                        "dot",
+                        "vertical",
+                        "random"
+                    ]
+                }
+            },
+            "anyOf": [
+                {
+                    "properties": {
+                        "particle": {
+                            "enum": [
+                                "entity_effect",
+                                "tinted_leaves"
+                            ]
+                        },
+                        "data": {
+                            "description": "Color options for this particle",
+                            "$ref": "#/definitions/ColorParsable"
+                        }
+                    }
+                },
+                {
+                    "properties": {
+                        "particle": {
+                            "enum": [
+                                "dust"
+                            ]
+                        },
+                        "data": {
+                            "description": "Dust options for this particle",
+                            "type": "object",
+                            "properties": {
+                                "color": {
+                                    "description": "The color of the dust",
+                                    "$ref": "#/definitions/ColorParsable"
+                                },
+                                "size": {
+                                    "description": "The size of the dust particle",
+                                    "type": "number"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    }
+                },
+                {
+                    "properties": {
+                        "particle": {
+                            "enum": [
+                                "dust_color_transition"
+                            ]
+                        },
+                        "data": {
+                            "description": "Dust options for this particle",
+                            "type": "object",
+                            "properties": {
+                                "from_color": {
+                                    "description": "The starting color of the dust",
+                                    "$ref": "#/definitions/ColorParsable"
+                                },
+                                "to_color": {
+                                    "description": "The starting color of the dust",
+                                    "$ref": "#/definitions/ColorParsable"
+                                },
+                                "size": {
+                                    "description": "The size of the dust particle",
+                                    "type": "number"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    }
+                },
+                {
+                    "properties": {
+                        "particle": {
+                            "enum": [
+                                "sculk_charge",
+                                "dragon_breath"
+                            ]
+                        },
+                        "data": {
+                            "description": "Float options for this particle",
+                            "type": "number"
+                        }
+                    }
+                },
+                {
+                    "properties": {
+                        "particle": {
+                            "enum": [
+                                "shriek"
+                            ]
+                        },
+                        "data": {
+                            "description": "Integer options for this particle",
+                            "type": "integer"
+                        }
+                    }
+                },
+                {
+                    "properties": {
+                        "particle": {
+                            "enum": [
+                                "block",
+                                "falling_dust",
+                                "dust_pillar",
+                                "block_crumble",
+                                "block_marker"
+                            ]
+                        },
+                        "data": {
+                            "description": "Block data options for this particle",
+                            "anyOf": [
+                                {
+                                    "description": "The block material to use",
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "block": {
+                                            "description": "The block material to use",
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "description": "The block data to use, if the block can have data",
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "block"
+                                    ],
+                                    "additionalProperties": false
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "properties": {
+                        "particle": {
+                            "enum": [
+                                "item"
+                            ]
+                        },
+                        "data": {
+                            "description": "Item stack data options for this particle",
+                            "anyOf": [
+                                {
+                                    "description": "The item type to use",
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "item": {
+                                            "description": "The item type to use",
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": true
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "properties": {
+                        "particle": {
+                            "enum": [
+                                "poof",
+                                "explosion",
+                                "explosion_emitter",
+                                "firework",
+                                "bubble",
+                                "splash",
+                                "fishing",
+                                "underwater",
+                                "crit",
+                                "enchanted_hit",
+                                "smoke",
+                                "large_smoke",
+                                "witch",
+                                "dripping_water",
+                                "dripping_lava",
+                                "angry_villager",
+                                "happy_villager",
+                                "mycelium",
+                                "note",
+                                "portal",
+                                "enchant",
+                                "flame",
+                                "lava",
+                                "cloud",
+                                "item_snowball",
+                                "item_slime",
+                                "heart",
+                                "rain",
+                                "elder_guardian",
+                                "end_rod",
+                                "damage_indicator",
+                                "sweep_attack",
+                                "totem_of_undying",
+                                "spit",
+                                "squid_ink",
+                                "bubble_pop",
+                                "current_down",
+                                "bubble_column_up",
+                                "nautilus",
+                                "dolphin",
+                                "sneeze",
+                                "campfire_cosy_smoke",
+                                "campfire_signal_smoke",
+                                "composter",
+                                "falling_lava",
+                                "landing_lava",
+                                "falling_water",
+                                "dripping_honey",
+                                "falling_honey",
+                                "landing_honey",
+                                "falling_nectar",
+                                "soul_fire_flame",
+                                "ash",
+                                "crimson_spore",
+                                "warped_spore",
+                                "soul",
+                                "dripping_obsidian_tear",
+                                "falling_obsidian_tear",
+                                "landing_obsidian_tear",
+                                "reverse_portal",
+                                "white_ash",
+                                "falling_spore_blossom",
+                                "spore_blossom_air",
+                                "small_flame",
+                                "snowflake",
+                                "dripping_dripstone_lava",
+                                "falling_dripstone_lava",
+                                "dripping_dripstone_water",
+                                "falling_dripstone_water",
+                                "glow_squid_ink",
+                                "glow",
+                                "wax_on",
+                                "wax_off",
+                                "electric_spark",
+                                "scrape",
+                                "sonic_boom",
+                                "sculk_soul",
+                                "sculk_charge_pop",
+                                "cherry_leaves",
+                                "pale_oak_leaves",
+                                "egg_crack",
+                                "dust_plume",
+                                "white_smoke",
+                                "gust",
+                                "small_gust",
+                                "gust_emitter_large",
+                                "gust_emitter_small",
+                                "trial_spawner_detection",
+                                "trial_spawner_detection_ominous",
+                                "vault_connection",
+                                "infested",
+                                "item_cobweb",
+                                "firefly",
+                                "ominous_spawning",
+                                "raid_omen",
+                                "trial_omen",
+                                "copper_fire_flame"
+                            ]
+                        }
+                    }
+                }
+            ],
+            "properties": {
+                "count": {
+                    "description": "How many particles to spawn in at once",
+                    "type": "integer"
+                },
+                "distance_blocks": {
+                    "description": "How many blocks away must the player be (in Euclidean distance; i.e. in a circle around the player) for the particles to appear",
+                    "type": "integer"
+                },
+                "height": {
+                    "description": "The height of the particle border in blocks. This acts as a radius that grows *n* number of blocks above and below the player's feet Y level",
+                    "type": "integer"
+                }
+            }
+        },
+        "ConsumableBorderType": {
+            "$id": "./ConsumableBorderType",
+            "description": "A time-based consumable border that gives a player a certain amount of time before feeling certain effects, such as freezing. This works similar to oxygen/breathing, but is displayed differently.",
+            "type": "object",
+            "patternProperties": {
+                "^type$": {
+                    "enum": [
+                        "consumable"
+                    ]
+                }
+            },
+            "properties": {
+                "warning_type": {
+                    "description": "The warning type used to indicate to the player how much of their time has been consumed",
+                    "enum": [
+                        "boss_bar",
+                        "action_bar"
+                    ]
+                },
+                "show_after": {
+                    "description": "Show the specified warning type a certain amount of seconds after leaving the border. This is used to prevent overwriting the exit notification, when enabled.",
+                    "type": "integer"
+                },
+                "duration": {
+                    "description": "The player's base consumable duration in Minecraft ticks (20 ticks per second). This amount may regenerate or reset, based on other configuration values.",
+                    "type": "integer"
+                },
+                "regeneration": {
+                    "description": "The amount that a player regenerates for each tick spent inside a retained chunk.",
+                    "type": "integer"
+                },
+                "reset_when": {
+                    "description": "Reset all players' consumable amount after a certain condition is met.",
+                    "type": "array",
+                    "items": {
+                        "enum": [
+                            "on_entry",
+                            "on_reset"
+                        ]
+                    }
+                },
+                "reset_extra": {
+                    "description": "Whether extra time should also be reset upon consumable time resets",
+                    "type": "boolean",
+                    "default": false
+                },
+                "effects": {
+                    "description": "The effects to apply to a player when their consumable time reaches zero.",
+                    "type": "array",
+                    "items": {
+                        "enum": [
+                            "freezing"
+                        ]
+                    }
+                },
+                "events": {
+                    "description": "Apply certain modifications to the player's consumable time based on specific events",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConsumableBorderEvent"
+                    }
+                },
+                "multipliers": {
+                    "description": "Apply certain multipliers to the per-tick decay based on various conditions",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConsumableBorderModifier"
+                    }
+                },
+                "subtractions": {
+                    "description": "Apply certain subtractions to the per-tick decay based on various conditions",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConsumableBorderModifier"
+                    }
+                }
+            }
+        },
+        "ConsumableBorderEvent": {
+            "$id": "./ConsumableBorderEvent",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "operation": {
+                    "description": "The operation to perform to the target time bank",
+                    "enum": [
+                        "add",
+                        "multiply"
+                    ]
+                },
+                "amount": {
+                    "description": "The amount to add/multiply from the target time bank, depending on configuration",
+                    "type": "number"
+                },
+                "target": {
+                    "description": "The target time bank. Can either be the regenerating time, or the extra time.",
+                    "enum": [
+                        "regenerating",
+                        "extra"
+                    ]
+                },
+                "triggers": {
+                    "description": "Triggers that will fire this event.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConsumableBorderEventTrigger"
+                    }
+                }
+            }
+        },
+        "ConsumableBorderModifier": {
+            "$id": "./ConsumableBorderModifier",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "amount": {
+                    "description": "The amount to subtract/multiply from the target time bank, depending on configuration",
+                    "type": "number"
+                },
+                "conditions": {
+                    "description": "Conditions that will apply this modifier. All must match.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConsumableBorderModifierCondition"
+                    }
+                }
+            }
+        },
+        "ConsumableBorderModifierCondition": {
+            "$id": "./ConsumableBorderModifierCondition",
+            "type": "object",
+            "additionalProperties": false,
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ConsumableBorderWornModifierCondition"
+                }
+            ],
+            "required": [
+                "type"
+            ]
+        },
+        "ConsumableBorderWornModifierCondition": {
+            "$id": "ConsumableBorderWornModifierCondition",
+            "description": "A modifier condition where a matching item must be worn by the player for the condition to be satisfied",
+            "patternProperties": {
+                "^type$": {
+                    "enum": [
+                        "worn"
+                    ]
+                }
+            },
+            "properties": {
+                "find_all": {
+                    "description": "Whether all the required armor pieces must be worn for this condition to be satisfied.",
+                    "type": "boolean"
+                },
+                "require_helmet": {
+                    "description": "Whether the helmet will be checked for this condition to be satisfied",
+                    "type": "boolean"
+                },
+                "require_chest": {
+                    "description": "Whether the chestplate will be checked for this condition to be satisfied",
+                    "type": "boolean"
+                },
+                "require_leggings": {
+                    "description": "Whether the leggings will be checked for this condition to be satisfied",
+                    "type": "boolean"
+                },
+                "require_boots": {
+                    "description": "Whether the boots will be checked for this condition to be satisfied",
+                    "type": "boolean"
+                }
+            },
+            "$ref": "#/definitions/ItemMask"
+        },
+        "ConsumableBorderEventTrigger": {
+            "$id": "./ConsumableBorderEventTrigger",
+            "type": "object",
+            "additionalProperties": false,
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/ItemMask",
+                    "patternProperties": {
+                        "^type$": {
+                            "enum": [
+                                "consume"
+                            ]
+                        }
+                    }
+                }
+            ],
+            "required": [
+                "type"
+            ]
+        },
+        "ItemMask": {
+            "$id": "./ItemMask",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "item": {
+                    "description": "The type of object to match. Can end with or completely be an asterisk, to indicate a wildcard match.",
+                    "type": "string",
+                    "minLength": 1
+                },
+                "components": {
+                    "description": "Components of the item which must also match",
+                    "$ref": "#/definitions/ComponentMask"
+                }
+            },
+            "required": [
+                "item"
+            ]
+        },
+        "ComponentMask": {
+            "$id": "./ComponentMask",
+            "type": "object",
+            "additionalProperties": false,
+            "anyOf": [
+                {
+                    "patternProperties": {
+                        "^(minecraft:)?trim$": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "pattern": {
+                                    "description": "The armor trim pattern to match",
+                                    "type": "string"
+                                },
+                                "material": {
+                                    "description": "The armor trim material to match",
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "ResetCondition": {
+            "$id": "./ResetCondition",
+            "type": "object",
+            "additionalProperties": false,
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/AlwaysResetCondition"
+                },
+                {
+                    "$ref": "#/definitions/CronResetCondition"
+                }
+            ]
+        },
+        "AlwaysResetCondition": {
+            "$id": "./AlwaysResetCondition",
+            "description": "A reset condition that is always true. You can use this to reset a world upon server startup. Note that you cannot reset an actively loaded world, as it will be in use.",
+            "properties": {
+                "always": {
+                    "const": true
+                }
+            },
+            "required": [
+                "always"
+            ]
+        },
+        "CronResetCondition": {
+            "$id": "./CronResetCondition",
+            "description": "Reset the world on a cron schedule (see [crontab.guru](https://crontab.guru/) for help with cron syntax). The cron expression is based on the server's local time and timezone.",
+            "properties": {
+                "cron": {
+                    "description": "A cron expression indicating when the server will reset.",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "cron"
+            ]
+        },
+        "ResetParameters": {
+            "$id": "./ResetParameters",
+            "type": "object",
+            "default": {
+                "retained_chunks": [],
+                "target_world_pattern": "world_%timestamp%",
+                "modify_server_properties": false,
+                "restart": false,
+                "outside_player_behavior": "spawn",
+                "nether_behavior": "normal",
+                "end_behavior": "normal",
+                "end_pillar_cleanup": true
+            },
+            "properties": {
+                "retained_chunks": {
+                    "description": "A list of chunk selectors defining which chunks to keep during the reset.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ChunkSelector"
+                    },
+                    "minItems": 1
+                },
+                "world": {
+                    "description": "The world to reset. If not specified, the main world (`level-name` in `server.properties`) will be reset.",
+                    "type": "string"
+                },
+                "target_world_pattern": {
+                    "description": "A pattern for the target world name when creating a new world during reset. Available patterns include: `%world%` (current world name), `%timestamp%` (current UNIX timestamp), `%source_seed%` (seed of old world), `%reset_count%` (how many resets has this world been through).",
+                    "type": "string"
+                },
+                "modify_server_properties": {
+                    "description": "If true, Homerun will modify the `server.properties` file to update the `level-name` to the new world name after a reset. If you are using this, `server.properties` must be writable by the server. Enabling `restart` is highly advised if you set this to `true`.",
+                    "type": "boolean"
+                },
+                "restart": {
+                    "description": "If true, the server will automatically restart after the reset. This requires that your server is set up to restart automatically when it stops. Most hosts allow this, though if you are locally hosting, you need to provide a [restart script](https://gist.github.com/Prof-Bloodstone/6367eb4016eaf9d1646a88772cdbbac5) in `spigot.yml`.",
+                    "type": "boolean"
+                },
+                "outside_player_behavior": {
+                    "description": "Defines what to do with players outside of retained chunks after a reset. Available behaviors include:\n* `spawn` (teleport player to their spawn point)\n* `kill` (kills the player)\n* `world_spawn` (teleport player to the world spawn)\n* `ignore` (do nothing, player may suffocate)\n* `highest` (teleport player to highest block at their X/Z pre-reset)\n* `closest` (teleport the player to the closest block at their X/Y/Z pre-reset)",
+                    "enum": [
+                        "spawn",
+                        "kill",
+                        "world_spawn",
+                        "ignore",
+                        "highest",
+                        "closest"
+                    ]
+                },
+                "nether_behavior": {
+                    "description": "Defines how to handle the Nether dimension related to a world during a reset. Only applicable to the default world.",
+                    "$ref": "#/definitions/DimensionResetBehavior"
+                },
+                "end_behavior": {
+                    "description": "Defines how to handle the The End dimension related to a world during a reset. Only applicable to the default world.",
+                    "$ref": "#/definitions/DimensionResetBehavior"
+                },
+                "end_pillar_cleanup": {
+                    "description": "Whether end pillars should be cleaned up during resets and dragon respawns. The radius and height of End Spikes are based on the seed, which can change during a reset. Disabling this will prevent spikes from being fully wiped during respawns and stray end crystals from being deleted after resets.",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "retained_chunks"
+            ],
+            "additionalProperties": false
+        },
+        "DimensionResetBehavior": {
+            "$id": "./DimensionResetBehavior",
+            "description": "Available behaviors include:\n* `normal` (reset the Nether like any other world)\n* `wipe` (recreates the Nether based on the new world's seed)\n* `copy` (copies the Nether from the previous world without resetting it)\n* `rename` (renames the previous Nether to match the new world's name)",
+            "enum": [
+                "normal",
+                "wipe",
+                "copy"
+            ]
+        },
+        "ChunkSelector": {
+            "$id": "./ChunkSelector",
+            "type": "object",
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/FromWorldSpawnSelector"
+                },
+                {
+                    "$ref": "#/definitions/FromWorldOriginSelector"
+                },
+                {
+                    "$ref": "#/definitions/SpecificChunkSelector"
+                },
+                {
+                    "$ref": "#/definitions/EndMainIslandSelector"
+                }
+            ],
+            "additionalProperties": false
+        },
+        "FromPointSpawnSelectorBox": {
+            "$id": "./FromPointSpawnSelectorBox",
+            "anyOf": [
+                {
+                    "description": "A square bounding box of diameter *n*, centered at this point.",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                {
+                    "description": "A rectangular bounding box of size *x* and *z*, centered at this point.",
+                    "type": "object",
+                    "properties": {
+                        "x": {
+                            "description": "The diameter of the bounding box along the X axis in chunks.",
+                            "type": "integer"
+                        },
+                        "z": {
+                            "description": "The diameter of the bounding box along the Z axis in chunks.",
+                            "type": "integer"
+                        }
+                    }
+                },
+                {
+                    "description": "A rectangular bounding box of specified radii, centered at this point.",
+                    "type": "object",
+                    "properties": {
+                        "north": {
+                            "description": "The radius of the box to the north (-Z) in chunks.",
+                            "type": "integer"
+                        },
+                        "south": {
+                            "description": "The radius of the box to the south (+Z) in chunks.",
+                            "type": "integer"
+                        },
+                        "west": {
+                            "description": "The radius of the box to the west (-X) in chunks.",
+                            "type": "integer"
+                        },
+                        "east": {
+                            "description": "The radius of the box to the east (+X) in chunks.",
+                            "type": "integer"
+                        }
+                    }
+                }
+            ]
+        },
+        "Environment": {
+            "$id": "./Environment",
+            "enum": [
+                "normal",
+                "nether",
+                "the_end"
+            ]
+        },
+        "FromWorldSpawnSelector": {
+            "$id": "./FromWorldSpawnSelector",
+            "description": "Select a bounding box of chunks, centered around the world spawn point.",
+            "properties": {
+                "from_world_spawn": {
+                    "$ref": "#/definitions/FromPointSpawnSelectorBox"
+                },
+                "dimensions": {
+                    "$ref": "#/definitions/Environment"
+                }
+            },
+            "required": [
+                "from_world_spawn"
+            ]
+        },
+        "FromWorldOriginSelector": {
+            "$id": "./FromWorldOriginSelector",
+            "description": "Select a bounding box of chunks, centered around the world origin (0, 0).",
+            "properties": {
+                "from_world_origin": {
+                    "$ref": "#/definitions/FromPointSpawnSelectorBox"
+                },
+                "dimensions": {
+                    "$ref": "#/definitions/Environment"
+                }
+            },
+            "required": [
+                "from_world_origin"
+            ]
+        },
+        "SpecificChunkSelector": {
+            "$id": "./SpecificChunkSelector",
+            "description": "Select a specific chunk, addressed by its X and Z chunk coordinate.",
+            "anyOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "x": {
+                            "description": "The X coordinate of the chunk to select.",
+                            "type": "integer"
+                        },
+                        "z": {
+                            "description": "The Z coordinate of the chunk to select.",
+                            "type": "integer"
+                        }
+                    }
+                },
+                {
+                    "description": "A tuple of the chunk to select, in X and Z chunk coordinates, respectively.",
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            ]
+        },
+        "EndMainIslandSelector": {
+            "$id": "./EndMainIslandSelector",
+            "description": "Select the main island of The End. Only useful when The End is set to reset as well.",
+            "properties": {
+                "end_main_island": {
+                    "const": true
+                }
+            }
+        },
+        "ResetWarningMethod": {
+            "$id": "./ResetWarningMethod",
+            "type": "object",
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/BossBarWarningMethod"
+                },
+                {
+                    "$ref": "#/definitions/ChatMessageWarningMethod"
+                },
+                {
+                    "$ref": "#/definitions/PlayerListWarningMethod"
+                }
+            ],
+            "additionalProperties": false
+        },
+        "BossBarWarningMethod": {
+            "$id": "./BossBarWarningMethod",
+            "description": "Displays a boss bar to all players with a custom message and countdown.",
+            "patternProperties": {
+                "^type$": {
+                    "enum": [
+                        "boss_bar"
+                    ]
+                }
+            },
+            "properties": {
+                "seconds_before": {
+                    "description": "Show the boss bar for *n* seconds before the reset",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "type"
+            ]
+        },
+        "ChatMessageWarningMethod": {
+            "$id": "./ChatMessageWarningMethod",
+            "description": "Sends a chat message to all players at specified intervals (in seconds before reset).",
+            "patternProperties": {
+                "^type$": {
+                    "enum": [
+                        "chat_message"
+                    ]
+                }
+            },
+            "properties": {
+                "intervals": {
+                    "description": "At what number of seconds before a reset happens should a chat message be sent. e.g. for `60`, a message will be sent one minute before reset.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "required": [
+                "type"
+            ]
+        },
+        "PlayerListWarningMethod": {
+            "$id": "./PlayerListWarningMethod",
+            "description": "Sends a chat message to all players at specified intervals (in seconds before reset).",
+            "patternProperties": {
+                "^type$": {
+                    "enum": [
+                        "player_list"
+                    ]
+                }
+            },
+            "properties": {
+                "position": {
+                    "description": "Where in the player list should the countdown be shown.",
+                    "enum": [
+                        "header",
+                        "footer",
+                        "both"
+                    ]
+                },
+                "min_seconds_before": {
+                    "description": "How many seconds before a reset should this warning be shown to players",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "type"
+            ]
+        }
+    },
+    "properties": {
+        "reset_rules": {
+            "description": "A list of reset rules. Reset rules determine when, how, and what gets reset in a server.",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/ResetRule"
+            }
+        },
+        "tick_period": {
+            "description": "The tick period for checking reset conditions and borders. Default is 1 tick (i.e. every tick). Setting this to a higher value can reduce CPU usage at the cost of less precise reset timing.",
+            "type": "integer",
+            "minimum": 1
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "reset_rules"
+    ]
+}
