@@ -52,6 +52,10 @@ class PlayerBorderListener(val plugin: Homerun) : Listener {
         playerLastLocation[player.uniqueId] = player.location
 
         for (resetRule in plugin.resetRules) {
+            if (!(resetRule.enabled ?: true)) {
+                continue
+            }
+            
             resetRule.borders?.forEach { border ->
                 border.doBorderUpdate(
                     plugin,
