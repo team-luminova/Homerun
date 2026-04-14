@@ -169,6 +169,18 @@ class Homerun : JavaPlugin() {
                 task.cancel()
             }
         }
+
+        for (resetRule in resetRules) {
+            if (!(resetRule.enabled ?: true)) {
+                continue
+            }
+
+            for (border in (resetRule.borders ?: emptyList())) {
+                if (border is ConsumableBorderType) {
+                    border.disposeAllBossBars()
+                }
+            }
+        }
     }
 
     @Suppress("UnstableApiUsage")

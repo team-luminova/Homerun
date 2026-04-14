@@ -64,6 +64,7 @@ class ConsumableBorderStatus(
     fun subtract(n: Double) {
         if (n > extraTime) {
             val remaining = n - extraTime
+            extraTime = 0.0
             regeneratingTime = (regeneratingTime - remaining).coerceAtLeast(0.0)
         } else {
             extraTime -= n
