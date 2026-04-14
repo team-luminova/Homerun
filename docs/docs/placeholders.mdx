@@ -1,0 +1,16 @@
+---
+sidebar_position: 3
+---
+
+# Placeholders
+Homerun has [PlaceholderAPI](https://placeholderapi.com/) support, which allows it to integrate with a lot of other server plugins.
+
+The following placeholders are supported:
+* `%homerun_countdown%` – Countdown until the next reset for the player's current world in `HH:MM:SS` format
+* `%homerun_countdown_text%` – Countdown until the next reset for the player's current world in `HH hours, MM minutes, SS seconds` format. This uses the messages in `messages.yml`.
+* `%homerun_next_reset_seconds%` – Seconds until the next reset
+* `%homerun_next_reset_timestamp%` – UNIX timestamp of the next reset, in milliseconds
+* `%homerun_next_reset_date%` – Timestamp of the next reset, in `yyyy-MM-dd` format
+* `%homerun_next_reset_time%` – Timestamp of the next reset, in `HH:mm z` format
+* `%homerun_next_reset_datetime%` – Timestamp of the next reset, in `yyyy-MM-dd HH:mm z` format
+* `%homerun_next_reset_<format>%` – Timestamp of the next reset, in any user-specified format compatible with Java's [SimpleDateFormat](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/text/SimpleDateFormat.html). Underscores are automatically converted into spaces.

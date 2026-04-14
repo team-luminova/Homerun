@@ -1,0 +1,49 @@
+.logo {
+    height: 200px;
+    width: auto;
+}
+
+@media screen and (max-width: 996px) {
+    .heroBanner {
+        padding: 2rem;
+    }
+}
+
+.index {
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    :global([data-theme='dark']) {
+        background: #000;
+    }
+
+    :global(.logotype) {
+        margin-top: 1rem;
+    }
+
+    main {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    footer {
+        font-size: smaller;
+        margin-top: 4rem;
+        text-align: center;
+        color: var(--ifm-color-secondary-darkest);
+    }
+
+    .buttons {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+    }
+}

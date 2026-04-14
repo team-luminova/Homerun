@@ -1,0 +1,15 @@
+---
+sidebar_position: 1
+---
+import CodeBlock from '@theme/CodeBlock';
+import Schema from "@site/static/schema/config.schema.json";
+import JSONSchemaViewer from "@theme/JSONSchemaViewer";
+
+# Configuration
+
+Homerun's configuration file can be found in the `plugins/Homerun/config.yml` file. The configuration file is in YAML
+format, and is automatically generated with all default values when you first run the plugin. You can edit the
+configuration file while the server is running, but you will need to run `/homerun reload` for the changes to take
+effect.
+
+<JSONSchemaViewer schema={ Schema } />

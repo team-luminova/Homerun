@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Wordmark" xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #9b9b9b;
+      }
+
+      .cls-2 {
+        fill: #b2b2b2;
+      }
+
+      .cls-3 {
+        fill: none;
+        stroke: #545454;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 32px;
+      }
+
+      .cls-4 {
+        fill: #939393;
+      }
+
+      .cls-5 {
+        fill: #a5a5a5;
+      }
+    </style>
+  </defs>
+  <g>
+    <polygon class="cls-2" points="500 20.49 267.6 154.67 500 288.85 500 20.49"/>
+    <polygon class="cls-2" points="732.4 154.67 500 20.49 500 288.85 732.4 154.67"/>
+    <polygon class="cls-1" points="267.6 154.67 500 557.21 500 288.85 267.6 154.67"/>
+    <polygon class="cls-4" points="267.6 423.03 500 557.21 267.6 154.67 267.6 423.03"/>
+    <polygon class="cls-5" points="500 288.85 500 557.21 732.4 154.67 500 288.85"/>
+    <polygon class="cls-4" points="500 557.21 732.4 423.03 732.4 154.67 500 557.21"/>
+  </g>
+  <g>
+    <line class="cls-3" x1="267.59" y1="308.61" x2="35.19" y2="442.79"/>
+    <polyline class="cls-3" points="267.59 576.96 35.19 442.79 35.19 711.14"/>
+    <line class="cls-3" x1="500" y1="442.79" x2="267.59" y2="308.61"/>
+    <polyline class="cls-3" points="267.59 576.96 35.19 711.14 267.59 845.32"/>
+    <line class="cls-3" x1="732.41" y1="308.61" x2="500" y2="442.79"/>
+    <line class="cls-3" x1="964.81" y1="442.79" x2="732.41" y2="308.61"/>
+    <polyline class="cls-3" points="964.81 711.14 964.81 442.79 732.41 576.96"/>
+    <polyline class="cls-3" points="732.41 845.32 964.81 711.14 732.41 576.96"/>
+    <line class="cls-3" x1="500" y1="442.79" x2="267.59" y2="576.96"/>
+    <polyline class="cls-3" points="500 711.14 267.59 576.96 267.59 845.32"/>
+    <line class="cls-3" x1="732.41" y1="576.96" x2="500" y2="442.79"/>
+    <polyline class="cls-3" points="732.41 845.32 732.41 576.96 500 711.14"/>
+    <polyline class="cls-3" points="500 711.14 267.59 845.32 500 979.5"/>
+    <polygon class="cls-3" points="500 979.5 732.41 845.32 500 711.14 500 979.5"/>
+  </g>
+</svg>
