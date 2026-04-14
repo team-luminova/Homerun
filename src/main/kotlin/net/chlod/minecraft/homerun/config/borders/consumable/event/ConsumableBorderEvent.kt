@@ -1,10 +1,11 @@
-package net.chlod.minecraft.homerun.config.borders.consumable.extra
+package net.chlod.minecraft.homerun.config.borders.consumable.event
 
 import org.bukkit.configuration.serialization.ConfigurationSerializable
 
 class ConsumableBorderEvent(
     val operation: Operation,
     val amount: Double,
+    val target: Target,
     val triggers: List<ConsumableBorderEventTrigger<*>>,
 ) : ConfigurationSerializable {
 
@@ -13,11 +14,17 @@ class ConsumableBorderEvent(
         MULTIPLY
     }
 
+    enum class Target {
+        REGENERATING,
+        EXTRA
+    }
+
     companion object {
         @JvmStatic
         fun deserialize(args: Map<String, Any>): ConsumableBorderEvent {
             val operation = Operation.valueOf((args["operation"] as String).uppercase())
             val amount = (args["amount"] as Number).toDouble()
+            val target = Target.valueOf(((args["target"] as? String ?: "extra").uppercase()))
 
             if (args["triggers"] !is List<*>) {
                 throw IllegalArgumentException("'triggers' must be a list")
@@ -49,6 +56,7 @@ class ConsumableBorderEvent(
             return ConsumableBorderEvent(
                 operation,
                 amount,
+                target,
                 triggers
             )
         }
@@ -58,6 +66,7 @@ class ConsumableBorderEvent(
         return mapOf(
             "operation" to operation.name.lowercase(),
             "amount" to amount,
+            "target" to target,
             "triggers" to triggers.map { it.serialize() }
         )
     }

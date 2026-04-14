@@ -5,7 +5,7 @@ import net.chlod.minecraft.homerun.config.ResetRule
 import net.chlod.minecraft.homerun.config.borders.consumable.ConsumableBorderStatus
 import net.chlod.minecraft.homerun.config.borders.consumable.effect.ConsumableBorderEffect
 import net.chlod.minecraft.homerun.config.borders.consumable.effect.ConsumableBorderFreezeEffect
-import net.chlod.minecraft.homerun.config.borders.consumable.extra.ConsumableBorderEvent
+import net.chlod.minecraft.homerun.config.borders.consumable.event.ConsumableBorderEvent
 import net.chlod.minecraft.homerun.config.borders.consumable.modifier.ConsumableBorderModifier
 import net.chlod.minecraft.homerun.config.borders.consumable.reset.ConsumableBorderOnEntryResetType
 import net.chlod.minecraft.homerun.config.borders.consumable.reset.ConsumableBorderOnResetResetType
@@ -228,12 +228,26 @@ class ConsumableBorderType(
             return
         }
 
-        when (event.operation) {
-            ConsumableBorderEvent.Operation.ADD ->
-                borderStatus.extraTime += event.amount
+        when (event.target) {
+            ConsumableBorderEvent.Target.REGENERATING -> {
+                when (event.operation) {
+                    ConsumableBorderEvent.Operation.ADD ->
+                        borderStatus.regeneratingTime += event.amount
 
-            ConsumableBorderEvent.Operation.MULTIPLY ->
-                borderStatus.extraTime *= event.amount
+                    ConsumableBorderEvent.Operation.MULTIPLY ->
+                        borderStatus.regeneratingTime *= event.amount
+                }
+            }
+
+            ConsumableBorderEvent.Target.EXTRA -> {
+                when (event.operation) {
+                    ConsumableBorderEvent.Operation.ADD ->
+                        borderStatus.extraTime += event.amount
+
+                    ConsumableBorderEvent.Operation.MULTIPLY ->
+                        borderStatus.extraTime *= event.amount
+                }
+            }
         }
         borderStatus.save()
     }
