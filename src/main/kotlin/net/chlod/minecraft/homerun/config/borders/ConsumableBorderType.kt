@@ -168,7 +168,7 @@ class ConsumableBorderType(
                     else -> throw IllegalArgumentException("Unknown reset type: ${it::class}")
                 }
             },
-            "resetExtra" to resetExtra,
+            "reset_extra" to resetExtra,
             "effects" to effects.map {
                 when (it) {
                     is ConsumableBorderFreezeEffect -> ConsumableBorderFreezeEffect.TYPE
