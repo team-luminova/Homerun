@@ -1,0 +1,12 @@
+---
+sidebar_position: 4
+---
+# Commands
+Though Homerun mostly works through configuration files, it also provides some commands for server operators:
+
+* `/homerun reset <rule>` – Immediately reset the world using the specified rule
+* `/homerun tpworld <world>` – Teleport to the specified world, keeping position and rotation of the player
+* `/homerun reload` – Reload the configuration. This immediately re-processes all reset rules.
+* `/homerun reloadcachedchunks` – Reload the chunk cache, which powers reset borders and entry/exit notifications
+* `/homerun lockout <enable/disable> <world>` – Enable or disable lockouts for a world. Lockouts prevent a player from
+  joining or teleporting into a world that is currently being reset.

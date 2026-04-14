@@ -1,0 +1,23 @@
+// This file is not used by "docusaurus start/build" commands.
+// It is here to improve your IDE experience (type-checking, autocompletion...),
+// and can also run the package.json "typecheck" script manually.
+{
+    "extends": "@docusaurus/tsconfig",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "ignoreDeprecations": "6.0",
+        "strict": true,
+        "resolveJsonModule": true,
+        // Extending "@tsconfig/docusaurus/tsconfig.json".types with "docusaurus-json-schema-plugin"
+        "types": [
+            "node",
+            "@docusaurus/module-type-aliases",
+            "@docusaurus/theme-classic",
+            "docusaurus-json-schema-plugin"
+        ]
+    },
+    "exclude": [
+        ".docusaurus",
+        "build"
+    ]
+}

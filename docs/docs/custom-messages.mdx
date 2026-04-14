@@ -1,0 +1,17 @@
+---
+sidebar_position: 2
+---
+
+# Custom messages
+You can modify the messages sent or shown by Homerun to players with a `messages.yml` file in the `plugins/Homerun`
+directory. On first run, Homerun will create a `messages.example.yml` file in that folder. Copy it to `messages.yml`
+and change the values you wish to modify. The `messages.yml` file is in YAML format, and you will need to run
+`/homerun reload` for changes to take effect.
+
+You can include only a subset of messages in `messages.yml`, the default English version will be used if no value was
+specified. This also helps ensure that changed messages will update accordingly, if you didn't set them to be changed
+at all.
+
+> [!WARNING]
+> The `messages.example.yml` file is overwritten whenever the server restarts. Do not write directly to that file, or
+> your changes will be lost!
