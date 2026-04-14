@@ -12,6 +12,10 @@ class ConsumableBorderConsumeListener(val plugin: Homerun) : Listener {
     @EventHandler
     fun onItemConsumed(event: PlayerItemConsumeEvent) {
         for (resetRule in plugin.resetRules) {
+            if (!(resetRule.enabled ?: true)) {
+                continue
+            }
+
             for (border in resetRule.borders ?: emptyList()) {
                 if (border !is ConsumableBorderType) {
                     continue

@@ -54,6 +54,10 @@ class DimensionSpawnFixListener(val plugin: Homerun) : Listener {
 
     private fun getManagedWorld(world: World): String? {
         for (resetRule in plugin.resetRules) {
+            if (!(resetRule.enabled ?: true)) {
+                continue
+            }
+            
             for (parameters in resetRule.parametersList) {
                 val worldName = parameters.world ?: plugin.server.worlds[0].name
                 if (
