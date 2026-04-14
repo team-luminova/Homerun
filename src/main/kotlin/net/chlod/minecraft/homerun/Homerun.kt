@@ -164,27 +164,21 @@ class Homerun : JavaPlugin() {
 
     override fun onDisable() {
         // Plugin shutdown logic
+        cleanup()
+
+        // This isn't in cleanup because timers don't need to be reloaded whenever the configuration
+        // is reloaded, as they directly access the Homerun plugin for the latest loaded `resetRules`.
         for (task in arrayOf(conditionCheckTask, borderCheckTask)) {
             if (task != null && !task.isCancelled) {
                 task.cancel()
-            }
-        }
-
-        for (resetRule in resetRules) {
-            if (!(resetRule.enabled ?: true)) {
-                continue
-            }
-
-            for (border in (resetRule.borders ?: emptyList())) {
-                if (border is ConsumableBorderType) {
-                    border.disposeAllBossBars()
-                }
             }
         }
     }
 
     @Suppress("UnstableApiUsage")
     fun reload() {
+        cleanup()
+
         reloadConfig()
         initFromConfig()
         startTimers()
@@ -211,6 +205,21 @@ class Homerun : JavaPlugin() {
                         player.location.clone(),
                         player.location.clone()
                     )
+                }
+            }
+        }
+    }
+
+    fun cleanup() {
+        for (resetRule in resetRules) {
+            if (!(resetRule.enabled ?: true)) {
+                continue
+            }
+
+            for (border in (resetRule.borders ?: emptyList())) {
+                if (border is ConsumableBorderType) {
+                    border.flushAllStatuses()
+                    border.disposeAllBossBars()
                 }
             }
         }
