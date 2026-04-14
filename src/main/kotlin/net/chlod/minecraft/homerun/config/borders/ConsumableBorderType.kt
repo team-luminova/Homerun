@@ -25,6 +25,7 @@ class ConsumableBorderType(
     val duration: Int,
     val regeneration: Int,
     val resetWhen: List<ConsumableBorderResetType>,
+    val resetExtra: Boolean,
     val effects: List<ConsumableBorderEffect>,
     val events: List<ConsumableBorderEvent>,
     val multipliers: List<ConsumableBorderModifier>,
@@ -74,6 +75,8 @@ class ConsumableBorderType(
 
                 else -> throw IllegalArgumentException("'reset_when' must be a list/array")
             }
+            val resetExtra = args["reset_extra"] as? Boolean ?: false
+
             // TODO: Make effects configurable
             val effects = when (val effectsRaw = args["effects"] ?: listOf<ConsumableBorderEffect>()) {
                 is List<*> -> {
@@ -140,6 +143,7 @@ class ConsumableBorderType(
                 duration ?: -1,
                 regeneration ?: 0,
                 resetWhen,
+                resetExtra,
                 effects,
                 events,
                 multipliers,
@@ -164,6 +168,7 @@ class ConsumableBorderType(
                     else -> throw IllegalArgumentException("Unknown reset type: ${it::class}")
                 }
             },
+            "resetExtra" to resetExtra,
             "effects" to effects.map {
                 when (it) {
                     is ConsumableBorderFreezeEffect -> ConsumableBorderFreezeEffect.TYPE
@@ -189,7 +194,7 @@ class ConsumableBorderType(
             // Should probably consider doing willReset checks only if the player is being tracked. Of course,
             // that will probably break the on_entry reset type.
             if (resetType.willReset(event.player, this, resetRule, plugin)) {
-                borderStatus.reset(resetExtra = false)
+                borderStatus.reset(resetExtra)
                 borderStatus.save()
             }
         }
