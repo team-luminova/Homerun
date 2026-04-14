@@ -1,4 +1,4 @@
-package net.chlod.minecraft.homerun.config.borders.consumable.extra
+package net.chlod.minecraft.homerun.config.borders.consumable.event
 
 import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.config.ResetRule

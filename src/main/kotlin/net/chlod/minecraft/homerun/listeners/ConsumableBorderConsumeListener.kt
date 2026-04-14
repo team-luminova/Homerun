@@ -2,7 +2,7 @@ package net.chlod.minecraft.homerun.listeners
 
 import net.chlod.minecraft.homerun.Homerun
 import net.chlod.minecraft.homerun.config.borders.ConsumableBorderType
-import net.chlod.minecraft.homerun.config.borders.consumable.extra.ConsumableBorderConsumeEventTrigger
+import net.chlod.minecraft.homerun.config.borders.consumable.event.ConsumableBorderConsumeEventTrigger
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerItemConsumeEvent
