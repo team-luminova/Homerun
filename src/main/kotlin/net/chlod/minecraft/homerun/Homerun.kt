@@ -19,6 +19,7 @@ import net.chlod.minecraft.homerun.tasks.*
 import org.bukkit.Bukkit
 import org.bukkit.WorldCreator
 import org.bukkit.configuration.serialization.ConfigurationSerialization
+import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitTask
 import java.util.*
@@ -170,6 +171,7 @@ class Homerun : JavaPlugin() {
         }
     }
 
+    @Suppress("UnstableApiUsage")
     fun reload() {
         reloadConfig()
         initFromConfig()
@@ -177,6 +179,29 @@ class Homerun : JavaPlugin() {
         messages.reload()
         loadResetRules()
         retainedChunkCache.flushCaches(true)
+
+        // Run border updates immediately
+        for (resetRule in resetRules) {
+            if (!(resetRule.enabled ?: true)) {
+                continue
+            }
+
+            server.onlinePlayers.forEach { player ->
+                resetRule.borders?.forEach { border ->
+                    border.doBorderUpdate(
+                        this,
+                        resetRule,
+                        PlayerMoveEvent(
+                            player,
+                            player.location.clone(),
+                            player.location.clone()
+                        ),
+                        player.location.clone(),
+                        player.location.clone()
+                    )
+                }
+            }
+        }
     }
 
     fun initFromConfig() {

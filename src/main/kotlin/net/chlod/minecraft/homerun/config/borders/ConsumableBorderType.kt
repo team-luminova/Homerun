@@ -278,6 +278,7 @@ class ConsumableBorderType(
 
             if (!player.isValid) {
                 // This user has left.
+                borderStatus.save()
                 trackedPlayers.remove(player)
                 return
             }
