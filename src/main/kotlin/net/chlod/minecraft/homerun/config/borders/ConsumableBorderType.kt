@@ -285,23 +285,24 @@ class ConsumableBorderType(
             // Deduct time first
             var deducted = false
             if (!borderStatus.currentlyInsideBorder) {
+                val delta = calculateSubtractions(
+                    plugin, resetRule, this, player
+                )
+                if (delta > 0) {
+                    deducted = true
+                }
                 if (borderStatus.remainingTime > 0L) {
-                    val delta = calculateSubtractions(
-                        plugin, resetRule, this, player
-                    )
-                    if (delta > 0) {
-                        deducted = true
-                    }
                     borderStatus.subtract(delta)
                 }
             } else {
                 borderStatus.regeneratingTime = (borderStatus.regeneratingTime + regeneration)
                     .coerceAtMost(duration.toDouble())
             }
-            val areEffectsActive = !borderStatus.currentlyInsideBorder && borderStatus.remainingTime == 0.0
+            val isSOL = !borderStatus.currentlyInsideBorder && borderStatus.remainingTime == 0.0
+            val areEffectsActive = deducted && isSOL
             if (areEffectsActive) {
                 borderStatus.ticksSinceEmpty += 1
-            } else {
+            } else if (!isSOL) {
                 borderStatus.ticksSinceEmpty = 0
             }
             borderStatus.save()
@@ -313,29 +314,32 @@ class ConsumableBorderType(
                 }
             }
 
-            if (
-                borderStatus.currentlyInsideBorder ||
-                (deducted && System.currentTimeMillis() - borderStatus.lastExitTime > (showAfter * 1000))
-            ) {
+            val isRegenerating =
+                borderStatus.currentlyInsideBorder && regeneration > 0 && borderStatus.remainingTime < duration
+            val isTimeToShowWarning =
+                System.currentTimeMillis() - borderStatus.lastExitTime > (showAfter * 1000)
+            val isRunningOut =
+                !borderStatus.currentlyInsideBorder && ((deducted && isTimeToShowWarning) || borderStatus.remainingTime == 0.0)
+            if (isRegenerating || isRunningOut) {
                 when (warningType) {
                     ConsumableBorderWarningType.BOSS_BAR ->
                         showBossBar(plugin, player, borderStatus)
 
                     ConsumableBorderWarningType.ACTION_BAR ->
-                        showActionbar(player, borderStatus)
+                        showActionBar(player, borderStatus)
+                }
+            } else {
+                when (warningType) {
+                    ConsumableBorderWarningType.BOSS_BAR ->
+                        hideBossBar(player)
+
+                    else -> {}
                 }
             }
         }
     }
 
     fun showBossBar(plugin: Homerun, player: Player, status: ConsumableBorderStatus) {
-        if (status.currentlyInsideBorder && (regeneration <= 0 || status.regeneratingTime == duration.toDouble())) {
-            if (bossBarCache[player] != null) {
-                player.hideBossBar(bossBarCache[player]!!)
-                bossBarCache.remove(player)
-            }
-            return
-        }
         val doubleDuration = duration.toDouble()
         val percentage = (status.remainingTime.coerceAtMost(doubleDuration) / doubleDuration).toFloat()
         val bossBar = bossBarCache[player] ?: BossBar.bossBar(
@@ -355,7 +359,14 @@ class ConsumableBorderType(
         player.showBossBar(bossBarCache[player]!!)
     }
 
-    fun showActionbar(player: Player, status: ConsumableBorderStatus) {
+    fun hideBossBar(player: Player) {
+        if (bossBarCache[player] != null) {
+            player.hideBossBar(bossBarCache[player]!!)
+            bossBarCache.remove(player)
+        }
+    }
+
+    fun showActionBar(player: Player, status: ConsumableBorderStatus) {
         if (status.currentlyInsideBorder && (regeneration <= 0 || status.regeneratingTime == duration.toDouble())) {
             return
         }
@@ -375,6 +386,12 @@ class ConsumableBorderType(
                         .color(NamedTextColor.BLACK)
                 ),
         )
+    }
+
+    fun disposeAllBossBars() {
+        val bossBars = HashMap(bossBarCache)
+        bossBarCache.clear()
+        bossBars.forEach { (player, bar) -> player.hideBossBar(bar) }
     }
 
 }
