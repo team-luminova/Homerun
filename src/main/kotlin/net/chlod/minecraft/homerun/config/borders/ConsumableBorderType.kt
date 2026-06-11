@@ -26,6 +26,7 @@ class ConsumableBorderType(
     val regeneration: Int,
     val resetWhen: List<ConsumableBorderResetType>,
     val resetExtra: Boolean,
+    val maxExtra: Int,
     val effects: List<ConsumableBorderEffect>,
     val events: List<ConsumableBorderEvent>,
     val multipliers: List<ConsumableBorderModifier>,
@@ -76,6 +77,7 @@ class ConsumableBorderType(
                 else -> throw IllegalArgumentException("'reset_when' must be a list/array")
             }
             val resetExtra = args["reset_extra"] as? Boolean ?: false
+            val maxExtra = args["max_extra"] as? Int ?: 0
 
             // TODO: Make effects configurable
             val effects = when (val effectsRaw = args["effects"] ?: listOf<ConsumableBorderEffect>()) {
@@ -144,6 +146,7 @@ class ConsumableBorderType(
                 regeneration ?: 0,
                 resetWhen,
                 resetExtra,
+                maxExtra,
                 effects,
                 events,
                 multipliers,
@@ -169,6 +172,7 @@ class ConsumableBorderType(
                 }
             },
             "reset_extra" to resetExtra,
+            "max_extra" to maxExtra,
             "effects" to effects.map {
                 when (it) {
                     is ConsumableBorderFreezeEffect -> ConsumableBorderFreezeEffect.TYPE
@@ -246,6 +250,9 @@ class ConsumableBorderType(
 
                     ConsumableBorderEvent.Operation.MULTIPLY ->
                         borderStatus.extraTime *= event.amount
+                }
+                if (borderStatus.extraTime >= maxExtra) {
+                    borderStatus.extraTime = maxExtra.toDouble()
                 }
             }
         }

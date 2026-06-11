@@ -491,6 +491,11 @@
                     "type": "boolean",
                     "default": false
                 },
+                "max_extra": {
+                    "description": "The maximum amount of extra time a player should have. This helps prevent players from essentially reaching an infinite amount of extra time.",
+                    "type": "integer",
+                    "default": 0
+                },
                 "effects": {
                     "description": "The effects to apply to a player when their consumable time reaches zero.",
                     "type": "array",
