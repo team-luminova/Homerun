@@ -19,16 +19,6 @@
                     "description": "If true, this rule will be enabled. This can be used to easily disable rules.",
                     "type": "boolean"
                 },
-                "notify_enter": {
-                    "description": "If true, players will be notified when they enter a reset-protected area.",
-                    "type": "boolean",
-                    "deprecated": true
-                },
-                "notify_exit": {
-                    "description": "If true, players will be notified when they leave a reset-protected area.",
-                    "type": "boolean",
-                    "deprecated": true
-                },
                 "borders": {
                     "description": "A list of borders that can appear to the player when they get near a reset-protected area.",
                     "type": "array",
@@ -78,6 +68,12 @@
                 },
                 {
                     "$ref": "#/definitions/ConsumableBorderType"
+                },
+                {
+                    "$ref": "#/definitions/ChatAnnounceBorderType"
+                },
+                {
+                    "$ref": "#/definitions/ActionBarAnnounceBorderType"
                 }
             ],
             "additionalProperties": false,
@@ -701,6 +697,56 @@
                     }
                 }
             ]
+        },
+        "ChatAnnounceBorderType": {
+            "$id": "./ChatAnnounceBorderType",
+            "title": "Chat announce border",
+            "description": "A border that announces to the player in chat when they get near a reset-protected area.",
+            "type": "object",
+            "patternProperties": {
+                "^type$": {
+                    "enum": [
+                        "chat_announce"
+                    ]
+                }
+            },
+            "properties": {
+                "notify_enter": {
+                    "description": "Whether to send a message when the player enters the border area.",
+                    "type": "boolean",
+                    "default": true
+                },
+                "notify_exit": {
+                    "description": "Whether to send a message when the player exits the border area.",
+                    "type": "boolean",
+                    "default": true
+                }
+            }
+        },
+        "ActionBarAnnounceBorderType": {
+            "$id": "./ActionBarAnnounceBorderType",
+            "title": "Action bar announce border",
+            "description": "A border that announces to the player in their action bar when they get near a reset-protected area.",
+            "type": "object",
+            "patternProperties": {
+                "^type$": {
+                    "enum": [
+                        "action_bar_announce"
+                    ]
+                }
+            },
+            "properties": {
+                "notify_enter": {
+                    "description": "Whether to send a message when the player enters the border area.",
+                    "type": "boolean",
+                    "default": true
+                },
+                "notify_exit": {
+                    "description": "Whether to send a message when the player exits the border area.",
+                    "type": "boolean",
+                    "default": true
+                }
+            }
         },
         "ResetCondition": {
             "$id": "./ResetCondition",

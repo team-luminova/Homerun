@@ -1,10 +1,7 @@
 package net.chlod.minecraft.homerun.config
 
 import net.chlod.minecraft.homerun.Homerun
-import net.chlod.minecraft.homerun.config.borders.ConsumableBorderType
-import net.chlod.minecraft.homerun.config.borders.HighestBlockBorderType
-import net.chlod.minecraft.homerun.config.borders.ParticleBorderType
-import net.chlod.minecraft.homerun.config.borders.ResetBorder
+import net.chlod.minecraft.homerun.config.borders.*
 import net.chlod.minecraft.homerun.config.conditions.AlwaysResetCondition
 import net.chlod.minecraft.homerun.config.conditions.CronResetCondition
 import net.chlod.minecraft.homerun.config.conditions.ResetCondition
@@ -19,8 +16,6 @@ class ResetRule(
     val parametersList: List<ResetParameters>,
     val name: String?,
     val enabled: Boolean? = false,
-    val notifyEnter: Boolean? = false,
-    val notifyExit: Boolean? = false,
     val borders: List<ResetBorder>? = null,
     /**
      * Methods to use for warning players about an upcoming reset.
@@ -106,9 +101,6 @@ class ResetRule(
                 throw IllegalArgumentException("At least one parameter set must be specified")
             }
 
-            val notifyEnter = (args["notify_enter"] ?: args["notify"]) as? Boolean
-            val notifyExit = (args["notify_exit"] ?: args["notify"]) as? Boolean
-
             val bordersRaw = args["borders"] as? List<*>
             val borders: MutableList<ResetBorder> = ArrayList()
             var consumableBorderExists = false
@@ -130,6 +122,14 @@ class ResetRule(
                                 }
                                 consumableBorderExists = true
                                 ConsumableBorderType.deserialize(border)
+                            }
+
+                            ResetBorder.BorderType.CHAT_ANNOUNCE -> {
+                                ChatAnnounceBorderType.deserialize(border)
+                            }
+
+                            ResetBorder.BorderType.ACTION_BAR_ANNOUNCE -> {
+                                ActionBarAnnounceBorderType.deserialize(border)
                             }
                         }
                     )
@@ -169,8 +169,6 @@ class ResetRule(
                 resetParametersList,
                 name,
                 enabled,
-                notifyEnter,
-                notifyExit,
                 borders,
                 warnings
             )
@@ -190,12 +188,6 @@ class ResetRule(
             }
             if (enabled != null) {
                 put("enabled", enabled)
-            }
-            if (notifyEnter != null) {
-                put("notify_enter", notifyEnter)
-            }
-            if (notifyExit != null) {
-                put("notify_exit", notifyExit)
             }
             if (borders != null) {
                 put("borders", borders.map { it.serialize() })

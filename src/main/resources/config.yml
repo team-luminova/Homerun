@@ -25,10 +25,6 @@
 reset_rules:
     -   name: default
         enabled: false
-        # Notify users when they're entering this area?
-        notify_enter: true
-        # Notify users when they're leaving this area?
-        notify_exit: true
         # Distance from a chunk bordered at which to show a physical border (shown as blocks). Setting this to 0 or
         # lower will disable the physical border, but players will still be notified when they cross the border if
         # notify_enter and notify_exit are enabled.
@@ -51,6 +47,10 @@ reset_rules:
                 distance_blocks: 7
                 height: 1
                 pattern: random
+            # Notify the players with a chat message when they cross a border.
+            # -   type: chat_announce
+            # Notify the players with an action bar message when they cross a border.
+            -   type: action_bar_announce
         conditions:
             # Run a reset every day at midnight on the server's local time.
             # This is ALWAYS based on the server's local time, regardless of the timezone setting in messages.yml.

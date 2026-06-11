@@ -15,8 +15,6 @@ class PlayerNotifyListener(val plugin: Homerun) : PlayerChunkMovementListener() 
         val worldData = plugin.retainedChunkCache.getRetainedChunks(event.player.location.world.name) ?: return
 
         for (resetRule in worldData.keys) {
-            val notifyEnter = resetRule.notifyEnter ?: false
-            val notifyExit = resetRule.notifyExit ?: false
             val retainedChunks = worldData[resetRule] ?: continue // No retained chunks?
             val lastState = playerLastState[event.player.name]
             val inRetainedChunk = Pair(playerChunkX, playerChunkZ) in retainedChunks
@@ -28,17 +26,6 @@ class PlayerNotifyListener(val plugin: Homerun) : PlayerChunkMovementListener() 
                 // If this is the first state change, skip sending a message.
                 if (lastState == null) {
                     return
-                }
-
-                if (notifyExit && !inRetainedChunk) {
-                    // Send them a message
-                    event.player.sendActionBar {
-                        plugin.messages.get("border-exit")
-                    }
-                } else if (notifyEnter && inRetainedChunk) {
-                    event.player.sendActionBar {
-                        plugin.messages.get("border-enter")
-                    }
                 }
             }
         }
