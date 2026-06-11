@@ -128,10 +128,7 @@ class RetainedChunkCache(val plugin: Homerun, val resetRules: List<ResetRule>) {
 
     private fun cacheRetainedChunks(verbose: Boolean = false) {
         for (resetRule in resetRules) {
-            if (
-                !(resetRule.enabled ?: false) ||
-                (!(resetRule.notifyExit ?: false) && !(resetRule.notifyEnter ?: false))
-            )
+            if (!(resetRule.enabled ?: false))
                 continue
 
             for (parameters in resetRule.parametersList) {

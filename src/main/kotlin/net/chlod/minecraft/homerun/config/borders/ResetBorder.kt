@@ -191,7 +191,9 @@ abstract class ResetBorder(
     enum class BorderType {
         HIGHEST_BLOCK,
         PARTICLES,
-        CONSUMABLE
+        CONSUMABLE,
+        CHAT_ANNOUNCE,
+        ACTION_BAR_ANNOUNCE,
     }
 
     override fun serialize(): Map<String?, Any?> {
