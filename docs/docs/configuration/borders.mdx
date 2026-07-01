@@ -89,32 +89,32 @@ For all color values below, Homerun supports a color name, hexadecimal value in 
 number (0-15). For example, `'red'`, `'#FF0000'`, or `14` will all give you red. Don't forget your quotes!
 
 * `dust`
-* Accepts a data object, containing two other properties:
-* `color` – A color value, in the same format as above.
-* `size` – A number, which is the size of the particle. The default
+  * Accepts a data object, containing two other properties:
+  * `color` – A color value, in the same format as above.
+  * `size` – A number, which is the size of the particle. The default
 * `dust_color_transition`
-* Accepts a data object, containing three other properties:
-* `from_color` – A color value, in the same format as above.
-* `to_color` – A color value, in the same format as above.
-* `size` – A number, which is the size of the particle. The default
+  * Accepts a data object, containing three other properties:
+  * `from_color` – A color value, in the same format as above.
+  * `to_color` – A color value, in the same format as above.
+  * `size` – A number, which is the size of the particle. The default
 * `block`, `falling_dust`, `dust_pillar`, `block_crumble`, and `block_marker`
-* Accepts a block name, like `gravel` or a block state object containing two other properties:
-* `block` – The block ID, like `gravel`.
-* `data` – Block data, like `'[lit="true"]'`. This is optional, and can be omitted if you don't need it. Make
+  * Accepts a block name, like `gravel` or a block state object containing two other properties:
+  * `block` – The block ID, like `gravel`.
+  * `data` – Block data, like `'[lit="true"]'`. This is optional, and can be omitted if you don't need it. Make
 sure to include quotes around the block data, or else you might end up creating an array instead.
 * `item`
-* Accepts an item name, like `bread` or an item state object containing two other properties:
-* `item` – The item ID, like `bread`.
-* `data` – [Item data components](https://minecraft.wiki/w/Data_component_format) as an object (not a string,
+  * Accepts an item name, like `bread` or an item state object containing two other properties:
+  * `item` – The item ID, like `bread`.
+  * `data` – [Item data components](https://minecraft.wiki/w/Data_component_format) as an object (not a string,
 unlike block data). Usually, you would never need this.
 * `entity_effect` and `tinted_leaves`
-* Accepts a color value.
+  * Accepts a color value.
 * `sculk_charge`
-* Accepts a number, determining the particle roll in radians.
+  * Accepts a number, determining the particle roll in radians.
 * `dragon_breath`
-* Accepts a number, determining the particle power.
+  * Accepts a number, determining the particle power.
 * `shriek`
-* Accepts a number, determining the delay in ticks.
+  * Accepts a number, determining the delay in ticks.
 
 ![Demonstration of the "particle" border with particle data](/images/border-particle-vomit.png)
 
