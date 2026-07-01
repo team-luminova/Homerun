@@ -100,10 +100,6 @@ class ResetParameters(
                 }
             }
 
-            if (retainedChunks.isEmpty()) {
-                throw IllegalArgumentException("At least one chunk retention selector must be specified")
-            }
-
             val outsidePlayerBehavior = when (val behavior = args["outside_player_behavior"]) {
                 is String -> OutsidePlayerBehavior.valueOf(behavior.uppercase())
                 else -> OutsidePlayerBehavior.SPAWN
