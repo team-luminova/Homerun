@@ -265,13 +265,20 @@ reset_rules:
 Minecraft's [End spikes](https://minecraft.wiki/w/End_Spike) are generated based on the world seed, and although their
 centers are the same on every world, their radii and height are not. This means that if you reset the End dimension, the
 spikes will be regenerated based on the new seed when the Ender Dragon is respawned. This leads to weird-looking spikes
-that have big bases and small tops, floating obsidian boxes, or even end crystals embedded in the spikes.
+that have big bases and small tops, floating obsidian boxes, or even End crystals embedded in the spikes.
 
-To avoid this, enable the `end_pillar_cleanup` parameter, which will automatically clean up stray end crystals and
-reform end spikes during the dragon respawn process. This is only useful if you're resetting the End dimension, and will
+![Differently-sized End pillars spawning on top of each other](/images/end-pillar-unclean.png)
+
+To avoid this, enable the `end_pillar_cleanup` parameter, which will automatically clean up stray End crystals and
+reform End spikes during the dragon respawn process. This is only useful if you're resetting the End dimension, and will
 not do anything if the End is being copied or wiped.
 
-This feature normally avoids end crystals placed by players to avoid destroying player creations. If more end crystals
+This feature normally avoids End crystals placed by players to avoid destroying player creations. If more End crystals
 were removed than you expected, you can disable this feature, though you'll get oddities when respawning the dragon.
 
-![Differently-sized end pillars spawning on top of each other](/images/end-pillar-unclean.png)
+```yml title="plugins/Homerun/config.yml"
+reset_rules:
+    -   enabled: true
+        parameters:
+            -   end_pillar_cleanup: true
+```

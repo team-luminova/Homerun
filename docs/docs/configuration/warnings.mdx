@@ -1,0 +1,97 @@
+# Warnings
+
+Warnings appear periodically to remind players of upcoming or impending resets. Three warning types are currently
+supported: `boss_bar`, `chat`, and `player_list`.and
+
+## Boss bar
+
+![Demonstration of a boss bar warning](/images/warning-boss-bar.png)
+
+The boss bar is an extremely easy way to get attention from players. It will appear a set number of seconds before a
+reset, and shows a countdown timer with a precision of 0.1 seconds.
+
+The text is controlled by the `warning-bossbar` message in the [`messages.yml` file](../custom-messages).
+
+```yml title="plugins/Homerun/config.yml"
+reset_rules:
+    -   enabled: true
+        warnings:
+            -   type: boss_bar
+                seconds_before: 60
+```
+
+## Player list
+
+![Demonstration of a player list warning](/images/warning-player-list.png)
+
+The player list warning method is used to display a warning message in the player list, which is visible when pressing
+the `Tab` key. You can use this if you don't have any other player list modification plugins. Otherwise, you might
+want to configure it with Homerun's [PlaceholderAPI integration](../placeholders) to display relevant warning data
+in the player list.
+
+Players will only ever see the upcoming reset time of the world they are in. Leaving this world will remove the
+reset countdown and time.
+
+The text is controlled by the `warning-playerlist`, `warning-playerlist-date`, and `warning-playerlist-countdown`
+messages in the [`messages.yml` file](../custom-messages).
+
+```yml title="plugins/Homerun/config.yml"
+reset_rules:
+    -   enabled: true
+        warnings:
+            -   type: player_list
+                # The position in the player list to put this warning. It could be at
+                # the `header`, `footer`, or in `both`.
+                position: header
+                # How many seconds before the reset should the warning start to be displayed.
+                # If you want to display this warning only when a reset is imminent, you can set
+                # this to a value like 86400 (24 hours).
+                min_seconds_before: 60
+```
+
+## Chat message
+
+![Demonstration of a chat warning](/images/warning-chat.png)
+
+The chat warning method is used to display a warning message in the chat. The message will be visible to all players
+that are in a world about to be reset. Leaving the world will prevent players from receiving the warning message. This
+is the only warning format which gives the remaining time in a human-readable format.
+
+The text is controlled by the `warning-chat`, `warning-chat-glue`, `warning-chat-hours`, `warning-chat-minutes`,
+and `warning-chat-seconds` messages in the [`messages.yml` file](../custom-messages).
+
+```yml title="plugins/Homerun/config.yml"
+reset_rules:
+    -   enabled: true
+        warnings:
+            -   type: chat_message
+                # At what intervals (in seconds) should the warning message be sent to
+                # players. For example, if you set this to 60, players will receive a
+                # warning message 60 seconds before the reset.
+                intervals:
+                    # 24 hours before reset
+                    - 86400
+                    # 12 hours before reset
+                    - 43200
+                    # 6 hours before reset
+                    - 21600
+                    # 1 hour before reset
+                    - 3600
+                    # 30 minutes before reset
+                    - 1800
+                    # 10 minutes before reset
+                    - 600
+                    # 5 minutes before reset
+                    - 300
+                    # 1 minute before reset
+                    - 60
+                    # 30 seconds before reset
+                    - 30
+                    # Final countdown!
+                    - 10
+                    - 5
+                    - 4
+                    - 3
+                    - 2
+                    - 1
+```
