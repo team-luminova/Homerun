@@ -42,7 +42,7 @@ const config: Config = {
             {
                 pages: {
                     beforeDefaultRemarkPlugins: [githubAdmonitions]
-                    
+
                 },
                 docs: {
                     sidebarPath: './sidebars.ts',
@@ -119,7 +119,8 @@ const config: Config = {
                     ],
                 },
             ],
-            copyright: `Copyright © ${new Date().getFullYear()} Chlod Alejandro, Luminova. Licensed under the Apache License 2.0.`,
+            copyright: `Copyright © ${new Date().getFullYear()} Chlod Alejandro, Luminova. Licensed under the Apache License 2.0.<br>
+            Not an official Minecraft service. Not approved by or associated with Mojang or Microsoft.`,
         },
         prism: {
             theme: prismThemes.nightOwlLight,

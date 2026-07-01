@@ -19,7 +19,7 @@ export default function Home(): ReactNode {
                 <p className={styles.subtitle}>{siteConfig.tagline}</p>
                 <div className={styles.buttons}>
                     <DownloadButton/>
-                    <Link href="docs/configuration">
+                    <Link href="../../docs/configuration">
                         <button className="button button--primary">View the documentation</button>
                     </Link>
                     <a href={`https://github.com/${siteConfig.organizationName}/${siteConfig.projectName}`}>

@@ -1,0 +1,48 @@
+---
+sidebar_position: 1
+---
+
+# Introduction
+
+Homerun is a Minecraft server plugin that lets you reset the world under specific conditions. Though Homerun can reset
+your entire server world, it can be set to keep specific chunks or regions intact. With Minecraft 1.18's
+[chunk blending](#chunk-blending) functionality, Homerun can reset your world while keeping the borders with kept chunks
+smooth and natural.
+
+Homerun works for 1.21.4 and above. Updates for the plugin are provided for servers running Minecraft 1.21.11. More
+information on supported versions can be found in the [Development](#development)
+section. [MCKotlin](https://modrinth.com/plugin/mckotlin) ([GitHub](https://github.com/4drian3d/MCKotlin)) is required
+for Homerun to work.
+
+> [!WARNING]
+> Homerun **directly modifies** your world files during resets. It is **highly recommended** to back up your worlds
+> in some other way before using Homerun. Homerun **will persist old worlds** and avoid deleting worlds, but it is still
+> a good idea to have backups in case something goes wrong.
+
+## Features
+
+* Reset world based on time intervals
+* Keep specific chunks intact during resets
+* Smooth chunk blending for kept chunks (Minecraft 1.18+)
+* Reset the Nether and The End (and keep chunks there too)
+* Warnings and countdowns for upcoming resets
+
+## Chunk blending
+
+Chunk blending is a Minecraft 1.18+ feature that allows for smoother transitions between chunks of different biomes and
+terrain. In prior versions of Minecraft, when a chunk is generated, it may not match the surrounding chunks leading to
+abrupt changes in terrain. Chunk blending helps to create a more natural and seamless transition between these chunks.
+
+![Chunk blending example](/assets/example.png)
+
+Homerun makes use of chunk blending to ensure that when chunks are reset, they blend seamlessly with the surrounding
+terrain. Without chunk blending, resetting chunks could lead to noticeable seams or abrupt changes in the world, which
+can be visually jarring for players. This applies to all reset rules, regardless of dimension (Overworld, Nether, or End).
+
+![Copied chunks with no chunk blending](/images/chunk-blending-failure.png)
+
+This blending isn't seamless; you might still see some floating leaves or cut-off trees. But this is a lot better than a
+hard cut between the retained chunks and surrounding terrain. This is sometimes more noticeable if you use other world
+generation datapacks or mods, like Terralith.
+
+![Terralith world generation causing cliffs near the edge of the reet border](/images/terralith-cliffing.png)
