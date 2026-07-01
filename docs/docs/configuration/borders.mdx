@@ -7,6 +7,8 @@ Borders appear directly on any unretained chunk. A border will never appear on a
 This means that borders are actually slightly offset, showing up outside the area that gets retained.
 
 The blocks on which borders appear are cached on server startup. If you use a chunk selector which might change
+while the server is running, the borders might not properly show which chunks will actually be retained. To date, no
+such selector exists, so this isn't an issue, but it's something to keep in mind for the future.
 
 ## Highest block border
 
@@ -87,32 +89,32 @@ For all color values below, Homerun supports a color name, hexadecimal value in 
 number (0-15). For example, `'red'`, `'#FF0000'`, or `14` will all give you red. Don't forget your quotes!
 
 * `dust`
-    * Accepts a data object, containing two other properties:
-        * `color` – A color value, in the same format as above.
-        * `size` – A number, which is the size of the particle. The default
+* Accepts a data object, containing two other properties:
+* `color` – A color value, in the same format as above.
+* `size` – A number, which is the size of the particle. The default
 * `dust_color_transition`
-    * Accepts a data object, containing three other properties:
-        * `from_color` – A color value, in the same format as above.
-        * `to_color` – A color value, in the same format as above.
-        * `size` – A number, which is the size of the particle. The default
+* Accepts a data object, containing three other properties:
+* `from_color` – A color value, in the same format as above.
+* `to_color` – A color value, in the same format as above.
+* `size` – A number, which is the size of the particle. The default
 * `block`, `falling_dust`, `dust_pillar`, `block_crumble`, and `block_marker`
-    * Accepts a block name, like `gravel` or a block state object containing two other properties:
-        * `block` – The block ID, like `gravel`.
-        * `data` – Block data, like `'[lit="true"]'`. This is optional, and can be omitted if you don't need it. Make
-        sure to include quotes around the block data, or else you might end up creating an array instead.
+* Accepts a block name, like `gravel` or a block state object containing two other properties:
+* `block` – The block ID, like `gravel`.
+* `data` – Block data, like `'[lit="true"]'`. This is optional, and can be omitted if you don't need it. Make
+sure to include quotes around the block data, or else you might end up creating an array instead.
 * `item`
-    * Accepts an item name, like `bread` or an item state object containing two other properties:
-        * `item` – The item ID, like `bread`.
-        * `data` – [Item data components](https://minecraft.wiki/w/Data_component_format) as an object (not a string,
-          unlike block data). Usually, you would never need this.
+* Accepts an item name, like `bread` or an item state object containing two other properties:
+* `item` – The item ID, like `bread`.
+* `data` – [Item data components](https://minecraft.wiki/w/Data_component_format) as an object (not a string,
+unlike block data). Usually, you would never need this.
 * `entity_effect` and `tinted_leaves`
-    * Accepts a color value.
+* Accepts a color value.
 * `sculk_charge`
-    * Accepts a number, determining the particle roll in radians.
+* Accepts a number, determining the particle roll in radians.
 * `dragon_breath`
-    * Accepts a number, determining the particle power.
+* Accepts a number, determining the particle power.
 * `shriek`
-    * Accepts a number, determining the delay in ticks.
+* Accepts a number, determining the delay in ticks.
 
 ![Demonstration of the "particle" border with particle data](/images/border-particle-vomit.png)
 
@@ -335,7 +337,7 @@ armor, the multiplier will be applied to their drain rate. Five additional multi
 specific armor combination:
 
 * `find_all` – Whether all required armor pieces need to be found for this condition to be true.
-  * This isn't necessary if you're only checking one armor piece.
+* This isn't necessary if you're only checking one armor piece.
 * `require_helmet` – Whether this armor piece must be worn on the head.
 * `require_chest` – Whether this armor piece must be worn on the chest.
 * `require_leggings` – Whether this armor piece must be worn on the legs.
