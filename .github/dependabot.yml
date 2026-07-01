@@ -10,3 +10,14 @@ updates:
                     - "*"
         commit-message:
             prefix: "chore(deps)"
+    -   package-ecosystem: npm
+        directory: "/docs"
+        schedule:
+            interval: weekly
+        groups:
+            npm:
+                patterns:
+                    - "@docusaurus/*"
+                    - "docusaurus*"
+        commit-message:
+            prefix: "chore(deps)"
