@@ -811,8 +811,7 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/ChunkSelector"
-                    },
-                    "minItems": 1
+                    }
                 },
                 "world": {
                     "description": "The world to reset. If not specified, the main world (`level-name` in `server.properties`) will be reset.",
